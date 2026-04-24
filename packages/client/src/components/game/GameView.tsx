@@ -8,7 +8,7 @@ import { useGameStore } from '../../store/gameStore';
 import { Phase } from '@ma-soi/shared';
 
 function PostProcessing() {
-  const phase = useGameStore(s => s.gameState?.phase);
+  const phase = useGameStore((s) => s.gameState?.phase);
   const isNight = phase === Phase.Night;
   const isJudgement = phase === Phase.Judgement;
 
@@ -31,7 +31,7 @@ function PostProcessing() {
 }
 
 export default function GameView() {
-  const gameState = useGameStore(s => s.gameState);
+  const gameState = useGameStore((s) => s.gameState);
   const phase = gameState?.phase;
 
   return (
@@ -39,7 +39,12 @@ export default function GameView() {
       <Canvas
         shadows
         camera={{ position: [0, 8, 12], fov: 50 }}
-        gl={{ antialias: true, alpha: false, toneMapping: THREE.ACESFilmicToneMapping, outputColorSpace: THREE.SRGBColorSpace }}
+        gl={{
+          antialias: true,
+          alpha: false,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          outputColorSpace: THREE.SRGBColorSpace,
+        }}
       >
         <VillageScene />
         <PostProcessing />

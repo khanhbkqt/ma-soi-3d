@@ -11,10 +11,28 @@ import { roleNameVi } from './prompt-builders/base.js';
 
 // ── Fact types ──
 
-interface ConfirmedRole { kind: 'confirmed'; player: string; role: string; source: string }
-interface SeerResult    { kind: 'seer';      player: string; wolf: boolean }
-interface RoleClaim     { kind: 'claim';     player: string; role: string; round: number }
-interface Accusation    { kind: 'accusation'; target: string; by: string }
+interface ConfirmedRole {
+  kind: 'confirmed';
+  player: string;
+  role: string;
+  source: string;
+}
+interface SeerResult {
+  kind: 'seer';
+  player: string;
+  wolf: boolean;
+}
+interface RoleClaim {
+  kind: 'claim';
+  player: string;
+  role: string;
+  round: number;
+}
+interface Accusation {
+  kind: 'accusation';
+  target: string;
+  by: string;
+}
 
 type Fact = ConfirmedRole | SeerResult | RoleClaim | Accusation;
 
@@ -23,21 +41,32 @@ type Extractor = (obs: string, round: number) => Fact | null;
 // ── Vietnamese role keywords for claim/accusation matching ──
 
 const ROLE_KEYWORDS: [string, string][] = [
-  ['tiên tri', 'Tiên Tri'], ['seer', 'Tiên Tri'],
-  ['phù thủy', 'Phù Thủy'], ['witch', 'Phù Thủy'],
-  ['thợ săn', 'Thợ Săn'], ['hunter', 'Thợ Săn'],
-  ['bảo vệ', 'Bảo Vệ'], ['guard', 'Bảo Vệ'],
-  ['thần tình yêu', 'Thần Tình Yêu'], ['cupid', 'Thần Tình Yêu'],
+  ['tiên tri', 'Tiên Tri'],
+  ['seer', 'Tiên Tri'],
+  ['phù thủy', 'Phù Thủy'],
+  ['witch', 'Phù Thủy'],
+  ['thợ săn', 'Thợ Săn'],
+  ['hunter', 'Thợ Săn'],
+  ['bảo vệ', 'Bảo Vệ'],
+  ['guard', 'Bảo Vệ'],
+  ['thần tình yêu', 'Thần Tình Yêu'],
+  ['cupid', 'Thần Tình Yêu'],
 ];
 
 const CLAIM_PREFIXES = [
-  /tao là/, /tui là/, /tao chính là/, /role tao là/, /tao là con/,
-  /tui chính là/, /tao đây là/, /mình là/, /anh là/, /chị là/,
+  /tao là/,
+  /tui là/,
+  /tao chính là/,
+  /role tao là/,
+  /tao là con/,
+  /tui chính là/,
+  /tao đây là/,
+  /mình là/,
+  /anh là/,
+  /chị là/,
 ];
 
-const ACCUSE_PATTERNS = [
-  /sói/, /fake/, /giả/, /nói láo/, /nói xạo/, /chắc luôn/, /đéo tin/,
-];
+const ACCUSE_PATTERNS = [/sói/, /fake/, /giả/, /nói láo/, /nói xạo/, /chắc luôn/, /đéo tin/];
 
 // ── Extractors ──
 
@@ -80,7 +109,7 @@ const extractAccusation: Extractor = (obs, round) => {
   const [, speaker, text] = chatMatch;
   const lower = text.toLowerCase();
 
-  if (!ACCUSE_PATTERNS.some(p => p.test(lower))) return null;
+  if (!ACCUSE_PATTERNS.some((p) => p.test(lower))) return null;
 
   // Try to find a player name being accused — caller provides alive names via context
   // For now we store the raw accusation; buildPrompt will resolve names
@@ -101,13 +130,18 @@ export class RoleDeductionTracker {
   private aliveNames: string[] = [];
 
   /** Update alive player names (call when state changes) */
-  setAliveNames(names: string[]) { this.aliveNames = names; }
+  setAliveNames(names: string[]) {
+    this.aliveNames = names;
+  }
 
   /** Feed one observation — extracts all facts */
   ingest(obs: string) {
     // Track round from phase markers
     const roundMatch = obs.match(/^--- Vòng (\d+)/);
-    if (roundMatch) { this.currentRound = parseInt(roundMatch[1]); return; }
+    if (roundMatch) {
+      this.currentRound = parseInt(roundMatch[1]);
+      return;
+    }
 
     // Run all extractors
     for (const extract of EXTRACTORS) {
@@ -130,7 +164,8 @@ export class RoleDeductionTracker {
       case 'claim': {
         const list = this.claims.get(fact.player) || [];
         // Avoid duplicate claims of same role
-        if (!list.some(c => c.role === fact.role)) list.push({ role: fact.role, round: fact.round });
+        if (!list.some((c) => c.role === fact.role))
+          list.push({ role: fact.role, round: fact.round });
         this.claims.set(fact.player, list);
         break;
       }
@@ -142,7 +177,7 @@ export class RoleDeductionTracker {
     if (!chatMatch) return;
     const [, speaker, text] = chatMatch;
     const lower = text.toLowerCase();
-    if (!ACCUSE_PATTERNS.some(p => p.test(lower))) return;
+    if (!ACCUSE_PATTERNS.some((p) => p.test(lower))) return;
 
     for (const name of this.aliveNames) {
       if (name === speaker) continue;
@@ -166,14 +201,16 @@ export class RoleDeductionTracker {
 
     // Seer results (only seer/apprentice has these)
     if (this.seerResults.size) {
-      const items = [...this.seerResults].map(([p, r]) => `${p} = ${r === 'wolf' ? 'SÓI' : 'Không sói'}`);
+      const items = [...this.seerResults].map(
+        ([p, r]) => `${p} = ${r === 'wolf' ? 'SÓI' : 'Không sói'}`,
+      );
       lines.push(`Soi: ${items.join(' | ')}`);
     }
 
     // Role claims
     if (this.claims.size) {
       const items = [...this.claims].map(([p, cs]) =>
-        cs.map(c => `${p} tự nhận ${c.role} (vòng ${c.round})`).join(', ')
+        cs.map((c) => `${p} tự nhận ${c.role} (vòng ${c.round})`).join(', '),
       );
       lines.push(`Claim: ${items.join(' | ')}`);
     }
@@ -184,13 +221,17 @@ export class RoleDeductionTracker {
       if (player === myName) continue;
       for (const c of cs) {
         if (c.role === myRoleVi) {
-          lines.push(`⚠ ${player} claim ${c.role} nhưng MÀY mới là ${myRoleVi} thật → ${player} NÓI LÁO!`);
+          lines.push(
+            `⚠ ${player} claim ${c.role} nhưng MÀY mới là ${myRoleVi} thật → ${player} NÓI LÁO!`,
+          );
         }
       }
     }
 
     // Accusations
-    const accused = [...this.accusations].filter(([, a]) => a.length > 0).sort((a, b) => b[1].length - a[1].length);
+    const accused = [...this.accusations]
+      .filter(([, a]) => a.length > 0)
+      .sort((a, b) => b[1].length - a[1].length);
     if (accused.length) {
       const items = accused.map(([t, a]) => `${t} (${a.length} người tố)`);
       lines.push(`Bị tố sói: ${items.join(' | ')}`);

@@ -25,7 +25,10 @@ describe('parseActionResponse', () => {
   });
 
   it('multi-target fields', () => {
-    const r = parseActionResponse('{"target1":"minh","target2":"lan","player1":"hùng","player2":"minh"}', names);
+    const r = parseActionResponse(
+      '{"target1":"minh","target2":"lan","player1":"hùng","player2":"minh"}',
+      names,
+    );
     expect(r.target1).toBe('Minh');
     expect(r.target2).toBe('Lan');
     expect(r.player1).toBe('Hùng');

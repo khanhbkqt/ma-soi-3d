@@ -5,10 +5,13 @@ import * as THREE from 'three';
 // ── Fire Flame (additive blended planes) ──
 function FireFlame({ delay, height = 1.2 }: { delay: number; height?: number }) {
   const ref = useRef<THREE.Mesh>(null);
-  const color = useMemo(() => new THREE.Color().setHSL(0.06 + Math.random() * 0.04, 1, 0.5 + Math.random() * 0.2), []);
+  const color = useMemo(
+    () => new THREE.Color().setHSL(0.06 + Math.random() * 0.04, 1, 0.5 + Math.random() * 0.2),
+    [],
+  );
   useFrame(() => {
     if (!ref.current) return;
-    const t = ((Date.now() * 0.0015 + delay) % 1);
+    const t = (Date.now() * 0.0015 + delay) % 1;
     ref.current.position.y = 0.2 + t * height;
     ref.current.position.x = Math.sin(Date.now() * 0.004 + delay * 13) * 0.1;
     ref.current.position.z = Math.cos(Date.now() * 0.003 + delay * 9) * 0.1;
@@ -19,7 +22,13 @@ function FireFlame({ delay, height = 1.2 }: { delay: number; height?: number }) 
   return (
     <mesh ref={ref} rotation={[0, delay * 2, 0]}>
       <planeGeometry args={[1, 1]} />
-      <meshBasicMaterial color={color} transparent blending={THREE.AdditiveBlending} side={THREE.DoubleSide} depthWrite={false} />
+      <meshBasicMaterial
+        color={color}
+        transparent
+        blending={THREE.AdditiveBlending}
+        side={THREE.DoubleSide}
+        depthWrite={false}
+      />
     </mesh>
   );
 }
@@ -39,7 +48,12 @@ function Ember({ delay }: { delay: number }) {
   return (
     <mesh ref={ref}>
       <sphereGeometry args={[1, 4, 4]} />
-      <meshBasicMaterial color="#ff6600" transparent blending={THREE.AdditiveBlending} depthWrite={false} />
+      <meshBasicMaterial
+        color="#ff6600"
+        transparent
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
     </mesh>
   );
 }
@@ -75,12 +89,17 @@ function Spark({ delay }: { delay: number }) {
     ref.current.position.x = Math.sin(delay * 23) * 0.3 * (1 - t);
     ref.current.position.z = Math.cos(delay * 19) * 0.3 * (1 - t);
     ref.current.scale.setScalar((1 - t) * 0.015);
-    (ref.current.material as THREE.MeshBasicMaterial).opacity = (1 - t);
+    (ref.current.material as THREE.MeshBasicMaterial).opacity = 1 - t;
   });
   return (
     <mesh ref={ref}>
       <sphereGeometry args={[1, 3, 3]} />
-      <meshBasicMaterial color="#ffee44" transparent blending={THREE.AdditiveBlending} depthWrite={false} />
+      <meshBasicMaterial
+        color="#ffee44"
+        transparent
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
     </mesh>
   );
 }
@@ -89,12 +108,22 @@ export default function Campfire() {
   return (
     <group position={[0, 0, 0]}>
       {/* Logs with emissive tips */}
-      {[0, 1, 2, 3].map(i => {
+      {[0, 1, 2, 3].map((i) => {
         const a = i * 1.57;
         return (
-          <mesh key={i} position={[Math.cos(a) * 0.2, 0.08, Math.sin(a) * 0.2]} rotation={[0.3, a, 0.15]} castShadow>
+          <mesh
+            key={i}
+            position={[Math.cos(a) * 0.2, 0.08, Math.sin(a) * 0.2]}
+            rotation={[0.3, a, 0.15]}
+            castShadow
+          >
             <cylinderGeometry args={[0.04, 0.055, 0.55, 6]} />
-            <meshStandardMaterial color="#3d2817" roughness={1} emissive="#ff3300" emissiveIntensity={0.15} />
+            <meshStandardMaterial
+              color="#3d2817"
+              roughness={1}
+              emissive="#ff3300"
+              emissiveIntensity={0.15}
+            />
           </mesh>
         );
       })}
@@ -109,22 +138,42 @@ export default function Campfire() {
         );
       })}
       {/* Fire flames */}
-      {Array.from({ length: 8 }).map((_, i) => <FireFlame key={i} delay={i * 0.13} />)}
+      {Array.from({ length: 8 }).map((_, i) => (
+        <FireFlame key={i} delay={i * 0.13} />
+      ))}
       {/* Embers */}
-      {Array.from({ length: 10 }).map((_, i) => <Ember key={`e${i}`} delay={i * 0.25} />)}
+      {Array.from({ length: 10 }).map((_, i) => (
+        <Ember key={`e${i}`} delay={i * 0.25} />
+      ))}
       {/* Smoke */}
-      {Array.from({ length: 5 }).map((_, i) => <SmokeParticle key={`sm${i}`} delay={i * 0.8} />)}
+      {Array.from({ length: 5 }).map((_, i) => (
+        <SmokeParticle key={`sm${i}`} delay={i * 0.8} />
+      ))}
       {/* Sparks */}
-      {Array.from({ length: 6 }).map((_, i) => <Spark key={`sp${i}`} delay={i * 0.25} />)}
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Spark key={`sp${i}`} delay={i * 0.25} />
+      ))}
       {/* Core glow */}
       <mesh position={[0, 0.2, 0]}>
         <sphereGeometry args={[0.25, 8, 8]} />
-        <meshBasicMaterial color="#ff4400" transparent opacity={0.2} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial
+          color="#ff4400"
+          transparent
+          opacity={0.2}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
       </mesh>
       {/* Heat haze glow */}
       <mesh position={[0, 0.8, 0]}>
         <sphereGeometry args={[0.4, 8, 8]} />
-        <meshBasicMaterial color="#ff6622" transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} />
+        <meshBasicMaterial
+          color="#ff6622"
+          transparent
+          opacity={0.06}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
       </mesh>
     </group>
   );

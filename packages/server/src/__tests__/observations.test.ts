@@ -12,7 +12,12 @@ function getObsFn() {
 }
 
 const obs = getObsFn();
-const ev = (type: GameEventType, data: any, isPublic = true) => ({ type, data, timestamp: Date.now(), isPublic });
+const ev = (type: GameEventType, data: any, isPublic = true) => ({
+  type,
+  data,
+  timestamp: Date.now(),
+  isPublic,
+});
 
 // Reusable viewers
 const seerPlayer = createMockPlayer({ id: 'seer-id', name: 'Seer', role: Role.Seer });
@@ -110,7 +115,10 @@ describe('eventToObservation — role-gated events', () => {
   });
 
   it('ApprenticeSeerActivated only visible to apprentice', () => {
-    const e = ev(GameEventType.ApprenticeSeerActivated, { apprenticeId: 'app-id', apprenticeName: 'App' });
+    const e = ev(GameEventType.ApprenticeSeerActivated, {
+      apprenticeId: 'app-id',
+      apprenticeName: 'App',
+    });
     expect(obs(e, apprentice)).toContain('kế thừa');
     expect(obs(e, villager)).toBeNull();
   });

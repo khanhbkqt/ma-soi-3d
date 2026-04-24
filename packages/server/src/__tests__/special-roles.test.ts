@@ -17,7 +17,7 @@ describe('Alpha Wolf infect', () => {
 
   it('infect converts target to Werewolf', async () => {
     const players = infectSetup();
-    const hunter = players.find(p => p.name === 'Hunter')!;
+    const hunter = players.find((p) => p.name === 'Hunter')!;
     const { gm } = createTestGM(players, {
       guardProtect: vi.fn().mockResolvedValue('Alpha'),
       alphaInfect: vi.fn().mockResolvedValue({ target: 'Hunter', infect: true }),
@@ -41,8 +41,10 @@ describe('Alpha Wolf infect', () => {
     const events = collectEvents(gm);
     await (gm as any).nightPhase();
 
-    expect(events.some(e => e.type === GameEventType.AlphaInfect && e.data.targetName === 'Hunter')).toBe(true);
-    const resolved = events.find(e => e.type === GameEventType.InfectResolved);
+    expect(
+      events.some((e) => e.type === GameEventType.AlphaInfect && e.data.targetName === 'Hunter'),
+    ).toBe(true);
+    const resolved = events.find((e) => e.type === GameEventType.InfectResolved);
     expect(resolved).toBeDefined();
     expect(resolved.data.targetName).toBe('Hunter');
     expect(resolved.data.wolfTeammates.length).toBeGreaterThan(0);
@@ -69,11 +71,11 @@ describe('Regression: Seer + infect same night', () => {
     const events = collectEvents(gm);
     await (gm as any).nightPhase();
 
-    const seerResult = events.find(e => e.type === GameEventType.SeerResult);
+    const seerResult = events.find((e) => e.type === GameEventType.SeerResult);
     expect(seerResult.data.targetName).toBe('Target');
     expect(seerResult.data.isWolf).toBe(false); // not wolf yet at seer time
     // But target IS now a wolf after resolve
-    expect(players.find(p => p.name === 'Target')!.role).toBe(Role.Werewolf);
+    expect(players.find((p) => p.name === 'Target')!.role).toBe(Role.Werewolf);
   });
 
   it('seer sees normal wolf as wolf', async () => {
@@ -93,7 +95,7 @@ describe('Regression: Seer + infect same night', () => {
     });
     const events = collectEvents(gm);
     await (gm as any).nightPhase();
-    expect(events.find(e => e.type === GameEventType.SeerResult)!.data.isWolf).toBe(true);
+    expect(events.find((e) => e.type === GameEventType.SeerResult)!.data.isWolf).toBe(true);
   });
 
   it('seer sees previously infected player as wolf (next night)', async () => {
@@ -105,15 +107,19 @@ describe('Regression: Seer + infect same night', () => {
       createMockPlayer({ name: 'V2', role: Role.Villager }),
       createMockPlayer({ name: 'V3', role: Role.Villager }),
     ];
-    const { gm } = createTestGM(players, {
-      guardProtect: vi.fn().mockResolvedValue('Seer'),
-      wolfKill: vi.fn().mockResolvedValue('V1'),
-      witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
-      seerInvestigate: vi.fn().mockResolvedValue('Target'),
-    }, { alphaInfectUsed: true });
+    const { gm } = createTestGM(
+      players,
+      {
+        guardProtect: vi.fn().mockResolvedValue('Seer'),
+        wolfKill: vi.fn().mockResolvedValue('V1'),
+        witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
+        seerInvestigate: vi.fn().mockResolvedValue('Target'),
+      },
+      { alphaInfectUsed: true },
+    );
     const events = collectEvents(gm);
     await (gm as any).nightPhase();
-    expect(events.find(e => e.type === GameEventType.SeerResult)!.data.isWolf).toBe(true);
+    expect(events.find((e) => e.type === GameEventType.SeerResult)!.data.isWolf).toBe(true);
   });
 });
 
@@ -127,7 +133,7 @@ describe('Wolf Cub', () => {
       createMockPlayer({ name: 'V3', role: Role.Villager }),
       createMockPlayer({ name: 'V4', role: Role.Villager }),
     ];
-    const cub = players.find(p => p.name === 'Cub')!;
+    const cub = players.find((p) => p.name === 'Cub')!;
     const { gm } = createTestGM(players);
     await (gm as any).killPlayer(cub, 'judged');
     expect(gm.state.wolfCubDead).toBe(true);
@@ -144,12 +150,16 @@ describe('Wolf Cub', () => {
       createMockPlayer({ name: 'V4', role: Role.Villager }),
     ];
     const doubleKill = vi.fn().mockResolvedValue(['V1', 'V2']);
-    const { gm } = createTestGM(players, {
-      guardProtect: vi.fn().mockResolvedValue('Seer'),
-      wolfDoubleKill: doubleKill,
-      witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
-      seerInvestigate: vi.fn().mockResolvedValue('Wolf1'),
-    }, { wolfCubRevengeActive: true, wolfCubDead: true });
+    const { gm } = createTestGM(
+      players,
+      {
+        guardProtect: vi.fn().mockResolvedValue('Seer'),
+        wolfDoubleKill: doubleKill,
+        witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
+        seerInvestigate: vi.fn().mockResolvedValue('Wolf1'),
+      },
+      { wolfCubRevengeActive: true, wolfCubDead: true },
+    );
 
     await (gm as any).nightPhase();
     expect(doubleKill).toHaveBeenCalled();
@@ -170,11 +180,11 @@ describe('Hunter', () => {
     ];
     const hunterShot = vi.fn().mockResolvedValue('V1');
     const { gm } = createTestGM(players, { hunterShot });
-    const hunter = players.find(p => p.name === 'Hunter')!;
+    const hunter = players.find((p) => p.name === 'Hunter')!;
 
     await (gm as any).killPlayer(hunter, 'wolf_kill');
     expect(hunterShot).toHaveBeenCalled();
-    expect(players.find(p => p.name === 'V1')!.alive).toBe(false);
+    expect(players.find((p) => p.name === 'V1')!.alive).toBe(false);
   });
 
   it('hunter killed by witch poison → NO hunterShot', async () => {
@@ -188,7 +198,7 @@ describe('Hunter', () => {
     ];
     const hunterShot = vi.fn().mockResolvedValue('V1');
     const { gm } = createTestGM(players, { hunterShot });
-    const hunter = players.find(p => p.name === 'Hunter')!;
+    const hunter = players.find((p) => p.name === 'Hunter')!;
 
     await (gm as any).killPlayer(hunter, 'witch_kill');
     expect(hunterShot).not.toHaveBeenCalled();
@@ -205,15 +215,19 @@ describe('Cupid couple', () => {
       createMockPlayer({ name: 'V4', role: Role.Villager }),
       createMockPlayer({ name: 'V5', role: Role.Villager }),
     ];
-    const v1 = players.find(p => p.name === 'V1')!;
-    const v2 = players.find(p => p.name === 'V2')!;
-    const { gm } = createTestGM(players, {}, {
-      couple: { player1Id: v1.id, player2Id: v2.id },
-    });
+    const v1 = players.find((p) => p.name === 'V1')!;
+    const v2 = players.find((p) => p.name === 'V2')!;
+    const { gm } = createTestGM(
+      players,
+      {},
+      {
+        couple: { player1Id: v1.id, player2Id: v2.id },
+      },
+    );
     const events = collectEvents(gm);
     await (gm as any).killPlayer(v1, 'wolf_kill');
     expect(v2.alive).toBe(false);
-    expect(events.some(e => e.type === GameEventType.LoverDeath)).toBe(true);
+    expect(events.some((e) => e.type === GameEventType.LoverDeath)).toBe(true);
   });
 
   it('cross-team couple last 2 alive → Lovers win', () => {
@@ -221,9 +235,13 @@ describe('Cupid couple', () => {
       createMockPlayer({ name: 'Wolf1', role: Role.Werewolf }),
       createMockPlayer({ name: 'V1', role: Role.Villager }),
     ];
-    const { gm } = createTestGM(players, {}, {
-      couple: { player1Id: players[0].id, player2Id: players[1].id },
-    });
+    const { gm } = createTestGM(
+      players,
+      {},
+      {
+        couple: { player1Id: players[0].id, player2Id: players[1].id },
+      },
+    );
     expect((gm as any).checkWin()).toBe(Team.Lovers);
   });
 });
@@ -238,13 +256,13 @@ describe('Apprentice Seer', () => {
       createMockPlayer({ name: 'V2', role: Role.Villager }),
       createMockPlayer({ name: 'V3', role: Role.Villager }),
     ];
-    const seer = players.find(p => p.name === 'Seer')!;
+    const seer = players.find((p) => p.name === 'Seer')!;
     const { gm } = createTestGM(players);
     const events = collectEvents(gm);
     await (gm as any).killPlayer(seer, 'wolf_kill');
     expect(gm.state.originalSeerDead).toBe(true);
     expect(gm.state.apprenticeSeerActivated).toBe(true);
-    expect(events.some(e => e.type === GameEventType.ApprenticeSeerActivated)).toBe(true);
+    expect(events.some((e) => e.type === GameEventType.ApprenticeSeerActivated)).toBe(true);
   });
 
   it('apprentice used as seer after activation', async () => {
@@ -257,12 +275,16 @@ describe('Apprentice Seer', () => {
       createMockPlayer({ name: 'V2', role: Role.Villager }),
     ];
     const seerInvestigate = vi.fn().mockResolvedValue('Wolf1');
-    const { gm } = createTestGM(players, {
-      guardProtect: vi.fn().mockResolvedValue('Apprentice'),
-      wolfKill: vi.fn().mockResolvedValue('V1'),
-      witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
-      seerInvestigate,
-    }, { originalSeerDead: true, apprenticeSeerActivated: true });
+    const { gm } = createTestGM(
+      players,
+      {
+        guardProtect: vi.fn().mockResolvedValue('Apprentice'),
+        wolfKill: vi.fn().mockResolvedValue('V1'),
+        witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
+        seerInvestigate,
+      },
+      { originalSeerDead: true, apprenticeSeerActivated: true },
+    );
 
     const events = collectEvents(gm);
     await (gm as any).nightPhase();
@@ -281,17 +303,21 @@ describe('Fool', () => {
       createMockPlayer({ name: 'V1', role: Role.Villager }),
       createMockPlayer({ name: 'V2', role: Role.Villager }),
     ];
-    const fool = players.find(p => p.name === 'Fool')!;
-    const { gm } = createTestGM(players, {
-      defend: vi.fn().mockResolvedValue('I am innocent'),
-      judgeVote: vi.fn().mockResolvedValue('kill'),
-    }, { accusedId: fool.id, phase: Phase.Judgement });
+    const fool = players.find((p) => p.name === 'Fool')!;
+    const { gm } = createTestGM(
+      players,
+      {
+        defend: vi.fn().mockResolvedValue('I am innocent'),
+        judgeVote: vi.fn().mockResolvedValue('kill'),
+      },
+      { accusedId: fool.id, phase: Phase.Judgement },
+    );
 
     const events = collectEvents(gm);
     await (gm as any).judgementPhase();
     expect(gm.state.winner).toBe('Fool');
-    expect(events.some(e => e.type === GameEventType.FoolVictory)).toBe(true);
-    expect(events.some(e => e.type === GameEventType.GameOver)).toBe(true);
+    expect(events.some((e) => e.type === GameEventType.FoolVictory)).toBe(true);
+    expect(events.some((e) => e.type === GameEventType.GameOver)).toBe(true);
   });
 });
 
@@ -307,7 +333,7 @@ describe('Guard', () => {
     ];
     const { gm } = createTestGM(players, {
       guardProtect: vi.fn().mockResolvedValue('V1'), // guard protects V1
-      wolfKill: vi.fn().mockResolvedValue('V1'),     // wolves target V1 (blocked)
+      wolfKill: vi.fn().mockResolvedValue('V1'), // wolves target V1 (blocked)
       witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: 'V1' }), // witch also targets V1
       seerInvestigate: vi.fn().mockResolvedValue('Wolf1'),
     });

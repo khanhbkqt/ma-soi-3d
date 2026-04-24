@@ -3,25 +3,26 @@ import { Phase } from '@ma-soi/shared';
 import { ROLE_COLORS, ROLE_NAMES_VI } from './constants';
 
 export default function PlayerRoster() {
-  const gameState = useGameStore(s => s.gameState);
-  const spectatorMode = useGameStore(s => s.spectatorMode);
-  const playerViewId = useGameStore(s => s.playerViewId);
-  const setPlayerView = useGameStore(s => s.setPlayerView);
+  const gameState = useGameStore((s) => s.gameState);
+  const spectatorMode = useGameStore((s) => s.spectatorMode);
+  const playerViewId = useGameStore((s) => s.playerViewId);
+  const setPlayerView = useGameStore((s) => s.setPlayerView);
   if (!gameState) return null;
 
   const voteCounts: Record<string, number> = {};
   if (gameState.phase === Phase.Dusk) {
-    gameState.votes.forEach(v => {
+    gameState.votes.forEach((v) => {
       voteCounts[v.targetId] = (voteCounts[v.targetId] || 0) + 1;
     });
   }
 
-  const isAccused = (id: string) => gameState.phase === Phase.Judgement && gameState.accusedId === id;
+  const isAccused = (id: string) =>
+    gameState.phase === Phase.Judgement && gameState.accusedId === id;
   const isPlayerView = spectatorMode === 'player';
 
   return (
     <div className="space-y-1">
-      {gameState.players.map(p => {
+      {gameState.players.map((p) => {
         const voteCount = voteCounts[p.id] || 0;
         const isVoteTarget = voteCount > 0;
         const accused = isAccused(p.id);
@@ -43,11 +44,22 @@ export default function PlayerRoster() {
             } ${isPlayerView ? 'cursor-pointer hover:bg-gray-700/50' : ''}`}
           >
             <span className="text-sm">{p.personality.emoji}</span>
-            <span className={`flex-1 font-medium ${
-              isViewing ? 'text-cyan-200' :
-              p.alive ? (accused ? 'text-red-300' : 'text-white') : 'text-gray-500 line-through'
-            }`}>{p.name}</span>
-            <span className="text-[9px] text-gray-500 truncate max-w-[60px]" title={p.modelName}>{p.modelName}</span>
+            <span
+              className={`flex-1 font-medium ${
+                isViewing
+                  ? 'text-cyan-200'
+                  : p.alive
+                    ? accused
+                      ? 'text-red-300'
+                      : 'text-white'
+                    : 'text-gray-500 line-through'
+              }`}
+            >
+              {p.name}
+            </span>
+            <span className="text-[9px] text-gray-500 truncate max-w-[60px]" title={p.modelName}>
+              {p.modelName}
+            </span>
             {isViewing && <span className="text-cyan-400 text-[10px]">👁</span>}
             {accused && <span className="text-red-400 text-[10px] font-bold">⚖️</span>}
             {isVoteTarget && (
@@ -56,12 +68,18 @@ export default function PlayerRoster() {
               </span>
             )}
             {(spectatorMode === 'god' || !p.alive) && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ color: ROLE_COLORS[p.role], backgroundColor: ROLE_COLORS[p.role] + '20' }}>
+              <span
+                className="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                style={{ color: ROLE_COLORS[p.role], backgroundColor: ROLE_COLORS[p.role] + '20' }}
+              >
                 {ROLE_NAMES_VI[p.role]}
               </span>
             )}
             {isViewing && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ color: ROLE_COLORS[p.role], backgroundColor: ROLE_COLORS[p.role] + '20' }}>
+              <span
+                className="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                style={{ color: ROLE_COLORS[p.role], backgroundColor: ROLE_COLORS[p.role] + '20' }}
+              >
                 {ROLE_NAMES_VI[p.role]}
               </span>
             )}

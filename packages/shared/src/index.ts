@@ -13,7 +13,11 @@ export enum Role {
   Fool = 'Fool',
 }
 
-export enum Team { Wolf = 'Wolf', Village = 'Village', Lovers = 'Lovers' }
+export enum Team {
+  Wolf = 'Wolf',
+  Village = 'Village',
+  Lovers = 'Lovers',
+}
 
 export const roleTeam: Record<Role, Team> = {
   [Role.Werewolf]: Team.Wolf,
@@ -37,9 +41,9 @@ export function isWolfRole(role: Role): boolean {
 export enum Phase {
   Lobby = 'Lobby',
   Night = 'Night',
-  Dawn = 'Dawn',          // Kết quả đêm, thông báo ai chết
-  Day = 'Day',            // Thảo luận tự do
-  Dusk = 'Dusk',          // Biểu quyết đưa lên giàn
+  Dawn = 'Dawn', // Kết quả đêm, thông báo ai chết
+  Day = 'Day', // Thảo luận tự do
+  Dusk = 'Dusk', // Biểu quyết đưa lên giàn
   Judgement = 'Judgement', // Biện hộ + vote giết/tha
   GameOver = 'GameOver',
 }
@@ -56,16 +60,30 @@ export interface Player {
 }
 
 export const VIETNAMESE_NAMES = [
-  'Minh', 'Lan', 'Hùng', 'Tú', 'Hoa', 'Đức', 'Linh', 'Phong',
-  'Mai', 'Khoa', 'Thảo', 'Bảo', 'Ngọc', 'Quân', 'Trang', 'Dũng',
+  'Minh',
+  'Lan',
+  'Hùng',
+  'Tú',
+  'Hoa',
+  'Đức',
+  'Linh',
+  'Phong',
+  'Mai',
+  'Khoa',
+  'Thảo',
+  'Bảo',
+  'Ngọc',
+  'Quân',
+  'Trang',
+  'Dũng',
 ];
 
 // ── Agent Personality ──
 export interface AgentPersonality {
   id: string;
   name: string;
-  trait: string;        // e.g. "aggressive accuser"
-  speechStyle: string;  // e.g. "short, punchy sentences with lots of accusations"
+  trait: string; // e.g. "aggressive accuser"
+  speechStyle: string; // e.g. "short, punchy sentences with lots of accusations"
   emoji: string;
 }
 
@@ -81,48 +99,109 @@ export interface ProviderConfig {
 
 // ── Toggleable Special Roles ──
 // Roles the player can enable/disable in lobby. Core roles (Werewolf, Villager, Seer) are always on.
-export const TOGGLEABLE_ROLES: { role: Role; label: string; emoji: string; description: string; minPlayers: number }[] = [
-  { role: Role.AlphaWolf,      label: 'Sói Đầu Đàn',     emoji: '🐺👑', description: 'Lây nhiễm 1 người thành sói (1 lần)',   minPlayers: 6 },
-  { role: Role.WolfCub,        label: 'Sói Con',          emoji: '🐺🍼', description: 'Chết → đêm sau sói cắn 2',              minPlayers: 9 },
-  { role: Role.Witch,          label: 'Phù Thủy',        emoji: '🧪',   description: '1 thuốc cứu + 1 thuốc độc',              minPlayers: 6 },
-  { role: Role.Hunter,         label: 'Thợ Săn',         emoji: '🏹',   description: 'Chết → bắn 1 người theo',                minPlayers: 6 },
-  { role: Role.Guard,          label: 'Bảo Vệ',          emoji: '🛡️',  description: 'Bảo vệ 1 người mỗi đêm',                minPlayers: 6 },
-  { role: Role.ApprenticeSeer, label: 'TT Tập Sự',       emoji: '🔮📚', description: 'Kế thừa khi Tiên Tri chết',              minPlayers: 9 },
-  { role: Role.Cupid,          label: 'Thần Tình Yêu',   emoji: '💘',   description: 'Ghép đôi 2 người, chết chung',           minPlayers: 9 },
-  { role: Role.Fool,           label: 'Kẻ Ngốc',         emoji: '🃏',   description: 'Bị treo cổ = thắng ngay',                minPlayers: 10 },
+export const TOGGLEABLE_ROLES: {
+  role: Role;
+  label: string;
+  emoji: string;
+  description: string;
+  minPlayers: number;
+}[] = [
+  {
+    role: Role.AlphaWolf,
+    label: 'Sói Đầu Đàn',
+    emoji: '🐺👑',
+    description: 'Lây nhiễm 1 người thành sói (1 lần)',
+    minPlayers: 6,
+  },
+  {
+    role: Role.WolfCub,
+    label: 'Sói Con',
+    emoji: '🐺🍼',
+    description: 'Chết → đêm sau sói cắn 2',
+    minPlayers: 9,
+  },
+  {
+    role: Role.Witch,
+    label: 'Phù Thủy',
+    emoji: '🧪',
+    description: '1 thuốc cứu + 1 thuốc độc',
+    minPlayers: 6,
+  },
+  {
+    role: Role.Hunter,
+    label: 'Thợ Săn',
+    emoji: '🏹',
+    description: 'Chết → bắn 1 người theo',
+    minPlayers: 6,
+  },
+  {
+    role: Role.Guard,
+    label: 'Bảo Vệ',
+    emoji: '🛡️',
+    description: 'Bảo vệ 1 người mỗi đêm',
+    minPlayers: 6,
+  },
+  {
+    role: Role.ApprenticeSeer,
+    label: 'TT Tập Sự',
+    emoji: '🔮📚',
+    description: 'Kế thừa khi Tiên Tri chết',
+    minPlayers: 9,
+  },
+  {
+    role: Role.Cupid,
+    label: 'Thần Tình Yêu',
+    emoji: '💘',
+    description: 'Ghép đôi 2 người, chết chung',
+    minPlayers: 9,
+  },
+  {
+    role: Role.Fool,
+    label: 'Kẻ Ngốc',
+    emoji: '🃏',
+    description: 'Bị treo cổ = thắng ngay',
+    minPlayers: 10,
+  },
 ];
 
 export function getDefaultEnabledRoles(playerCount: number): Role[] {
-  return TOGGLEABLE_ROLES.filter(r => r.minPlayers <= playerCount).map(r => r.role);
+  return TOGGLEABLE_ROLES.filter((r) => r.minPlayers <= playerCount).map((r) => r.role);
 }
 
 // ── Game Config ──
 export interface GameConfig {
   gameName: string;
   playerCount: number;
-  discussionRounds: number;  // max rounds (early exit if quiet)
+  discussionRounds: number; // max rounds (early exit if quiet)
   discussionTimeLimitMs: number; // total time budget for day discussion
   autoPlay: boolean;
-  phaseDelay: number;        // ms between phases
+  phaseDelay: number; // ms between phases
   providers: ProviderConfig[];
   playerSetup: PlayerSetup[];
-  enabledSpecialRoles: Role[];  // which special roles are active this game
+  enabledSpecialRoles: Role[]; // which special roles are active this game
 }
 
 export interface PlayerSetup {
   name: string;
   providerId: string;
   modelName?: string;
-  personalityId?: string;  // auto-assign if not set
+  personalityId?: string; // auto-assign if not set
 }
 
 // ── Night Actions ──
-export type NightActionType = 'wolf_kill' | 'wolf_infect' | 'seer_investigate' | 'witch_heal' | 'witch_kill' | 'guard_protect' | 'cupid_pair';
+export type NightActionType =
+  | 'wolf_kill'
+  | 'wolf_infect'
+  | 'seer_investigate'
+  | 'witch_heal'
+  | 'witch_kill'
+  | 'guard_protect'
+  | 'cupid_pair';
 export interface NightAction {
   type: NightActionType;
   actorId: string;
   targetId: string;
-  targetId2?: string;  // for cupid pairing
+  targetId2?: string; // for cupid pairing
 }
 
 // ── Day Messages ──
@@ -196,11 +275,14 @@ export interface GameEvent {
   type: GameEventType;
   data: any;
   timestamp: number;
-  isPublic: boolean;  // false = god-view only
+  isPublic: boolean; // false = god-view only
 }
 
 // ── Game State ──
-export interface WitchPotions { healUsed: boolean; killUsed: boolean; }
+export interface WitchPotions {
+  healUsed: boolean;
+  killUsed: boolean;
+}
 
 export interface GameState {
   id: string;
@@ -212,7 +294,7 @@ export interface GameState {
   nightActions: NightAction[];
   votes: Vote[];
   witchPotions: WitchPotions;
-  lastGuardedId: string | null;  // guard can't protect same person twice in a row
+  lastGuardedId: string | null; // guard can't protect same person twice in a row
   winner: Team | 'Fool' | null;
   isPaused: boolean;
   discussionMessages: DayMessage[];
@@ -226,7 +308,7 @@ export interface GameState {
   couple: CoupleState | null;
   alphaInfectUsed: boolean;
   wolfCubDead: boolean;
-  wolfCubRevengeActive: boolean;  // true = this night wolves kill 2
+  wolfCubRevengeActive: boolean; // true = this night wolves kill 2
   originalSeerDead: boolean;
   apprenticeSeerActivated: boolean;
 }
@@ -267,7 +349,7 @@ export interface PlayerViewState {
 export interface AgentMemory {
   observations: string[];
   reflections: string[];
-  knownRoles: Record<string, Role>;  // player id -> known role
+  knownRoles: Record<string, Role>; // player id -> known role
   suspicions: Record<string, number>; // player id -> suspicion level
 }
 
@@ -298,7 +380,14 @@ export function getRoleDistribution(playerCount: number, enabledRoles?: Role[]):
   roles.push(Role.Seer);
 
   // ── Toggleable village roles ──
-  const villageToggles: Role[] = [Role.Witch, Role.Hunter, Role.Guard, Role.ApprenticeSeer, Role.Cupid, Role.Fool];
+  const villageToggles: Role[] = [
+    Role.Witch,
+    Role.Hunter,
+    Role.Guard,
+    Role.ApprenticeSeer,
+    Role.Cupid,
+    Role.Fool,
+  ];
   for (const r of villageToggles) {
     if (has(r) && roles.length < playerCount) roles.push(r);
   }

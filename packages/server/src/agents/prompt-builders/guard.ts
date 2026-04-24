@@ -23,15 +23,22 @@ BAN NGÀY: Giấu thân, chơi như dân. Come out khi bị đưa lên giàn.`;
 Nếu đã đỡ thành công trước đó → nói ra làm bằng chứng.`;
   }
 
-  guardProtect(player: Player, state: GameState, observations: string[], lastGuardedId: string | null): string {
-    const targets = state.players.filter(p => p.alive && p.id !== lastGuardedId);
-    const lastGuardedName = lastGuardedId ? state.players.find(p => p.id === lastGuardedId)?.name : null;
+  guardProtect(
+    player: Player,
+    state: GameState,
+    observations: string[],
+    lastGuardedId: string | null,
+  ): string {
+    const targets = state.players.filter((p) => p.alive && p.id !== lastGuardedId);
+    const lastGuardedName = lastGuardedId
+      ? state.players.find((p) => p.id === lastGuardedId)?.name
+      : null;
     return `${taskContext(observations)}
 Chọn 1 người để bảo vệ đêm nay (có thể bảo vệ chính mình).
 ${lastGuardedName ? `Không được bảo vệ ${lastGuardedName} (đêm trước đã bảo vệ).` : ''}
 Đoán xem sói sẽ cắn ai → bảo vệ người đó. 
 TƯ DUY MIND-GAME: Đừng rơi vào thói quen "Tự đỡ mình Đêm 1". Sói biết Đêm 2 mày không thể tự đỡ và sẽ cắn mày. Cân nhắc đỡ người khác Đêm 1. Nếu Tiên Tri đã lộ, Sói có thể cắn người khác vì nghĩ mày sẽ đỡ Tiên Tri. Hãy đoán target thật sự của Sói.
-Danh sách: ${targets.map(t => t.name).join(', ')}
+Danh sách: ${targets.map((t) => t.name).join(', ')}
 JSON: {"target":"Tên","reasoning":"lý do chọn target"}`;
   }
 }

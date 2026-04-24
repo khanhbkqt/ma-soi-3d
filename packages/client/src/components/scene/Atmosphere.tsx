@@ -5,7 +5,15 @@ import { Phase } from '@ma-soi/shared';
 
 function Firefly({ seed }: { seed: number }) {
   const ref = useRef<THREE.Mesh>(null);
-  const offset = useMemo(() => ({ x: (Math.random() - 0.5) * 14, z: (Math.random() - 0.5) * 14, speed: 0.3 + Math.random() * 0.5, phase: Math.random() * Math.PI * 2 }), []);
+  const offset = useMemo(
+    () => ({
+      x: (Math.random() - 0.5) * 14,
+      z: (Math.random() - 0.5) * 14,
+      speed: 0.3 + Math.random() * 0.5,
+      phase: Math.random() * Math.PI * 2,
+    }),
+    [],
+  );
   useFrame(() => {
     if (!ref.current) return;
     const t = Date.now() * 0.001 * offset.speed;
@@ -20,14 +28,26 @@ function Firefly({ seed }: { seed: number }) {
   return (
     <mesh ref={ref}>
       <sphereGeometry args={[1, 4, 4]} />
-      <meshBasicMaterial color="#aaff44" transparent blending={THREE.AdditiveBlending} depthWrite={false} />
+      <meshBasicMaterial
+        color="#aaff44"
+        transparent
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
     </mesh>
   );
 }
 
 function MistCloud({ seed }: { seed: number }) {
   const ref = useRef<THREE.Mesh>(null);
-  const offset = useMemo(() => ({ x: (Math.random() - 0.5) * 16, z: (Math.random() - 0.5) * 16, speed: 0.05 + Math.random() * 0.1 }), []);
+  const offset = useMemo(
+    () => ({
+      x: (Math.random() - 0.5) * 16,
+      z: (Math.random() - 0.5) * 16,
+      speed: 0.05 + Math.random() * 0.1,
+    }),
+    [],
+  );
   useFrame(() => {
     if (!ref.current) return;
     const t = Date.now() * 0.001 * offset.speed;
@@ -44,7 +64,15 @@ function MistCloud({ seed }: { seed: number }) {
 
 function DustMote({ seed }: { seed: number }) {
   const ref = useRef<THREE.Mesh>(null);
-  const offset = useMemo(() => ({ x: (Math.random() - 0.5) * 12, z: (Math.random() - 0.5) * 12, y: 1 + Math.random() * 3, speed: 0.2 + Math.random() * 0.3 }), []);
+  const offset = useMemo(
+    () => ({
+      x: (Math.random() - 0.5) * 12,
+      z: (Math.random() - 0.5) * 12,
+      y: 1 + Math.random() * 3,
+      speed: 0.2 + Math.random() * 0.3,
+    }),
+    [],
+  );
   useFrame(() => {
     if (!ref.current) return;
     const t = Date.now() * 0.001 * offset.speed;
@@ -57,7 +85,12 @@ function DustMote({ seed }: { seed: number }) {
   return (
     <mesh ref={ref}>
       <sphereGeometry args={[0.015, 3, 3]} />
-      <meshBasicMaterial color="#ffeecc" transparent blending={THREE.AdditiveBlending} depthWrite={false} />
+      <meshBasicMaterial
+        color="#ffeecc"
+        transparent
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+      />
     </mesh>
   );
 }
@@ -75,7 +108,8 @@ export default function Atmosphere({ phase }: { phase?: Phase }) {
 
   return (
     <group>
-      {showFireflies && Array.from({ length: 20 }).map((_, i) => <Firefly key={`f${i}`} seed={i} />)}
+      {showFireflies &&
+        Array.from({ length: 20 }).map((_, i) => <Firefly key={`f${i}`} seed={i} />)}
       {showMist && Array.from({ length: 8 }).map((_, i) => <MistCloud key={`m${i}`} seed={i} />)}
       {showDust && Array.from({ length: 15 }).map((_, i) => <DustMote key={`d${i}`} seed={i} />)}
     </group>

@@ -10,16 +10,21 @@ function makeGrassTexture(size = 512, dark = false): THREE.CanvasTexture {
   ctx.fillRect(0, 0, size, size);
   // Noise blades
   for (let i = 0; i < 8000; i++) {
-    const x = Math.random() * size, y = Math.random() * size;
+    const x = Math.random() * size,
+      y = Math.random() * size;
     const g = dark ? Math.random() * 30 + 20 : Math.random() * 50 + 40;
     ctx.fillStyle = `rgb(${g * 0.4},${g + (dark ? 30 : 60)},${g * 0.3})`;
     ctx.fillRect(x, y, 1 + Math.random() * 2, 1 + Math.random() * 3);
   }
   // Patches
   for (let i = 0; i < 30; i++) {
-    const x = Math.random() * size, y = Math.random() * size, r = 10 + Math.random() * 30;
+    const x = Math.random() * size,
+      y = Math.random() * size,
+      r = 10 + Math.random() * 30;
     ctx.fillStyle = dark ? `rgba(15,40,10,0.3)` : `rgba(30,70,20,0.25)`;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
   }
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -34,7 +39,8 @@ function makeDirtTexture(size = 256): THREE.CanvasTexture {
   ctx.fillStyle = '#5c4a2e';
   ctx.fillRect(0, 0, size, size);
   for (let i = 0; i < 3000; i++) {
-    const x = Math.random() * size, y = Math.random() * size;
+    const x = Math.random() * size,
+      y = Math.random() * size;
     const b = Math.random() * 40 + 60;
     ctx.fillStyle = `rgb(${b},${b * 0.8},${b * 0.5})`;
     ctx.fillRect(x, y, 1 + Math.random() * 2, 1 + Math.random() * 2);
@@ -46,18 +52,39 @@ function makeDirtTexture(size = 256): THREE.CanvasTexture {
 }
 
 function PathStones() {
-  const stones = useMemo(() =>
-    Array.from({ length: 24 }, (_, i) => {
-      const a = (i / 24) * Math.PI * 2 + Math.random() * 0.2;
-      const r = 2.5 + Math.random() * 2;
-      return { pos: [Math.cos(a) * r, 0.02 + Math.random() * 0.03, Math.sin(a) * r] as [number, number, number], s: 0.04 + Math.random() * 0.06, ry: Math.random() * Math.PI };
-    }), []);
-  return <>{stones.map((s, i) => (
-    <mesh key={i} position={s.pos} rotation={[Math.random() * 0.3, s.ry, 0]} castShadow receiveShadow>
-      <dodecahedronGeometry args={[s.s, 0]} />
-      <meshStandardMaterial color="#7a7060" roughness={0.95} />
-    </mesh>
-  ))}</>;
+  const stones = useMemo(
+    () =>
+      Array.from({ length: 24 }, (_, i) => {
+        const a = (i / 24) * Math.PI * 2 + Math.random() * 0.2;
+        const r = 2.5 + Math.random() * 2;
+        return {
+          pos: [Math.cos(a) * r, 0.02 + Math.random() * 0.03, Math.sin(a) * r] as [
+            number,
+            number,
+            number,
+          ],
+          s: 0.04 + Math.random() * 0.06,
+          ry: Math.random() * Math.PI,
+        };
+      }),
+    [],
+  );
+  return (
+    <>
+      {stones.map((s, i) => (
+        <mesh
+          key={i}
+          position={s.pos}
+          rotation={[Math.random() * 0.3, s.ry, 0]}
+          castShadow
+          receiveShadow
+        >
+          <dodecahedronGeometry args={[s.s, 0]} />
+          <meshStandardMaterial color="#7a7060" roughness={0.95} />
+        </mesh>
+      ))}
+    </>
+  );
 }
 
 export default function Ground() {
@@ -70,9 +97,10 @@ export default function Ground() {
     const g = new THREE.CircleGeometry(6, 48);
     const pos = g.attributes.position;
     for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i), y = pos.getY(i);
+      const x = pos.getX(i),
+        y = pos.getY(i);
       const d = Math.sqrt(x * x + y * y);
-      pos.setZ(i, (Math.sin(x * 2.3) * Math.cos(y * 1.7) * 0.06) * (d / 6));
+      pos.setZ(i, Math.sin(x * 2.3) * Math.cos(y * 1.7) * 0.06 * (d / 6));
     }
     pos.needsUpdate = true;
     g.computeVertexNormals();

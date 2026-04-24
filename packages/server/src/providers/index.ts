@@ -11,10 +11,14 @@ const providers = new Map<string, LLMProvider>();
 export function createProvider(config: ProviderConfig): LLMProvider {
   switch (config.type) {
     case 'openai-compatible':
-    case 'openai': return new OpenAIProvider(config.apiKey || '', config.model, config.baseUrl);
-    case 'anthropic': return new AnthropicProvider(config.apiKey!, config.model);
-    case 'ollama': return new OllamaProvider(config.model, config.baseUrl || 'http://localhost:11434');
-    default: throw new Error(`Unknown provider type: ${(config as any).type}`);
+    case 'openai':
+      return new OpenAIProvider(config.apiKey || '', config.model, config.baseUrl);
+    case 'anthropic':
+      return new AnthropicProvider(config.apiKey!, config.model);
+    case 'ollama':
+      return new OllamaProvider(config.model, config.baseUrl || 'http://localhost:11434');
+    default:
+      throw new Error(`Unknown provider type: ${(config as any).type}`);
   }
 }
 

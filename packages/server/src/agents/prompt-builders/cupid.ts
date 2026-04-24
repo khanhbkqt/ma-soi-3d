@@ -16,8 +16,8 @@ Thậm chí hãy chủ động "chửi nhẹ" hoặc nghi ngờ giả vờ 1 tro
   discussionHint(_player: Player, state: GameState): string {
     if (state.couple) {
       const names = [
-        state.players.find(p => p.id === state.couple!.player1Id)?.name,
-        state.players.find(p => p.id === state.couple!.player2Id)?.name,
+        state.players.find((p) => p.id === state.couple!.player1Id)?.name,
+        state.players.find((p) => p.id === state.couple!.player2Id)?.name,
       ].filter(Boolean);
       return `MÀY LÀ THẦN TÌNH YÊU. Đã ghép: ${names.join(' ❤️ ')}.
 TƯ DUY CHỐNG BẮT BÀI: Mày phải bơ cặp đôi này đi! Tuyệt đối không bênh vực lộ liễu. Thậm chí có thể nghi ngờ vờ vĩnh họ để Sói không nhận ra mối quan hệ 3 người của tụi mày.`;
@@ -26,12 +26,12 @@ TƯ DUY CHỐNG BẮT BÀI: Mày phải bơ cặp đôi này đi! Tuyệt đối
   }
 
   cupidPair(player: Player, state: GameState, observations: string[]): string {
-    const targets = state.players.filter(p => p.alive);
+    const targets = state.players.filter((p) => p.alive);
     return `${taskContext(observations)}
 Chọn 2 người để ghép đôi. 1 chết → người kia chết theo. Có thể ghép chính mình ("${player.name}").
 Nếu cặp gồm 1 Sói + 1 Dân → Phe Cặp Đôi, thắng khi là 2 người cuối.
 Cân nhắc: ghép mình (kiểm soát được, nhưng rủi ro chết đôi) hay ghép 2 người khác (tự do hơn)?
-Danh sách: ${targets.map(t => t.name).join(', ')}
+Danh sách: ${targets.map((t) => t.name).join(', ')}
 JSON: {"player1":"Tên1","player2":"Tên2","reasoning":"lý do ghép đôi"}`;
   }
 }

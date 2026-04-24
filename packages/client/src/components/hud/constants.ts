@@ -1,17 +1,31 @@
 import { Role, Phase } from '@ma-soi/shared';
 
 export const ROLE_COLORS: Record<Role, string> = {
-  [Role.Werewolf]: '#ef4444', [Role.AlphaWolf]: '#dc2626', [Role.WolfCub]: '#f87171',
-  [Role.Villager]: '#4ade80', [Role.Seer]: '#a855f7', [Role.ApprenticeSeer]: '#c084fc',
-  [Role.Witch]: '#34d399', [Role.Hunter]: '#f97316', [Role.Guard]: '#3b82f6',
-  [Role.Cupid]: '#f472b6', [Role.Fool]: '#fbbf24',
+  [Role.Werewolf]: '#ef4444',
+  [Role.AlphaWolf]: '#dc2626',
+  [Role.WolfCub]: '#f87171',
+  [Role.Villager]: '#4ade80',
+  [Role.Seer]: '#a855f7',
+  [Role.ApprenticeSeer]: '#c084fc',
+  [Role.Witch]: '#34d399',
+  [Role.Hunter]: '#f97316',
+  [Role.Guard]: '#3b82f6',
+  [Role.Cupid]: '#f472b6',
+  [Role.Fool]: '#fbbf24',
 };
 
 export const ROLE_NAMES_VI: Record<Role, string> = {
-  [Role.Werewolf]: 'Sói', [Role.AlphaWolf]: 'Sói Đầu Đàn', [Role.WolfCub]: 'Sói Con',
-  [Role.Villager]: 'Dân', [Role.Seer]: 'Tiên Tri', [Role.ApprenticeSeer]: 'Tiên Tri Tập Sự',
-  [Role.Witch]: 'Phù Thủy', [Role.Hunter]: 'Thợ Săn', [Role.Guard]: 'Bảo Vệ',
-  [Role.Cupid]: 'Thần Tình Yêu', [Role.Fool]: 'Kẻ Ngốc',
+  [Role.Werewolf]: 'Sói',
+  [Role.AlphaWolf]: 'Sói Đầu Đàn',
+  [Role.WolfCub]: 'Sói Con',
+  [Role.Villager]: 'Dân',
+  [Role.Seer]: 'Tiên Tri',
+  [Role.ApprenticeSeer]: 'Tiên Tri Tập Sự',
+  [Role.Witch]: 'Phù Thủy',
+  [Role.Hunter]: 'Thợ Săn',
+  [Role.Guard]: 'Bảo Vệ',
+  [Role.Cupid]: 'Thần Tình Yêu',
+  [Role.Fool]: 'Kẻ Ngốc',
 };
 
 export const PHASE_INFO: Record<string, { label: string; icon: string; color: string }> = {

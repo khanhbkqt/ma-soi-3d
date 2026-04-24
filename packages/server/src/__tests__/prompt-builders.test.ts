@@ -56,7 +56,7 @@ describe('systemPrompt content', () => {
 
   it('all builders include game rules', () => {
     for (const role of [Role.Werewolf, Role.Seer, Role.Villager]) {
-      const player = allPlayers.find(p => p.role === role)!;
+      const player = allPlayers.find((p) => p.role === role)!;
       const prompt = getPromptBuilder(role).systemPrompt(player, state);
       expect(prompt).toContain('MA SÓI');
     }

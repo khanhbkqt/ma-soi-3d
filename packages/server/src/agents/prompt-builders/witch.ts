@@ -26,20 +26,29 @@ CHIẾN THUẬT BAN NGÀY:
   }
 
   defenseHint(_player: Player, state: GameState): string {
-    const potionsLeft = (!state.witchPotions.healUsed || !state.witchPotions.killUsed);
+    const potionsLeft = !state.witchPotions.healUsed || !state.witchPotions.killUsed;
     return `Mày là PHÙ THỦY bị đưa lên giàn phán xét!
 - Nếu CÒN THUỐC: COME OUT ngay lập tức! Báo cho Làng biết mày còn thuốc để họ thấy giá trị. Có thể đe dọa "ai vote treo tao, đêm nay tao ném độc".
 - Nếu HẾT THUỐC: Vẫn COME OUT và khai báo toàn bộ thông tin (đêm nào cứu ai, độc ai) để Làng biết mày là người tốt đã cống hiến xong và để lại "di sản thông tin".
 Chỉ ra kẻ đáng nghi nhất và kêu gọi vote người đó.`;
   }
 
-  witchAction(player: Player, state: GameState, observations: string[], killedName: string | null, potions: { healUsed: boolean; killUsed: boolean }): string {
-    const targets = state.players.filter(p => p.alive && p.id !== player.id);
-    const healInfo = killedName && !potions.healUsed
-      ? `Sói vừa cắn ${killedName}. Cứu không? TƯ DUY ĐỈNH CAO: Nếu đây là đêm 1 hoặc 2, ƯU TIÊN CỨU để bảo toàn số phiếu cho Làng. Nhớ rằng: người này 90% là tốt, nhưng vẫn có 10% Sói tự cắn đồng bọn để lừa mày "tẩy trắng" cho chúng. Đừng quá tham giữ thuốc trừ khi có lý do đặc biệt.`
-      : potions.healUsed ? 'Thuốc cứu đã dùng.' : 'Đêm nay không ai bị cắn.';
+  witchAction(
+    player: Player,
+    state: GameState,
+    observations: string[],
+    killedName: string | null,
+    potions: { healUsed: boolean; killUsed: boolean },
+  ): string {
+    const targets = state.players.filter((p) => p.alive && p.id !== player.id);
+    const healInfo =
+      killedName && !potions.healUsed
+        ? `Sói vừa cắn ${killedName}. Cứu không? TƯ DUY ĐỈNH CAO: Nếu đây là đêm 1 hoặc 2, ƯU TIÊN CỨU để bảo toàn số phiếu cho Làng. Nhớ rằng: người này 90% là tốt, nhưng vẫn có 10% Sói tự cắn đồng bọn để lừa mày "tẩy trắng" cho chúng. Đừng quá tham giữ thuốc trừ khi có lý do đặc biệt.`
+        : potions.healUsed
+          ? 'Thuốc cứu đã dùng.'
+          : 'Đêm nay không ai bị cắn.';
     const killInfo = !potions.killUsed
-      ? `Đầu độc ai không? Chỉ độc khi có bằng chứng mạnh — độc nhầm dân = thảm họa. Độc Thợ Săn → không được bắn phát cuối.\nDanh sách: ${targets.map(t => t.name).join(', ')}`
+      ? `Đầu độc ai không? Chỉ độc khi có bằng chứng mạnh — độc nhầm dân = thảm họa. Độc Thợ Săn → không được bắn phát cuối.\nDanh sách: ${targets.map((t) => t.name).join(', ')}`
       : 'Thuốc độc đã dùng.';
     return `${taskContext(observations)}
 ${healInfo}

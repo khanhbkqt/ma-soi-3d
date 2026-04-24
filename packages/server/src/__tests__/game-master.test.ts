@@ -92,7 +92,7 @@ describe('GameMaster — night resolve', () => {
     });
     const events = collectEvents(gm);
     await (gm as any).nightPhase();
-    const seerEvent = events.find(e => e.type === GameEventType.SeerResult);
+    const seerEvent = events.find((e) => e.type === GameEventType.SeerResult);
     expect(seerEvent).toBeDefined();
     expect(seerEvent.data.isWolf).toBe(true);
     expect(seerEvent.data.targetName).toBe('Wolf1');
@@ -108,7 +108,7 @@ describe('GameMaster — night resolve', () => {
     });
     const events = collectEvents(gm);
     await (gm as any).nightPhase();
-    const seerEvent = events.find(e => e.type === GameEventType.SeerResult);
+    const seerEvent = events.find((e) => e.type === GameEventType.SeerResult);
     expect(seerEvent.data.isWolf).toBe(false);
   });
 });
@@ -156,15 +156,19 @@ describe('GameMaster — judgement', () => {
       createMockPlayer({ name: 'V3', role: Role.Villager }),
     ];
     const accused = players[0]; // Wolf1
-    const { gm } = createTestGM(players, {
-      defend: vi.fn().mockResolvedValue('I am innocent'),
-      judgeVote: vi.fn().mockResolvedValue('kill'), // all vote kill
-    }, { accusedId: accused.id, phase: Phase.Judgement });
+    const { gm } = createTestGM(
+      players,
+      {
+        defend: vi.fn().mockResolvedValue('I am innocent'),
+        judgeVote: vi.fn().mockResolvedValue('kill'), // all vote kill
+      },
+      { accusedId: accused.id, phase: Phase.Judgement },
+    );
 
     const events = collectEvents(gm);
     await (gm as any).judgementPhase();
 
-    const result = events.find(e => e.type === GameEventType.JudgementResult);
+    const result = events.find((e) => e.type === GameEventType.JudgementResult);
     expect(result.data.executed).toBe(true);
     expect(accused.alive).toBe(false);
   });
@@ -177,10 +181,14 @@ describe('GameMaster — judgement', () => {
       createMockPlayer({ name: 'V3', role: Role.Villager }),
     ];
     const accused = players[0];
-    const { gm } = createTestGM(players, {
-      defend: vi.fn().mockResolvedValue('I am innocent'),
-      judgeVote: vi.fn().mockResolvedValue('spare'), // all vote spare
-    }, { accusedId: accused.id, phase: Phase.Judgement });
+    const { gm } = createTestGM(
+      players,
+      {
+        defend: vi.fn().mockResolvedValue('I am innocent'),
+        judgeVote: vi.fn().mockResolvedValue('spare'), // all vote spare
+      },
+      { accusedId: accused.id, phase: Phase.Judgement },
+    );
 
     await (gm as any).judgementPhase();
     expect(accused.alive).toBe(true);
@@ -190,15 +198,21 @@ describe('GameMaster — judgement', () => {
 describe('GameMaster — dawn', () => {
   it('processes pendingDeaths → PlayerDied events', async () => {
     const players = sixPlayers();
-    const villager = players.find(p => p.name === 'Villager')!;
-    const { gm } = createTestGM(players, {}, {
-      pendingDeaths: [{ playerId: villager.id, playerName: 'Villager', cause: 'wolf_kill' }],
-    });
+    const villager = players.find((p) => p.name === 'Villager')!;
+    const { gm } = createTestGM(
+      players,
+      {},
+      {
+        pendingDeaths: [{ playerId: villager.id, playerName: 'Villager', cause: 'wolf_kill' }],
+      },
+    );
     const events = collectEvents(gm);
     await (gm as any).dawnPhase();
 
     expect(villager.alive).toBe(false);
-    expect(events.some(e => e.type === GameEventType.PlayerDied && e.data.playerName === 'Villager')).toBe(true);
+    expect(
+      events.some((e) => e.type === GameEventType.PlayerDied && e.data.playerName === 'Villager'),
+    ).toBe(true);
     expect(gm.state.pendingDeaths).toHaveLength(0);
   });
 
@@ -208,7 +222,7 @@ describe('GameMaster — dawn', () => {
     const events = collectEvents(gm);
     await (gm as any).dawnPhase();
 
-    const dawn = events.find(e => e.type === GameEventType.DawnAnnouncement);
+    const dawn = events.find((e) => e.type === GameEventType.DawnAnnouncement);
     expect(dawn).toBeDefined();
     expect(dawn.data.peaceful).toBe(true);
   });

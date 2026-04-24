@@ -4,7 +4,13 @@ import * as THREE from 'three';
 import { GameState, Phase } from '@ma-soi/shared';
 
 // ── Fence ──
-function FenceSection({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+function FenceSection({
+  position,
+  rotation = 0,
+}: {
+  position: [number, number, number];
+  rotation?: number;
+}) {
   return (
     <group position={position} rotation={[0, rotation, 0]}>
       {/* Posts */}
@@ -31,13 +37,19 @@ function FenceRing() {
     const count = 14;
     // Arc from -120° to 120° (leaving gap for entrance)
     for (let i = 0; i < count; i++) {
-      const a = (-2.1 + (i / (count - 1)) * 4.2);
+      const a = -2.1 + (i / (count - 1)) * 4.2;
       const r = 6.5;
       items.push({ pos: [Math.cos(a) * r, 0, Math.sin(a) * r], rot: a + Math.PI / 2 });
     }
     return items;
   }, []);
-  return <>{sections.map((s, i) => <FenceSection key={i} position={s.pos} rotation={s.rot} />)}</>;
+  return (
+    <>
+      {sections.map((s, i) => (
+        <FenceSection key={i} position={s.pos} rotation={s.rot} />
+      ))}
+    </>
+  );
 }
 
 // ── Well ──
@@ -93,20 +105,38 @@ function Lantern({ position, isNight }: { position: [number, number, number]; is
       {/* Lantern head */}
       <mesh position={[0, 1.3, 0]}>
         <boxGeometry args={[0.12, 0.16, 0.12]} />
-        <meshStandardMaterial color="#8a7040" emissive={isNight ? '#ff9933' : '#000'} emissiveIntensity={isNight ? 0.6 : 0} roughness={0.7} />
+        <meshStandardMaterial
+          color="#8a7040"
+          emissive={isNight ? '#ff9933' : '#000'}
+          emissiveIntensity={isNight ? 0.6 : 0}
+          roughness={0.7}
+        />
       </mesh>
       {/* Top cap */}
       <mesh position={[0, 1.42, 0]}>
         <coneGeometry args={[0.09, 0.08, 4]} />
         <meshStandardMaterial color="#5a4a30" roughness={0.9} />
       </mesh>
-      <pointLight ref={glowRef} position={[0, 1.3, 0]} color="#ff9933" distance={4} decay={2} intensity={isNight ? 1.5 : 0.1} />
+      <pointLight
+        ref={glowRef}
+        position={[0, 1.3, 0]}
+        color="#ff9933"
+        distance={4}
+        decay={2}
+        intensity={isNight ? 1.5 : 0.1}
+      />
     </group>
   );
 }
 
 // ── Wooden Sign ──
-function WoodenSign({ position, rotation = 0 }: { position: [number, number, number]; rotation?: number }) {
+function WoodenSign({
+  position,
+  rotation = 0,
+}: {
+  position: [number, number, number];
+  rotation?: number;
+}) {
   return (
     <group position={position} rotation={[0, rotation, 0]}>
       <mesh position={[0, 0.4, 0]} castShadow>
@@ -149,18 +179,19 @@ export default function WorldProps({ gameState }: { gameState: GameState | null 
 
   const deadPlayers = useMemo(() => {
     if (!gameState) return [];
-    return gameState.players
-      .map((p, i) => ({ ...p, index: i }))
-      .filter(p => !p.alive);
-  }, [gameState?.players.map(p => p.alive).join(',')]);
+    return gameState.players.map((p, i) => ({ ...p, index: i })).filter((p) => !p.alive);
+  }, [gameState?.players.map((p) => p.alive).join(',')]);
 
   // Gravestone positions — near the village edge
-  const gravestonePositions = useMemo(() =>
-    deadPlayers.map((p, i) => {
-      const a = -1.8 + (i * 0.5);
-      const r = 7.2;
-      return [Math.cos(a) * r, 0, Math.sin(a) * r] as [number, number, number];
-    }), [deadPlayers.length]);
+  const gravestonePositions = useMemo(
+    () =>
+      deadPlayers.map((p, i) => {
+        const a = -1.8 + i * 0.5;
+        const r = 7.2;
+        return [Math.cos(a) * r, 0, Math.sin(a) * r] as [number, number, number];
+      }),
+    [deadPlayers.length],
+  );
 
   return (
     <group>

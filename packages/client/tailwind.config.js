@@ -13,8 +13,8 @@ export default {
         witch: '#1b5e20',
         hunter: '#e65100',
         guard: '#0d47a1',
-      }
-    }
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };

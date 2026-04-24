@@ -9,17 +9,17 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     resolve: {
-      alias: { '@ma-soi/shared': path.resolve(__dirname, '../shared/src') }
+      alias: { '@ma-soi/shared': path.resolve(__dirname, '../shared/src') },
     },
     define: {
-      'import.meta.env.VITE_BE_PORT': JSON.stringify(bePort)
+      'import.meta.env.VITE_BE_PORT': JSON.stringify(bePort),
     },
-    server: { 
-      port: 5173, 
-      proxy: { 
-        '/api': `http://localhost:${bePort}`, 
-        '/socket.io': { target: `http://localhost:${bePort}`, ws: true } 
-      } 
-    }
+    server: {
+      port: 5173,
+      proxy: {
+        '/api': `http://localhost:${bePort}`,
+        '/socket.io': { target: `http://localhost:${bePort}`, ws: true },
+      },
+    },
   };
 });

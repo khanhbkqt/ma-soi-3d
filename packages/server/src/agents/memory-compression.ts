@@ -1,6 +1,6 @@
 /**
  * Memory compression for agent observations.
- * 
+ *
  * Problem: observations.slice(-30) drops early-game facts (deaths, seer results, vote outcomes).
  * Solution: Compress older observations into a structured summary, keep recent ones raw.
  */
@@ -9,23 +9,23 @@ const RECENT_COUNT = 20;
 
 // Patterns that indicate high-importance observations
 const HIGH_IMPORTANCE = [
-  /đã chết/,           // deaths
-  /Vai:/,              // role reveals
-  /LÀ SÓI/,           // seer wolf result
-  /Không phải sói/,    // seer clear result
-  /bị treo cổ/,        // execution
-  /bị đuổi/,           // exiled
-  /được tha/,          // spared
-  /LÂY NHIỄM/,        // alpha infect
-  /kế thừa/,           // apprentice activation
-  /ghép đôi/,          // cupid pair
-  /chết theo/,         // lover death
-  /bảo vệ/,           // guard protect
-  /thuốc/,            // witch potion
-  /Sói cắn/,          // wolf kill (wolf-only)
-  /Thợ Săn bắn/,      // hunter shot
-  /trả thù/,          // wolf cub revenge
-  /Kẻ Ngốc/,          // fool victory
+  /đã chết/, // deaths
+  /Vai:/, // role reveals
+  /LÀ SÓI/, // seer wolf result
+  /Không phải sói/, // seer clear result
+  /bị treo cổ/, // execution
+  /bị đuổi/, // exiled
+  /được tha/, // spared
+  /LÂY NHIỄM/, // alpha infect
+  /kế thừa/, // apprentice activation
+  /ghép đôi/, // cupid pair
+  /chết theo/, // lover death
+  /bảo vệ/, // guard protect
+  /thuốc/, // witch potion
+  /Sói cắn/, // wolf kill (wolf-only)
+  /Thợ Săn bắn/, // hunter shot
+  /trả thù/, // wolf cub revenge
+  /Kẻ Ngốc/, // fool victory
 ];
 
 const PHASE_MARKER = /^--- Vòng/;
@@ -38,7 +38,7 @@ interface CompressedMemory {
 }
 
 function isHighImportance(obs: string): boolean {
-  return HIGH_IMPORTANCE.some(p => p.test(obs));
+  return HIGH_IMPORTANCE.some((p) => p.test(obs));
 }
 
 function isPhaseMarker(obs: string): boolean {
@@ -80,7 +80,9 @@ export function compressMemory(observations: string[]): CompressedMemory {
       seerResults.push(obs);
     } else if (/bị treo cổ|được tha|bị đuổi/.test(obs)) {
       executions.push(obs);
-    } else if (/LÂY NHIỄM|kế thừa|ghép đôi|chết theo|Thợ Săn bắn|trả thù|thuốc|bảo vệ|Sói cắn/.test(obs)) {
+    } else if (
+      /LÂY NHIỄM|kế thừa|ghép đôi|chết theo|Thợ Săn bắn|trả thù|thuốc|bảo vệ|Sói cắn/.test(obs)
+    ) {
       keyEvents.push(obs);
     } else if (VOTE_PATTERN.test(obs) && !isChat(obs)) {
       votePatterns.push(obs);
@@ -100,9 +102,7 @@ export function compressMemory(observations: string[]): CompressedMemory {
     if (voteSummary) parts.push(`Vote cũ: ${voteSummary}`);
   }
 
-  const summary = parts.length
-    ? `TÓM TẮT CÁC VÒNG TRƯỚC:\n${parts.join('\n')}`
-    : '';
+  const summary = parts.length ? `TÓM TẮT CÁC VÒNG TRƯỚC:\n${parts.join('\n')}` : '';
 
   return { summary, recent };
 }
@@ -133,7 +133,7 @@ export function compressedMemoryPrompt(observations: string[], deductionBlock?: 
   if (!observations.length && !deductionBlock) return '';
 
   const { summary, recent } = compressMemory(observations);
-  const recentBlock = recent.length ? recent.map(o => `- ${o}`).join('\n') : '';
+  const recentBlock = recent.length ? recent.map((o) => `- ${o}`).join('\n') : '';
 
   const parts: string[] = [];
   if (summary) parts.push(summary);

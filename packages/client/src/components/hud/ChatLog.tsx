@@ -9,7 +9,7 @@ function ReasoningToggle({ reasoning }: { reasoning: string }) {
   return (
     <div className="mt-1 ml-5">
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen((o) => !o)}
         className="text-[10px] text-purple-400/70 hover:text-purple-300 transition-colors"
       >
         💭 {open ? 'Ẩn suy luận' : 'Suy luận'}
@@ -24,22 +24,24 @@ function ReasoningToggle({ reasoning }: { reasoning: string }) {
 }
 
 export default function ChatLog() {
-  const events = useGameStore(s => s.events);
-  const spectatorMode = useGameStore(s => s.spectatorMode);
-  const gameState = useGameStore(s => s.gameState);
-  const playerViewState = useGameStore(s => s.playerViewState);
+  const events = useGameStore((s) => s.events);
+  const spectatorMode = useGameStore((s) => s.spectatorMode);
+  const gameState = useGameStore((s) => s.gameState);
+  const playerViewState = useGameStore((s) => s.playerViewState);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight); }, [events.length]);
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, scrollRef.current.scrollHeight);
+  }, [events.length]);
 
   const filtered = useMemo(() => {
     if (spectatorMode === 'god') return events;
     if (spectatorMode === 'player' && playerViewState) {
-      return events.filter(e =>
-        isEventVisibleToPlayer(e, playerViewState.playerId, playerViewState.role)
+      return events.filter((e) =>
+        isEventVisibleToPlayer(e, playerViewState.playerId, playerViewState.role),
       );
     }
-    return events.filter(e => e.isPublic);
+    return events.filter((e) => e.isPublic);
   }, [events, spectatorMode, playerViewState]);
 
   const renderEvent = (e: GameEvent, i: number) => {
@@ -47,11 +49,13 @@ export default function ChatLog() {
     const showRole = spectatorMode === 'god';
     switch (e.type) {
       case GameEventType.DayMessage: {
-        const player = gameState?.players.find(p => p.id === d.playerId);
+        const player = gameState?.players.find((p) => p.id === d.playerId);
         const color = showRole && player ? ROLE_COLORS[player.role] : '#e0e0e0';
         return (
           <div key={i} className="mb-2 animate-fadeIn">
-            <span className="font-bold text-sm" style={{ color }}>{player?.personality.emoji} {d.playerName}</span>
+            <span className="font-bold text-sm" style={{ color }}>
+              {player?.personality.emoji} {d.playerName}
+            </span>
             <p className="text-sm text-gray-200 ml-5 mt-0.5">{d.message}</p>
             {showRole && d.reasoning && <ReasoningToggle reasoning={d.reasoning} />}
           </div>
@@ -71,25 +75,39 @@ export default function ChatLog() {
         );
       case GameEventType.DuskNomination:
         return (
-          <div key={i} className="defense-card rounded-xl p-3 mb-3 border border-red-600/40 overflow-hidden relative">
+          <div
+            key={i}
+            className="defense-card rounded-xl p-3 mb-3 border border-red-600/40 overflow-hidden relative"
+          >
             <div className="absolute inset-0 bg-gradient-to-br from-red-900/40 via-amber-900/20 to-transparent" />
             <div className="relative z-10 flex items-center gap-2">
               <span className="text-xl">⚡</span>
-              <span className="text-red-400 font-bold text-sm">{d.accusedName} bị đưa lên giàn!</span>
+              <span className="text-red-400 font-bold text-sm">
+                {d.accusedName} bị đưa lên giàn!
+              </span>
             </div>
           </div>
         );
       case GameEventType.DefenseSpeech: {
-        const player = gameState?.players.find(p => p.id === d.playerId);
+        const player = gameState?.players.find((p) => p.id === d.playerId);
         return (
-          <div key={i} className="defense-card rounded-xl p-4 mb-3 border border-amber-500/40 overflow-hidden relative">
+          <div
+            key={i}
+            className="defense-card rounded-xl p-4 mb-3 border border-amber-500/40 overflow-hidden relative"
+          >
             <div className="absolute inset-0 bg-gradient-to-br from-amber-900/30 via-red-900/15 to-transparent" />
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl">⚖️</span>
                 <span className="text-amber-300 font-bold text-sm">Biện hộ — {d.playerName}</span>
                 {showRole && player && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full" style={{ color: ROLE_COLORS[player.role], backgroundColor: ROLE_COLORS[player.role] + '20' }}>
+                  <span
+                    className="text-[10px] px-1.5 py-0.5 rounded-full"
+                    style={{
+                      color: ROLE_COLORS[player.role],
+                      backgroundColor: ROLE_COLORS[player.role] + '20',
+                    }}
+                  >
                     {ROLE_NAMES_VI[player.role]}
                   </span>
                 )}
@@ -104,7 +122,9 @@ export default function ChatLog() {
         const isKill = d.verdict === 'kill';
         return (
           <div key={i} className="mb-1.5">
-            <div className={`flex items-center gap-2 px-2 py-1 rounded-lg ${isKill ? 'judgement-verdict-kill bg-red-900/20' : 'judgement-verdict-spare bg-green-900/20'}`}>
+            <div
+              className={`flex items-center gap-2 px-2 py-1 rounded-lg ${isKill ? 'judgement-verdict-kill bg-red-900/20' : 'judgement-verdict-spare bg-green-900/20'}`}
+            >
               <span className="text-base">{isKill ? '🔴' : '🟢'}</span>
               <span className="text-xs text-gray-300 font-medium">{d.voterName}</span>
               <span className={`text-xs font-bold ${isKill ? 'text-red-400' : 'text-green-400'}`}>
@@ -118,12 +138,17 @@ export default function ChatLog() {
       case GameEventType.JudgementResult: {
         const totalVotes = d.killVotes + d.spareVotes;
         return (
-          <div key={i} className="vote-result-card rounded-xl p-3 mb-3 border border-amber-600/30 overflow-hidden relative">
+          <div
+            key={i}
+            className="vote-result-card rounded-xl p-3 mb-3 border border-amber-600/30 overflow-hidden relative"
+          >
             <div className="absolute inset-0 bg-gradient-to-br from-amber-900/40 via-red-900/20 to-transparent" />
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xl">{d.executed ? '⚰️' : '✋'}</span>
-                <span className={`font-bold text-sm ${d.executed ? 'text-red-400' : 'text-green-400'}`}>
+                <span
+                  className={`font-bold text-sm ${d.executed ? 'text-red-400' : 'text-green-400'}`}
+                >
                   {d.executed ? `${d.accusedName} bị xử tử!` : `${d.accusedName} được tha!`}
                 </span>
                 {d.executed && showRole && (
@@ -141,7 +166,9 @@ export default function ChatLog() {
                   <span className="text-green-400">🟢 Tha:</span>
                   <span className="font-bold text-green-300">{d.spareVotes}</span>
                 </div>
-                <span className="text-gray-500">({totalVotes} phiếu, cần &gt;{Math.floor(totalVotes / 2)} để giết)</span>
+                <span className="text-gray-500">
+                  ({totalVotes} phiếu, cần &gt;{Math.floor(totalVotes / 2)} để giết)
+                </span>
               </div>
             </div>
           </div>
@@ -150,12 +177,17 @@ export default function ChatLog() {
       case GameEventType.VoteResult: {
         if (d.exiled) {
           return (
-            <div key={i} className="vote-result-card rounded-xl p-3 mb-3 border border-amber-600/30 overflow-hidden relative">
+            <div
+              key={i}
+              className="vote-result-card rounded-xl p-3 mb-3 border border-amber-600/30 overflow-hidden relative"
+            >
               <div className="absolute inset-0 bg-gradient-to-br from-amber-900/40 via-red-900/20 to-transparent" />
               <div className="relative z-10">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">⚰️</span>
-                  <span className="text-red-400 font-bold text-sm">{d.exiled.name} bị trục xuất!</span>
+                  <span className="text-red-400 font-bold text-sm">
+                    {d.exiled.name} bị trục xuất!
+                  </span>
                 </div>
               </div>
             </div>
@@ -171,26 +203,59 @@ export default function ChatLog() {
       case GameEventType.PlayerDied: {
         const roleName = ROLE_NAMES_VI[d.role as Role] || d.role;
         const causes: Record<string, string> = {
-          wolf_kill: 'bị sói cắn', witch_kill: 'bị đầu độc', judged: 'bị xử tử',
-          hunter_shot: 'bị thợ săn bắn', lover_death: 'chết vì tình',
+          wolf_kill: 'bị sói cắn',
+          witch_kill: 'bị đầu độc',
+          judged: 'bị xử tử',
+          hunter_shot: 'bị thợ săn bắn',
+          lover_death: 'chết vì tình',
           voted_out: 'bị trục xuất',
         };
-        return <div key={i} className="text-red-400 text-sm mb-1">💀 {d.playerName} đã chết ({causes[d.cause] || d.cause}) — là {roleName}</div>;
+        return (
+          <div key={i} className="text-red-400 text-sm mb-1">
+            💀 {d.playerName} đã chết ({causes[d.cause] || d.cause}) — là {roleName}
+          </div>
+        );
       }
       case GameEventType.HunterShot:
-        return <div key={i} className="text-orange-400 text-sm mb-1">🏹 Thợ Săn bắn hạ {d.targetName}!</div>;
+        return (
+          <div key={i} className="text-orange-400 text-sm mb-1">
+            🏹 Thợ Săn bắn hạ {d.targetName}!
+          </div>
+        );
       case GameEventType.LoverDeath:
-        return <div key={i} className="text-pink-400 text-sm mb-1">💔 {d.loverName} chết vì tình sau cái chết của {d.deadName}!</div>;
+        return (
+          <div key={i} className="text-pink-400 text-sm mb-1">
+            💔 {d.loverName} chết vì tình sau cái chết của {d.deadName}!
+          </div>
+        );
       case GameEventType.PhaseChanged:
-        return <div key={i} className="text-center text-xs text-gray-500 my-2 border-t border-gray-700 pt-2">{PHASE_INFO[d.phase]?.icon} {PHASE_INFO[d.phase]?.label} — Vòng {d.round}</div>;
+        return (
+          <div
+            key={i}
+            className="text-center text-xs text-gray-500 my-2 border-t border-gray-700 pt-2"
+          >
+            {PHASE_INFO[d.phase]?.icon} {PHASE_INFO[d.phase]?.label} — Vòng {d.round}
+          </div>
+        );
       case GameEventType.DawnAnnouncement:
-        if (d.peaceful) return <div key={i} className="text-green-400 text-sm mb-1">🌅 Đêm yên bình — không ai chết.</div>;
-        return <div key={i} className="text-red-400 text-sm mb-1">🌅 Nạn nhân trong đêm: {d.deaths.map((x: any) => x.name).join(', ')}</div>;
+        if (d.peaceful)
+          return (
+            <div key={i} className="text-green-400 text-sm mb-1">
+              🌅 Đêm yên bình — không ai chết.
+            </div>
+          );
+        return (
+          <div key={i} className="text-red-400 text-sm mb-1">
+            🌅 Nạn nhân trong đêm: {d.deaths.map((x: any) => x.name).join(', ')}
+          </div>
+        );
       case GameEventType.NightActionPerformed:
         if (spectatorMode === 'fog') return null;
         return (
           <div key={i} className="mb-1">
-            <div className="text-red-300/60 text-xs">🐺 Sói nhắm vào: {d.targetName || d.targetNames?.join(', ')}</div>
+            <div className="text-red-300/60 text-xs">
+              🐺 Sói nhắm vào: {d.targetName || d.targetNames?.join(', ')}
+            </div>
             {d.reasoning && <ReasoningToggle reasoning={d.reasoning} />}
           </div>
         );
@@ -198,24 +263,40 @@ export default function ChatLog() {
         if (spectatorMode === 'fog') return null;
         return (
           <div key={i} className="mb-1">
-            <div className="text-red-300/60 text-xs">🦠 Sói Đầu Đàn lây nhiễm: {d.targetName} (cũ: {ROLE_NAMES_VI[d.oldRole as Role]})</div>
+            <div className="text-red-300/60 text-xs">
+              🦠 Sói Đầu Đàn lây nhiễm: {d.targetName} (cũ: {ROLE_NAMES_VI[d.oldRole as Role]})
+            </div>
             {d.reasoning && <ReasoningToggle reasoning={d.reasoning} />}
           </div>
         );
       case GameEventType.WolfCubRevenge:
         if (spectatorMode === 'fog') return null;
-        return <div key={i} className="text-red-300/60 text-xs mb-1">🐺💢 Sói Con chết! Đêm sau sói cắn 2 người!</div>;
+        return (
+          <div key={i} className="text-red-300/60 text-xs mb-1">
+            🐺💢 Sói Con chết! Đêm sau sói cắn 2 người!
+          </div>
+        );
       case GameEventType.CupidPair:
         if (spectatorMode === 'fog') return null;
-        return <div key={i} className="text-pink-300/60 text-xs mb-1">💘 Thần Tình Yêu ghép đôi: {d.player1Name} ❤️ {d.player2Name}</div>;
+        return (
+          <div key={i} className="text-pink-300/60 text-xs mb-1">
+            💘 Thần Tình Yêu ghép đôi: {d.player1Name} ❤️ {d.player2Name}
+          </div>
+        );
       case GameEventType.ApprenticeSeerActivated:
         if (spectatorMode === 'fog') return null;
-        return <div key={i} className="text-purple-300/60 text-xs mb-1">🔮 Tiên Tri Tập Sự {d.apprenticeName} đã kế thừa!</div>;
+        return (
+          <div key={i} className="text-purple-300/60 text-xs mb-1">
+            🔮 Tiên Tri Tập Sự {d.apprenticeName} đã kế thừa!
+          </div>
+        );
       case GameEventType.SeerResult:
         if (spectatorMode === 'fog') return null;
         return (
           <div key={i} className="mb-1">
-            <div className="text-purple-300/60 text-xs">🔮 Tiên Tri: {d.targetName} {d.isWolf ? 'là 🐺 SÓI' : '✅ không phải sói'}</div>
+            <div className="text-purple-300/60 text-xs">
+              🔮 Tiên Tri: {d.targetName} {d.isWolf ? 'là 🐺 SÓI' : '✅ không phải sói'}
+            </div>
             {d.reasoning && <ReasoningToggle reasoning={d.reasoning} />}
           </div>
         );
@@ -231,39 +312,61 @@ export default function ChatLog() {
         if (spectatorMode === 'fog') return null;
         return (
           <div key={i} className="mb-1">
-            <div className="text-emerald-300/60 text-xs">🧪 Phù Thủy {d.action === 'heal' ? 'cứu' : 'giết'}: {d.targetName}</div>
+            <div className="text-emerald-300/60 text-xs">
+              🧪 Phù Thủy {d.action === 'heal' ? 'cứu' : 'giết'}: {d.targetName}
+            </div>
             {d.reasoning && <ReasoningToggle reasoning={d.reasoning} />}
           </div>
         );
       case GameEventType.FoolVictory:
         return (
-          <div key={i} className="game-over-card rounded-xl p-5 my-3 text-center border border-yellow-500/30 overflow-hidden relative">
+          <div
+            key={i}
+            className="game-over-card rounded-xl p-5 my-3 text-center border border-yellow-500/30 overflow-hidden relative"
+          >
             <div className="absolute inset-0 bg-gradient-to-br from-yellow-900/50 via-amber-900/30 to-purple-900/30" />
             <div className="relative z-10">
               <div className="text-3xl mb-2">🃏</div>
-              <div className="text-xl font-bold text-yellow-300">Kẻ Ngốc {d.foolName} Chiến Thắng!</div>
+              <div className="text-xl font-bold text-yellow-300">
+                Kẻ Ngốc {d.foolName} Chiến Thắng!
+              </div>
               <p className="text-xs text-gray-400 mt-1">Dân làng đã treo cổ nhầm người!</p>
             </div>
           </div>
         );
       case GameEventType.GameOver:
         return (
-          <div key={i} className="game-over-card rounded-xl p-5 my-3 text-center border border-amber-500/30 overflow-hidden relative">
+          <div
+            key={i}
+            className="game-over-card rounded-xl p-5 my-3 text-center border border-amber-500/30 overflow-hidden relative"
+          >
             <div className="absolute inset-0 bg-gradient-to-br from-amber-900/50 via-red-900/30 to-purple-900/30" />
             <div className="relative z-10">
               <div className="text-3xl mb-2">🏆</div>
               <div className="text-xl font-bold text-amber-300">
-                {d.winner === 'Wolf' ? '🐺 Phe Sói Chiến Thắng!' : d.winner === 'Lovers' ? '💕 Phe Cặp Đôi Chiến Thắng!' : d.winner === 'Fool' ? '🃏 Kẻ Ngốc Chiến Thắng!' : '🏘️ Dân Làng Chiến Thắng!'}
+                {d.winner === 'Wolf'
+                  ? '🐺 Phe Sói Chiến Thắng!'
+                  : d.winner === 'Lovers'
+                    ? '💕 Phe Cặp Đôi Chiến Thắng!'
+                    : d.winner === 'Fool'
+                      ? '🃏 Kẻ Ngốc Chiến Thắng!'
+                      : '🏘️ Dân Làng Chiến Thắng!'}
               </div>
               <div className="text-xs text-gray-400 mt-3 space-y-0.5">
                 {d.players?.map((p: any) => (
-                  <div key={p.id}><span style={{ color: ROLE_COLORS[p.role as Role] }}>{ROLE_NAMES_VI[p.role as Role] || p.role}</span> — {p.name} {p.alive ? '✅' : '💀'}</div>
+                  <div key={p.id}>
+                    <span style={{ color: ROLE_COLORS[p.role as Role] }}>
+                      {ROLE_NAMES_VI[p.role as Role] || p.role}
+                    </span>{' '}
+                    — {p.name} {p.alive ? '✅' : '💀'}
+                  </div>
                 ))}
               </div>
             </div>
           </div>
         );
-      default: return null;
+      default:
+        return null;
     }
   };
 

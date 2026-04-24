@@ -6,27 +6,78 @@ import { Player, GameState, Phase, Role, GameEventType, isWolfRole } from '@ma-s
 import { useGameStore } from '../../store/gameStore';
 
 const ROLE_COLORS: Record<Role, string> = {
-  [Role.Werewolf]: '#cc2222', [Role.AlphaWolf]: '#aa1111', [Role.WolfCub]: '#ee4444',
-  [Role.Villager]: '#44aa44', [Role.Seer]: '#9933cc', [Role.ApprenticeSeer]: '#bb66dd',
-  [Role.Witch]: '#22aa66', [Role.Hunter]: '#ee6600', [Role.Guard]: '#2266cc',
-  [Role.Cupid]: '#ee66aa', [Role.Fool]: '#ddaa22',
+  [Role.Werewolf]: '#cc2222',
+  [Role.AlphaWolf]: '#aa1111',
+  [Role.WolfCub]: '#ee4444',
+  [Role.Villager]: '#44aa44',
+  [Role.Seer]: '#9933cc',
+  [Role.ApprenticeSeer]: '#bb66dd',
+  [Role.Witch]: '#22aa66',
+  [Role.Hunter]: '#ee6600',
+  [Role.Guard]: '#2266cc',
+  [Role.Cupid]: '#ee66aa',
+  [Role.Fool]: '#ddaa22',
 };
 const ROLE_NAMES_VI: Record<Role, string> = {
-  [Role.Werewolf]: 'Sói', [Role.AlphaWolf]: 'Sói Đầu Đàn', [Role.WolfCub]: 'Sói Con',
-  [Role.Villager]: 'Dân', [Role.Seer]: 'Tiên Tri', [Role.ApprenticeSeer]: 'TT Tập Sự',
-  [Role.Witch]: 'Phù Thủy', [Role.Hunter]: 'Thợ Săn', [Role.Guard]: 'Bảo Vệ',
-  [Role.Cupid]: 'Cupid', [Role.Fool]: 'Kẻ Ngốc',
+  [Role.Werewolf]: 'Sói',
+  [Role.AlphaWolf]: 'Sói Đầu Đàn',
+  [Role.WolfCub]: 'Sói Con',
+  [Role.Villager]: 'Dân',
+  [Role.Seer]: 'Tiên Tri',
+  [Role.ApprenticeSeer]: 'TT Tập Sự',
+  [Role.Witch]: 'Phù Thủy',
+  [Role.Hunter]: 'Thợ Săn',
+  [Role.Guard]: 'Bảo Vệ',
+  [Role.Cupid]: 'Cupid',
+  [Role.Fool]: 'Kẻ Ngốc',
 };
-const SKIN_COLORS = ['#e8b89d', '#d4956b', '#c68642', '#8d5524', '#f5d0a9', '#e0ac69', '#c49a6c', '#a0785a',
-  '#f3c9a8', '#d9a87c', '#b8865e', '#9c6e4a', '#deb887', '#cd853f', '#d2a679', '#b5916b'];
+const SKIN_COLORS = [
+  '#e8b89d',
+  '#d4956b',
+  '#c68642',
+  '#8d5524',
+  '#f5d0a9',
+  '#e0ac69',
+  '#c49a6c',
+  '#a0785a',
+  '#f3c9a8',
+  '#d9a87c',
+  '#b8865e',
+  '#9c6e4a',
+  '#deb887',
+  '#cd853f',
+  '#d2a679',
+  '#b5916b',
+];
 
 // ── Outfit System ──
-const HAT_COLORS = ['#4a2a6a', '#2a4a2a', '#6a2a2a', '#2a3a5a', '#5a4a1a', '#3a5a5a', '#5a2a4a', '#4a4a2a'];
-const CLOAK_COLORS = ['#3a1a5a', '#1a3a1a', '#5a1a1a', '#1a2a4a', '#4a3a0a', '#2a4a4a', '#4a1a3a', '#3a3a1a'];
+const HAT_COLORS = [
+  '#4a2a6a',
+  '#2a4a2a',
+  '#6a2a2a',
+  '#2a3a5a',
+  '#5a4a1a',
+  '#3a5a5a',
+  '#5a2a4a',
+  '#4a4a2a',
+];
+const CLOAK_COLORS = [
+  '#3a1a5a',
+  '#1a3a1a',
+  '#5a1a1a',
+  '#1a2a4a',
+  '#4a3a0a',
+  '#2a4a4a',
+  '#4a1a3a',
+  '#3a3a1a',
+];
 
 function seededRng(seed: number) {
   let s = seed;
-  return () => { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
+  return () => {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
 }
 
 function getOutfit(index: number) {
@@ -45,16 +96,28 @@ function getOutfit(index: number) {
 function WizardHat({ color }: { color: string }) {
   return (
     <group position={[0, 0.65, 0]}>
-      <mesh><coneGeometry args={[0.12, 0.35, 8]} /><meshStandardMaterial color={color} roughness={0.8} /></mesh>
-      <mesh position={[0, -0.12, 0]}><cylinderGeometry args={[0.18, 0.18, 0.03, 12]} /><meshStandardMaterial color={color} roughness={0.8} /></mesh>
+      <mesh>
+        <coneGeometry args={[0.12, 0.35, 8]} />
+        <meshStandardMaterial color={color} roughness={0.8} />
+      </mesh>
+      <mesh position={[0, -0.12, 0]}>
+        <cylinderGeometry args={[0.18, 0.18, 0.03, 12]} />
+        <meshStandardMaterial color={color} roughness={0.8} />
+      </mesh>
     </group>
   );
 }
 function FarmerHat({ color }: { color: string }) {
   return (
     <group position={[0, 0.65, 0]}>
-      <mesh><cylinderGeometry args={[0.12, 0.13, 0.1, 8]} /><meshStandardMaterial color={color} roughness={0.9} /></mesh>
-      <mesh position={[0, -0.03, 0]}><cylinderGeometry args={[0.22, 0.22, 0.02, 12]} /><meshStandardMaterial color={color} roughness={0.9} /></mesh>
+      <mesh>
+        <cylinderGeometry args={[0.12, 0.13, 0.1, 8]} />
+        <meshStandardMaterial color={color} roughness={0.9} />
+      </mesh>
+      <mesh position={[0, -0.03, 0]}>
+        <cylinderGeometry args={[0.22, 0.22, 0.02, 12]} />
+        <meshStandardMaterial color={color} roughness={0.9} />
+      </mesh>
     </group>
   );
 }
@@ -77,8 +140,11 @@ function Bandana({ color }: { color: string }) {
 function Crown() {
   return (
     <group position={[0, 0.65, 0]}>
-      <mesh><cylinderGeometry args={[0.14, 0.16, 0.08, 8]} /><meshStandardMaterial color="#c8a820" metalness={0.6} roughness={0.3} /></mesh>
-      {[0, 1, 2, 3, 4].map(i => {
+      <mesh>
+        <cylinderGeometry args={[0.14, 0.16, 0.08, 8]} />
+        <meshStandardMaterial color="#c8a820" metalness={0.6} roughness={0.3} />
+      </mesh>
+      {[0, 1, 2, 3, 4].map((i) => {
         const a = (i / 5) * Math.PI * 2;
         return (
           <mesh key={i} position={[Math.cos(a) * 0.13, 0.06, Math.sin(a) * 0.13]}>
@@ -93,12 +159,18 @@ function Crown() {
 
 function Hat({ type, color }: { type: number; color: string }) {
   switch (type) {
-    case 0: return <WizardHat color={color} />;
-    case 1: return <FarmerHat color={color} />;
-    case 2: return <Hood color={color} />;
-    case 3: return <Bandana color={color} />;
-    case 4: return <Crown />;
-    default: return null;
+    case 0:
+      return <WizardHat color={color} />;
+    case 1:
+      return <FarmerHat color={color} />;
+    case 2:
+      return <Hood color={color} />;
+    case 3:
+      return <Bandana color={color} />;
+    case 4:
+      return <Crown />;
+    default:
+      return null;
   }
 }
 
@@ -112,12 +184,26 @@ function Cloak({ color }: { color: string }) {
 }
 
 function WolfEyes() {
-  return <>
-    <mesh position={[-0.06, 0.52, 0.16]}><sphereGeometry args={[0.03, 6, 6]} /><meshBasicMaterial color="#ff2200" /></mesh>
-    <mesh position={[0.06, 0.52, 0.16]}><sphereGeometry args={[0.03, 6, 6]} /><meshBasicMaterial color="#ff2200" /></mesh>
-    <mesh position={[-0.06, 0.52, 0.16]}><sphereGeometry args={[0.05, 6, 6]} /><meshBasicMaterial color="#ff4400" transparent opacity={0.3} /></mesh>
-    <mesh position={[0.06, 0.52, 0.16]}><sphereGeometry args={[0.05, 6, 6]} /><meshBasicMaterial color="#ff4400" transparent opacity={0.3} /></mesh>
-  </>;
+  return (
+    <>
+      <mesh position={[-0.06, 0.52, 0.16]}>
+        <sphereGeometry args={[0.03, 6, 6]} />
+        <meshBasicMaterial color="#ff2200" />
+      </mesh>
+      <mesh position={[0.06, 0.52, 0.16]}>
+        <sphereGeometry args={[0.03, 6, 6]} />
+        <meshBasicMaterial color="#ff2200" />
+      </mesh>
+      <mesh position={[-0.06, 0.52, 0.16]}>
+        <sphereGeometry args={[0.05, 6, 6]} />
+        <meshBasicMaterial color="#ff4400" transparent opacity={0.3} />
+      </mesh>
+      <mesh position={[0.06, 0.52, 0.16]}>
+        <sphereGeometry args={[0.05, 6, 6]} />
+        <meshBasicMaterial color="#ff4400" transparent opacity={0.3} />
+      </mesh>
+    </>
+  );
 }
 
 // ── VFX Components ──
@@ -135,8 +221,11 @@ function ZzzParticles() {
   });
   return (
     <group ref={ref} position={[0.3, 1.2, 0]}>
-      {[0, 1, 2].map(i => (
-        <mesh key={i}><sphereGeometry args={[1, 4, 4]} /><meshBasicMaterial color="#aaccff" transparent opacity={0.6} /></mesh>
+      {[0, 1, 2].map((i) => (
+        <mesh key={i}>
+          <sphereGeometry args={[1, 4, 4]} />
+          <meshBasicMaterial color="#aaccff" transparent opacity={0.6} />
+        </mesh>
       ))}
     </group>
   );
@@ -144,8 +233,12 @@ function ZzzParticles() {
 
 function WolfSlash({ active }: { active: boolean }) {
   const [opacity, setOpacity] = useState(0);
-  useEffect(() => { if (active) setOpacity(1); }, [active]);
-  useFrame((_, dt) => { if (opacity > 0) setOpacity(o => Math.max(0, o - dt * 2)); });
+  useEffect(() => {
+    if (active) setOpacity(1);
+  }, [active]);
+  useFrame((_, dt) => {
+    if (opacity > 0) setOpacity((o) => Math.max(0, o - dt * 2));
+  });
   if (opacity <= 0) return null;
   return (
     <mesh position={[0, 1, 0.3]} rotation={[0, 0, -0.5]}>
@@ -160,7 +253,8 @@ function ShieldBubble() {
   useFrame(() => {
     if (!ref.current) return;
     ref.current.rotation.y += 0.02;
-    (ref.current.material as THREE.MeshBasicMaterial).opacity = 0.15 + Math.sin(Date.now() * 0.003) * 0.05;
+    (ref.current.material as THREE.MeshBasicMaterial).opacity =
+      0.15 + Math.sin(Date.now() * 0.003) * 0.05;
   });
   return (
     <mesh ref={ref} position={[0, 0.8, 0]}>
@@ -187,11 +281,13 @@ function SeerGlow() {
 
 function PotionBurst({ color }: { color: string }) {
   const [life, setLife] = useState(1);
-  useFrame((_, dt) => { setLife(l => Math.max(0, l - dt * 0.8)); });
+  useFrame((_, dt) => {
+    setLife((l) => Math.max(0, l - dt * 0.8));
+  });
   if (life <= 0) return null;
   return (
     <group position={[0, 1, 0]}>
-      {[0, 1, 2, 3, 4].map(i => {
+      {[0, 1, 2, 3, 4].map((i) => {
         const a = (i / 5) * Math.PI * 2;
         const r = (1 - life) * 0.8;
         return (
@@ -209,7 +305,7 @@ function LoveParticles() {
   const ref = useRef<THREE.Group>(null);
   const [life, setLife] = useState(1);
   useFrame((_, dt) => {
-    setLife(l => Math.max(0, l - dt * 0.2));
+    setLife((l) => Math.max(0, l - dt * 0.2));
     if (!ref.current) return;
     ref.current.children.forEach((c, i) => {
       const t = ((Date.now() * 0.001 + i * 0.3) % 2) / 2;
@@ -231,8 +327,18 @@ function LoveParticles() {
   );
 }
 
-const NIGHT_ROLE_COLORS: Record<string, string> = { wolf: '#cc2222', guard: '#2266cc', seer: '#9933cc', witch: '#22aa66' };
-const NIGHT_ROLE_ICONS: Record<string, string> = { wolf: '🐾', guard: '🛡️', seer: '👁️', witch: '🧪' };
+const NIGHT_ROLE_COLORS: Record<string, string> = {
+  wolf: '#cc2222',
+  guard: '#2266cc',
+  seer: '#9933cc',
+  witch: '#22aa66',
+};
+const NIGHT_ROLE_ICONS: Record<string, string> = {
+  wolf: '🐾',
+  guard: '🛡️',
+  seer: '👁️',
+  witch: '🧪',
+};
 
 function NightActiveGlow({ role }: { role: string }) {
   const ringRef = useRef<THREE.Mesh>(null);
@@ -260,7 +366,8 @@ function DefenseSpotlight({ isDefending }: { isDefending: boolean }) {
   const fireRef = useRef<THREE.Group>(null);
   useFrame(() => {
     const t = Date.now() * 0.004;
-    if (coneRef.current) (coneRef.current.material as THREE.MeshBasicMaterial).opacity = 0.06 + Math.sin(t) * 0.03;
+    if (coneRef.current)
+      (coneRef.current.material as THREE.MeshBasicMaterial).opacity = 0.06 + Math.sin(t) * 0.03;
     if (ringRef.current) {
       (ringRef.current.material as THREE.MeshBasicMaterial).opacity = 0.2 + Math.sin(t) * 0.1;
       ringRef.current.rotation.z += 0.02;
@@ -284,13 +391,21 @@ function DefenseSpotlight({ isDefending }: { isDefending: boolean }) {
       {/* Volumetric cone light */}
       <mesh ref={coneRef} position={[0, 2.5, 0]}>
         <coneGeometry args={[0.8, 5, 16, 1, true]} />
-        <meshBasicMaterial color={isDefending ? '#ffaa44' : '#ff4444'} transparent opacity={0.08} side={THREE.DoubleSide} />
+        <meshBasicMaterial
+          color={isDefending ? '#ffaa44' : '#ff4444'}
+          transparent
+          opacity={0.08}
+          side={THREE.DoubleSide}
+        />
       </mesh>
       {/* Fire ring particles when defending */}
       {isDefending && (
         <group ref={fireRef} position={[0, 0.1, 0]}>
           {Array.from({ length: 8 }).map((_, i) => (
-            <mesh key={i}><sphereGeometry args={[1, 4, 4]} /><meshBasicMaterial color="#ff6622" transparent opacity={0.5} /></mesh>
+            <mesh key={i}>
+              <sphereGeometry args={[1, 4, 4]} />
+              <meshBasicMaterial color="#ff6622" transparent opacity={0.5} />
+            </mesh>
           ))}
         </group>
       )}
@@ -299,7 +414,13 @@ function DefenseSpotlight({ isDefending }: { isDefending: boolean }) {
 }
 
 // ── Execution Animation ──
-function ExecutionEffect({ progress, phase }: { progress: number; phase: 'rising' | 'hanging' | 'falling' | 'done' }) {
+function ExecutionEffect({
+  progress,
+  phase,
+}: {
+  progress: number;
+  phase: 'rising' | 'hanging' | 'falling' | 'done';
+}) {
   const ropeRef = useRef<THREE.Mesh>(null);
   const burstRef = useRef<THREE.Group>(null);
   useFrame(() => {
@@ -331,7 +452,10 @@ function ExecutionEffect({ progress, phase }: { progress: number; phase: 'rising
       {phase === 'falling' && (
         <group ref={burstRef} position={[0, 1, 0]}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <mesh key={i}><sphereGeometry args={[1, 4, 4]} /><meshBasicMaterial color="#ff4444" transparent opacity={0.6} /></mesh>
+            <mesh key={i}>
+              <sphereGeometry args={[1, 4, 4]} />
+              <meshBasicMaterial color="#ff4444" transparent opacity={0.6} />
+            </mesh>
           ))}
         </group>
       )}
@@ -342,18 +466,30 @@ function ExecutionEffect({ progress, phase }: { progress: number; phase: 'rising
 // ── Vote Visual Effects ──
 
 function VoteArrow({ from, to }: { from: [number, number, number]; to: [number, number, number] }) {
-  const points = useMemo(() => [new THREE.Vector3(...from), new THREE.Vector3(from[0], 2.2, from[2]), new THREE.Vector3(to[0], 2.2, to[2]), new THREE.Vector3(...to)], [from, to]);
+  const points = useMemo(
+    () => [
+      new THREE.Vector3(...from),
+      new THREE.Vector3(from[0], 2.2, from[2]),
+      new THREE.Vector3(to[0], 2.2, to[2]),
+      new THREE.Vector3(...to),
+    ],
+    [from, to],
+  );
   const curve = useMemo(() => new THREE.CatmullRomCurve3(points), [points]);
   const [progress, setProgress] = useState(0);
   const trailRef = useRef<THREE.Group>(null);
 
   const geom = useMemo(() => {
-    const partial = new THREE.CatmullRomCurve3(curve.getPoints(Math.max(2, Math.floor(30 * progress))).slice(0, Math.max(2, Math.floor(30 * progress))));
+    const partial = new THREE.CatmullRomCurve3(
+      curve
+        .getPoints(Math.max(2, Math.floor(30 * progress)))
+        .slice(0, Math.max(2, Math.floor(30 * progress))),
+    );
     return new THREE.TubeGeometry(partial, 20, 0.04, 8, false);
   }, [curve, Math.floor(progress * 10)]);
 
   useFrame((_, dt) => {
-    if (progress < 1) setProgress(p => Math.min(1, p + dt * 2));
+    if (progress < 1) setProgress((p) => Math.min(1, p + dt * 2));
     // Trail particles
     if (trailRef.current) {
       trailRef.current.children.forEach((c, i) => {
@@ -388,8 +524,11 @@ function VoteArrow({ from, to }: { from: [number, number, number]; to: [number, 
       )}
       {/* Trail particles */}
       <group ref={trailRef}>
-        {[0, 1, 2, 3].map(i => (
-          <mesh key={i}><sphereGeometry args={[1, 4, 4]} /><meshBasicMaterial color="#ffcc44" transparent opacity={0.4} /></mesh>
+        {[0, 1, 2, 3].map((i) => (
+          <mesh key={i}>
+            <sphereGeometry args={[1, 4, 4]} />
+            <meshBasicMaterial color="#ffcc44" transparent opacity={0.4} />
+          </mesh>
         ))}
       </group>
     </group>
@@ -399,7 +538,9 @@ function VoteArrow({ from, to }: { from: [number, number, number]; to: [number, 
 function VoterGlow() {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(() => {
-    if (ref.current) (ref.current.material as THREE.MeshBasicMaterial).opacity = 0.12 + Math.sin(Date.now() * 0.003) * 0.05;
+    if (ref.current)
+      (ref.current.material as THREE.MeshBasicMaterial).opacity =
+        0.12 + Math.sin(Date.now() * 0.003) * 0.05;
   });
   return (
     <mesh ref={ref} position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -448,7 +589,7 @@ function VoteParticles() {
   });
   return (
     <group ref={ref} position={[0, 0.2, 0]}>
-      {[0, 1, 2, 3, 4, 5].map(i => (
+      {[0, 1, 2, 3, 4, 5].map((i) => (
         <mesh key={i}>
           <sphereGeometry args={[1, 4, 4]} />
           <meshBasicMaterial color="#ffcc44" transparent opacity={0.5} />
@@ -478,13 +619,23 @@ function HoverGlow() {
 
 // ── Main Character ──
 
-export default function Character({ player, index, total, gameState }: { player: Player; index: number; total: number; gameState: GameState }) {
+export default function Character({
+  player,
+  index,
+  total,
+  gameState,
+}: {
+  player: Player;
+  index: number;
+  total: number;
+  gameState: GameState;
+}) {
   const groupRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
-  const spectatorMode = useGameStore(s => s.spectatorMode);
-  const setPlayerView = useGameStore(s => s.setPlayerView);
-  const events = useGameStore(s => s.events);
+  const spectatorMode = useGameStore((s) => s.spectatorMode);
+  const setPlayerView = useGameStore((s) => s.setPlayerView);
+  const events = useGameStore((s) => s.events);
 
   const angle = (index / total) * Math.PI * 2 - Math.PI / 2;
   const radius = 4;
@@ -500,7 +651,8 @@ export default function Character({ player, index, total, gameState }: { player:
   const isJudgement = gameState.phase === Phase.Judgement;
   const isAccused = isJudgement && gameState.accusedId === player.id;
   const outfit = useMemo(() => getOutfit(index), [index]);
-  const showWolfEyes = isNight && player.alive && isWolfRole(player.role) && spectatorMode === 'god';
+  const showWolfEyes =
+    isNight && player.alive && isWolfRole(player.role) && spectatorMode === 'god';
 
   // ── Night actor detection (god mode only) ──
   const nightActive = useMemo(() => {
@@ -512,9 +664,19 @@ export default function Character({ player, index, total, gameState }: { player:
     for (let i = recent.length - 1; i >= 0; i--) {
       const e = recent[i];
       if (now - e.timestamp > WINDOW) continue;
-      if (e.type === GameEventType.SeerResult && (e.data.seerId === player.id || e.data.targetName === player.name)) return 'seer';
+      if (
+        e.type === GameEventType.SeerResult &&
+        (e.data.seerId === player.id || e.data.targetName === player.name)
+      )
+        return 'seer';
       if (e.type === GameEventType.WitchAction && player.role === Role.Witch) return 'witch';
-      if ((e.type === GameEventType.WolfDiscussMessage || (e.type === GameEventType.NightActionPerformed && (e.data.action === 'wolf_kill' || e.data.action === 'wolf_double_kill'))) && isWolfRole(player.role)) return 'wolf';
+      if (
+        (e.type === GameEventType.WolfDiscussMessage ||
+          (e.type === GameEventType.NightActionPerformed &&
+            (e.data.action === 'wolf_kill' || e.data.action === 'wolf_double_kill'))) &&
+        isWolfRole(player.role)
+      )
+        return 'wolf';
       if (e.type === GameEventType.GuardProtect && e.data.guardId === player.id) return 'guard';
     }
     return null;
@@ -522,33 +684,124 @@ export default function Character({ player, index, total, gameState }: { player:
 
   // Active effects from recent events
   const recentEvents = events.slice(-20);
-  const isSpeaking = recentEvents.some(e => e.type === GameEventType.DayMessage && e.data.playerId === player.id && Date.now() - e.timestamp < 3000) && gameState.phase === Phase.Day;
-  const isDefending = recentEvents.some(e => e.type === GameEventType.DefenseSpeech && e.data.playerId === player.id && Date.now() - e.timestamp < 5000);
-  const lastSpeech = [...events].reverse().find(e => (e.type === GameEventType.DayMessage || e.type === GameEventType.DefenseSpeech) && e.data.playerId === player.id);
-  const wasAttacked = recentEvents.some(e => e.type === GameEventType.NightActionPerformed && e.data.action === 'wolf_kill' && e.data.targetName === player.name && Date.now() - e.timestamp < 4000);
-  const isGuarded = recentEvents.some(e => e.type === GameEventType.GuardProtect && e.data.targetName === player.name && Date.now() - e.timestamp < 5000);
-  const isSeerTarget = recentEvents.some(e => e.type === GameEventType.SeerResult && e.data.targetName === player.name && Date.now() - e.timestamp < 4000);
-  const isSeer = (player.role === Role.Seer || (player.role === Role.ApprenticeSeer && gameState.apprenticeSeerActivated)) && recentEvents.some(e => e.type === GameEventType.SeerResult && e.data.seerId === player.id && Date.now() - e.timestamp < 4000);
-  const witchHeal = recentEvents.some(e => e.type === GameEventType.WitchAction && e.data.action === 'heal' && e.data.targetName === player.name && Date.now() - e.timestamp < 4000);
-  const witchKill = recentEvents.some(e => e.type === GameEventType.WitchAction && e.data.action === 'kill' && e.data.targetName === player.name && Date.now() - e.timestamp < 4000);
-  const isCupidPair = recentEvents.some(e => e.type === GameEventType.CupidPair && (e.data.player1Name === player.name || e.data.player2Name === player.name) && Date.now() - e.timestamp < 6000);
+  const isSpeaking =
+    recentEvents.some(
+      (e) =>
+        e.type === GameEventType.DayMessage &&
+        e.data.playerId === player.id &&
+        Date.now() - e.timestamp < 3000,
+    ) && gameState.phase === Phase.Day;
+  const isDefending = recentEvents.some(
+    (e) =>
+      e.type === GameEventType.DefenseSpeech &&
+      e.data.playerId === player.id &&
+      Date.now() - e.timestamp < 5000,
+  );
+  const lastSpeech = [...events]
+    .reverse()
+    .find(
+      (e) =>
+        (e.type === GameEventType.DayMessage || e.type === GameEventType.DefenseSpeech) &&
+        e.data.playerId === player.id,
+    );
+  const wasAttacked = recentEvents.some(
+    (e) =>
+      e.type === GameEventType.NightActionPerformed &&
+      e.data.action === 'wolf_kill' &&
+      e.data.targetName === player.name &&
+      Date.now() - e.timestamp < 4000,
+  );
+  const isGuarded = recentEvents.some(
+    (e) =>
+      e.type === GameEventType.GuardProtect &&
+      e.data.targetName === player.name &&
+      Date.now() - e.timestamp < 5000,
+  );
+  const isSeerTarget = recentEvents.some(
+    (e) =>
+      e.type === GameEventType.SeerResult &&
+      e.data.targetName === player.name &&
+      Date.now() - e.timestamp < 4000,
+  );
+  const isSeer =
+    (player.role === Role.Seer ||
+      (player.role === Role.ApprenticeSeer && gameState.apprenticeSeerActivated)) &&
+    recentEvents.some(
+      (e) =>
+        e.type === GameEventType.SeerResult &&
+        e.data.seerId === player.id &&
+        Date.now() - e.timestamp < 4000,
+    );
+  const witchHeal = recentEvents.some(
+    (e) =>
+      e.type === GameEventType.WitchAction &&
+      e.data.action === 'heal' &&
+      e.data.targetName === player.name &&
+      Date.now() - e.timestamp < 4000,
+  );
+  const witchKill = recentEvents.some(
+    (e) =>
+      e.type === GameEventType.WitchAction &&
+      e.data.action === 'kill' &&
+      e.data.targetName === player.name &&
+      Date.now() - e.timestamp < 4000,
+  );
+  const isCupidPair = recentEvents.some(
+    (e) =>
+      e.type === GameEventType.CupidPair &&
+      (e.data.player1Name === player.name || e.data.player2Name === player.name) &&
+      Date.now() - e.timestamp < 6000,
+  );
 
   // Vote tracking
-  const lastVote = [...events].reverse().find(e => e.type === GameEventType.VoteCast && e.data.voterName === player.name && Date.now() - e.timestamp < 5000);
-  const voteTarget = lastVote ? gameState.players.find(p => p.name === lastVote.data.targetName) : null;
+  const lastVote = [...events]
+    .reverse()
+    .find(
+      (e) =>
+        e.type === GameEventType.VoteCast &&
+        e.data.voterName === player.name &&
+        Date.now() - e.timestamp < 5000,
+    );
+  const voteTarget = lastVote
+    ? gameState.players.find((p) => p.name === lastVote.data.targetName)
+    : null;
   const voteTargetIndex = voteTarget ? gameState.players.indexOf(voteTarget) : -1;
 
-  const votesReceived = isDusk ? recentEvents.filter(e => e.type === GameEventType.VoteCast && e.data.targetName === player.name && Date.now() - e.timestamp < 10000).length : 0;
-  const hasVoted = isDusk && recentEvents.some(e => e.type === GameEventType.VoteCast && e.data.voterName === player.name && Date.now() - e.timestamp < 10000);
+  const votesReceived = isDusk
+    ? recentEvents.filter(
+        (e) =>
+          e.type === GameEventType.VoteCast &&
+          e.data.targetName === player.name &&
+          Date.now() - e.timestamp < 10000,
+      ).length
+    : 0;
+  const hasVoted =
+    isDusk &&
+    recentEvents.some(
+      (e) =>
+        e.type === GameEventType.VoteCast &&
+        e.data.voterName === player.name &&
+        Date.now() - e.timestamp < 10000,
+    );
 
   // Death animation
   const [deathProgress, setDeathProgress] = useState(player.alive ? 0 : 1);
-  useEffect(() => { if (!player.alive) setDeathProgress(0); }, [player.alive]);
+  useEffect(() => {
+    if (!player.alive) setDeathProgress(0);
+  }, [player.alive]);
 
   // Execution (treo cổ) animation
-  const [execPhase, setExecPhase] = useState<'none' | 'rising' | 'hanging' | 'falling' | 'done'>('none');
+  const [execPhase, setExecPhase] = useState<'none' | 'rising' | 'hanging' | 'falling' | 'done'>(
+    'none',
+  );
   const [execProgress, setExecProgress] = useState(0);
-  const wasExecuted = recentEvents.some(e => e.type === GameEventType.JudgementResult && e.data.accusedId === player.id && e.data.executed && Date.now() - e.timestamp < 8000);
+  const wasExecuted = recentEvents.some(
+    (e) =>
+      e.type === GameEventType.JudgementResult &&
+      e.data.accusedId === player.id &&
+      e.data.executed &&
+      Date.now() - e.timestamp < 8000,
+  );
   useEffect(() => {
     if (wasExecuted && execPhase === 'none') {
       setExecPhase('rising');
@@ -557,7 +810,11 @@ export default function Character({ player, index, total, gameState }: { player:
   }, [wasExecuted]);
 
   // Dim other players when someone is defending
-  const someoneDefending = isJudgement && recentEvents.some(e => e.type === GameEventType.DefenseSpeech && Date.now() - e.timestamp < 5000);
+  const someoneDefending =
+    isJudgement &&
+    recentEvents.some(
+      (e) => e.type === GameEventType.DefenseSpeech && Date.now() - e.timestamp < 5000,
+    );
   const isDimmed = someoneDefending && !isAccused && player.alive;
 
   useFrame((_, dt) => {
@@ -565,23 +822,32 @@ export default function Character({ player, index, total, gameState }: { player:
 
     // Execution animation phases
     if (execPhase === 'rising') {
-      setExecProgress(p => {
+      setExecProgress((p) => {
         const next = p + dt * 1.2;
-        if (next >= 1) { setExecPhase('hanging'); return 0; }
+        if (next >= 1) {
+          setExecPhase('hanging');
+          return 0;
+        }
         return next;
       });
       bodyRef.current.position.y = execProgress * 2.5;
     } else if (execPhase === 'hanging') {
-      setExecProgress(p => {
+      setExecProgress((p) => {
         const next = p + dt * 2;
-        if (next >= 1) { setExecPhase('falling'); return 0; }
+        if (next >= 1) {
+          setExecPhase('falling');
+          return 0;
+        }
         return next;
       });
       bodyRef.current.position.y = 2.5 + Math.sin(Date.now() * 0.01) * 0.05;
     } else if (execPhase === 'falling') {
-      setExecProgress(p => {
+      setExecProgress((p) => {
         const next = p + dt * 3;
-        if (next >= 1) { setExecPhase('done'); return 1; }
+        if (next >= 1) {
+          setExecPhase('done');
+          return 1;
+        }
         return next;
       });
       bodyRef.current.position.y = 2.5 * (1 - execProgress);
@@ -608,7 +874,7 @@ export default function Character({ player, index, total, gameState }: { player:
 
       // Death fall
       if (!player.alive && deathProgress < 1) {
-        setDeathProgress(p => Math.min(1, p + dt * 1.5));
+        setDeathProgress((p) => Math.min(1, p + dt * 1.5));
         bodyRef.current.rotation.z = deathProgress * (Math.PI / 3);
         bodyRef.current.position.y = -deathProgress * 0.3;
       }
@@ -628,10 +894,23 @@ export default function Character({ player, index, total, gameState }: { player:
   });
 
   return (
-    <group ref={groupRef} position={[x, 0, z]} rotation={[0, lookAngle + Math.PI, 0]}
-      onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer'; }}
-      onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto'; }}
-      onClick={(e) => { e.stopPropagation(); setPlayerView(player.id); }}
+    <group
+      ref={groupRef}
+      position={[x, 0, z]}
+      rotation={[0, lookAngle + Math.PI, 0]}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        setHovered(true);
+        document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={() => {
+        setHovered(false);
+        document.body.style.cursor = 'auto';
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        setPlayerView(player.id);
+      }}
     >
       {/* Seat */}
       <mesh position={[0, 0.2, 0]} castShadow>
@@ -645,11 +924,18 @@ export default function Character({ player, index, total, gameState }: { player:
       {/* Hover tooltip */}
       {hovered && (
         <Html position={[0, 2.4, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
-          <div className="bg-gray-900/95 backdrop-blur-sm border border-cyan-500/40 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap" style={{ boxShadow: '0 0 15px rgba(100,200,255,0.15)' }}>
+          <div
+            className="bg-gray-900/95 backdrop-blur-sm border border-cyan-500/40 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap"
+            style={{ boxShadow: '0 0 15px rgba(100,200,255,0.15)' }}
+          >
             <div className="flex items-center gap-2 mb-1">
               <span className="text-base">{player.personality.emoji}</span>
               <span className="text-sm font-bold text-cyan-200">{player.name}</span>
-              {!player.alive && <span className="text-[9px] px-1 py-0.5 rounded bg-red-900/60 text-red-400">💀</span>}
+              {!player.alive && (
+                <span className="text-[9px] px-1 py-0.5 rounded bg-red-900/60 text-red-400">
+                  💀
+                </span>
+              )}
             </div>
             {showRole && (
               <div className="text-[11px] font-medium" style={{ color: roleColor }}>
@@ -679,11 +965,21 @@ export default function Character({ player, index, total, gameState }: { player:
         {/* Legs */}
         <mesh position={[-0.1, -0.45, 0]} castShadow>
           <capsuleGeometry args={[0.055, 0.25, 4, 8]} />
-          <meshStandardMaterial color={player.alive ? '#3a3a3a' : '#222'} roughness={0.8} transparent opacity={player.alive ? 1 : 0.4} />
+          <meshStandardMaterial
+            color={player.alive ? '#3a3a3a' : '#222'}
+            roughness={0.8}
+            transparent
+            opacity={player.alive ? 1 : 0.4}
+          />
         </mesh>
         <mesh position={[0.1, -0.45, 0]} castShadow>
           <capsuleGeometry args={[0.055, 0.25, 4, 8]} />
-          <meshStandardMaterial color={player.alive ? '#3a3a3a' : '#222'} roughness={0.8} transparent opacity={player.alive ? 1 : 0.4} />
+          <meshStandardMaterial
+            color={player.alive ? '#3a3a3a' : '#222'}
+            roughness={0.8}
+            transparent
+            opacity={player.alive ? 1 : 0.4}
+          />
         </mesh>
 
         {/* Torso */}
@@ -691,7 +987,9 @@ export default function Character({ player, index, total, gameState }: { player:
           <capsuleGeometry args={[0.22, 0.4, 8, 16]} />
           <meshStandardMaterial
             color={player.alive ? (showRole ? roleColor : '#666666') : '#333333'}
-            roughness={0.7} transparent opacity={player.alive ? (isDimmed ? 0.4 : 1) : Math.max(0.2, 1 - deathProgress * 0.6)}
+            roughness={0.7}
+            transparent
+            opacity={player.alive ? (isDimmed ? 0.4 : 1) : Math.max(0.2, 1 - deathProgress * 0.6)}
           />
         </mesh>
 
@@ -709,37 +1007,73 @@ export default function Character({ player, index, total, gameState }: { player:
         {/* Neck */}
         <mesh position={[0, 0.35, 0]}>
           <cylinderGeometry args={[0.06, 0.08, 0.1, 8]} />
-          <meshStandardMaterial color={player.alive ? skinColor : '#555'} roughness={0.6} transparent opacity={player.alive ? 1 : 0.4} />
+          <meshStandardMaterial
+            color={player.alive ? skinColor : '#555'}
+            roughness={0.6}
+            transparent
+            opacity={player.alive ? 1 : 0.4}
+          />
         </mesh>
 
         {/* Head */}
         <mesh position={[0, 0.5, 0]} castShadow>
           <sphereGeometry args={[0.18, 16, 16]} />
-          <meshStandardMaterial color={player.alive ? skinColor : '#555'} roughness={0.6} transparent opacity={player.alive ? 1 : 0.4} />
+          <meshStandardMaterial
+            color={player.alive ? skinColor : '#555'}
+            roughness={0.6}
+            transparent
+            opacity={player.alive ? 1 : 0.4}
+          />
         </mesh>
 
         {/* Hat */}
         {player.alive && <Hat type={outfit.hatType} color={outfit.hatColor} />}
 
         {/* Eyes — normal */}
-        {player.alive && !isNight && !showWolfEyes && <>
-          <mesh position={[-0.06, 0.52, 0.15]}><sphereGeometry args={[0.03, 8, 8]} /><meshBasicMaterial color={(isSpeaking || isDefending) ? '#ffffff' : '#222'} /></mesh>
-          <mesh position={[0.06, 0.52, 0.15]}><sphereGeometry args={[0.03, 8, 8]} /><meshBasicMaterial color={(isSpeaking || isDefending) ? '#ffffff' : '#222'} /></mesh>
-        </>}
+        {player.alive && !isNight && !showWolfEyes && (
+          <>
+            <mesh position={[-0.06, 0.52, 0.15]}>
+              <sphereGeometry args={[0.03, 8, 8]} />
+              <meshBasicMaterial color={isSpeaking || isDefending ? '#ffffff' : '#222'} />
+            </mesh>
+            <mesh position={[0.06, 0.52, 0.15]}>
+              <sphereGeometry args={[0.03, 8, 8]} />
+              <meshBasicMaterial color={isSpeaking || isDefending ? '#ffffff' : '#222'} />
+            </mesh>
+          </>
+        )}
         {/* Eyes — sleeping (night, non-wolf or fog mode) */}
-        {player.alive && isNight && !showWolfEyes && <>
-          <mesh position={[-0.06, 0.52, 0.16]} rotation={[0, 0, Math.PI / 6]}><boxGeometry args={[0.06, 0.01, 0.01]} /><meshBasicMaterial color="#222" /></mesh>
-          <mesh position={[0.06, 0.52, 0.16]} rotation={[0, 0, -Math.PI / 6]}><boxGeometry args={[0.06, 0.01, 0.01]} /><meshBasicMaterial color="#222" /></mesh>
-        </>}
+        {player.alive && isNight && !showWolfEyes && (
+          <>
+            <mesh position={[-0.06, 0.52, 0.16]} rotation={[0, 0, Math.PI / 6]}>
+              <boxGeometry args={[0.06, 0.01, 0.01]} />
+              <meshBasicMaterial color="#222" />
+            </mesh>
+            <mesh position={[0.06, 0.52, 0.16]} rotation={[0, 0, -Math.PI / 6]}>
+              <boxGeometry args={[0.06, 0.01, 0.01]} />
+              <meshBasicMaterial color="#222" />
+            </mesh>
+          </>
+        )}
         {/* Eyes — wolf glowing (night, god mode) */}
         {showWolfEyes && <WolfEyes />}
 
         {/* Arms */}
-        <mesh position={[-0.3, -0.05, 0]} rotation={[0, 0, (isSpeaking || isDefending) ? -0.6 : hasVoted ? -0.8 : -0.3]} castShadow>
-          <capsuleGeometry args={[0.06, 0.3, 4, 8]} /><meshStandardMaterial color={skinColor} transparent opacity={player.alive ? 1 : 0.4} />
+        <mesh
+          position={[-0.3, -0.05, 0]}
+          rotation={[0, 0, isSpeaking || isDefending ? -0.6 : hasVoted ? -0.8 : -0.3]}
+          castShadow
+        >
+          <capsuleGeometry args={[0.06, 0.3, 4, 8]} />
+          <meshStandardMaterial color={skinColor} transparent opacity={player.alive ? 1 : 0.4} />
         </mesh>
-        <mesh position={[0.3, -0.05, 0]} rotation={[0, 0, (isSpeaking || isDefending) ? 0.6 : hasVoted ? 0.8 : 0.3]} castShadow>
-          <capsuleGeometry args={[0.06, 0.3, 4, 8]} /><meshStandardMaterial color={skinColor} transparent opacity={player.alive ? 1 : 0.4} />
+        <mesh
+          position={[0.3, -0.05, 0]}
+          rotation={[0, 0, isSpeaking || isDefending ? 0.6 : hasVoted ? 0.8 : 0.3]}
+          castShadow
+        >
+          <capsuleGeometry args={[0.06, 0.3, 4, 8]} />
+          <meshStandardMaterial color={skinColor} transparent opacity={player.alive ? 1 : 0.4} />
         </mesh>
 
         {/* VFX */}
@@ -759,7 +1093,10 @@ export default function Character({ player, index, total, gameState }: { player:
       {/* Night action icon indicator */}
       {nightActive && (
         <Html position={[0, 2.1, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
-          <div className="text-2xl animate-bounce" style={{ filter: `drop-shadow(0 0 6px ${NIGHT_ROLE_COLORS[nightActive]})` }}>
+          <div
+            className="text-2xl animate-bounce"
+            style={{ filter: `drop-shadow(0 0 6px ${NIGHT_ROLE_COLORS[nightActive]})` }}
+          >
             {NIGHT_ROLE_ICONS[nightActive]}
           </div>
         </Html>
@@ -768,24 +1105,43 @@ export default function Character({ player, index, total, gameState }: { player:
       {/* Name label */}
       <Html position={[0, 1.7, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
         <div className="text-center whitespace-nowrap">
-          <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-            isAccused ? 'bg-red-900/90 text-red-200 border border-red-500/50' :
-            player.alive ? 'bg-black/70 text-white' : 'bg-black/40 text-gray-500 line-through'
-          }`}>
+          <div
+            className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+              isAccused
+                ? 'bg-red-900/90 text-red-200 border border-red-500/50'
+                : player.alive
+                  ? 'bg-black/70 text-white'
+                  : 'bg-black/40 text-gray-500 line-through'
+            }`}
+          >
             {player.personality.emoji} {player.name}
           </div>
-          {showRole && <div className="text-[10px] mt-0.5 px-2 py-0.5 rounded-full bg-black/60" style={{ color: roleColor }}>{ROLE_NAMES_VI[player.role]}</div>}
+          {showRole && (
+            <div
+              className="text-[10px] mt-0.5 px-2 py-0.5 rounded-full bg-black/60"
+              style={{ color: roleColor }}
+            >
+              {ROLE_NAMES_VI[player.role]}
+            </div>
+          )}
         </div>
       </Html>
 
       {/* Vote count badge */}
       {isDusk && votesReceived > 0 && player.alive && (
         <Html position={[0.4, 2.0, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
-          <div className="vote-badge-3d flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm text-white shadow-lg"
+          <div
+            className="vote-badge-3d flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm text-white shadow-lg"
             style={{
-              background: votesReceived >= 3 ? 'linear-gradient(135deg, #ef4444, #dc2626)' : votesReceived >= 2 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #eab308, #ca8a04)',
+              background:
+                votesReceived >= 3
+                  ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                  : votesReceived >= 2
+                    ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+                    : 'linear-gradient(135deg, #eab308, #ca8a04)',
               boxShadow: `0 0 12px ${votesReceived >= 3 ? '#ef4444' : '#f59e0b'}88`,
-            }}>
+            }}
+          >
             {votesReceived}
           </div>
         </Html>
@@ -794,7 +1150,10 @@ export default function Character({ player, index, total, gameState }: { player:
       {/* Accused badge during Judgement */}
       {isAccused && (
         <Html position={[0, 2.2, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
-          <div className="judgement-phase-pulse text-sm px-3 py-1 rounded-full bg-red-600/90 text-white font-bold whitespace-nowrap shadow-lg" style={{ boxShadow: '0 0 20px #ef444466' }}>
+          <div
+            className="judgement-phase-pulse text-sm px-3 py-1 rounded-full bg-red-600/90 text-white font-bold whitespace-nowrap shadow-lg"
+            style={{ boxShadow: '0 0 20px #ef444466' }}
+          >
             ⚖️ Đang bị phán xét
           </div>
         </Html>
@@ -812,12 +1171,21 @@ export default function Character({ player, index, total, gameState }: { player:
       {/* Speech bubble */}
       {(isSpeaking || isDefending) && lastSpeech && (
         <Html position={[0, 2.3, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
-          <div className={`text-sm px-4 py-2.5 rounded-xl max-w-[480px] min-w-[280px] shadow-lg animate-pulse ${
-            isDefending ? 'bg-red-50/95 text-red-900 border-2 border-red-400/50' : 'bg-white/95 text-black'
-          }`}>
-            {isDefending && <span className="text-xs font-bold text-red-600 block mb-1">⚖️ Biện hộ:</span>}
-            {lastSpeech.data.message?.slice(0, 150)}{lastSpeech.data.message?.length > 150 ? '...' : ''}
-            <div className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 ${isDefending ? 'bg-red-50/95' : 'bg-white/95'}`} />
+          <div
+            className={`text-sm px-4 py-2.5 rounded-xl max-w-[480px] min-w-[280px] shadow-lg animate-pulse ${
+              isDefending
+                ? 'bg-red-50/95 text-red-900 border-2 border-red-400/50'
+                : 'bg-white/95 text-black'
+            }`}
+          >
+            {isDefending && (
+              <span className="text-xs font-bold text-red-600 block mb-1">⚖️ Biện hộ:</span>
+            )}
+            {lastSpeech.data.message?.slice(0, 150)}
+            {lastSpeech.data.message?.length > 150 ? '...' : ''}
+            <div
+              className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 ${isDefending ? 'bg-red-50/95' : 'bg-white/95'}`}
+            />
           </div>
         </Html>
       )}
@@ -830,16 +1198,18 @@ export default function Character({ player, index, total, gameState }: { player:
       )}
 
       {/* Vote arrow */}
-      {voteTarget && voteTargetIndex >= 0 && (() => {
-        const ta = (voteTargetIndex / total) * Math.PI * 2 - Math.PI / 2;
-        const tx = Math.cos(ta) * radius;
-        const tz = Math.sin(ta) * radius;
-        return (
-          <group rotation={[0, -(lookAngle + Math.PI), 0]}>
-            <VoteArrow from={[0, 1.5, 0]} to={[tx - x, 1.5, tz - z]} />
-          </group>
-        );
-      })()}
+      {voteTarget &&
+        voteTargetIndex >= 0 &&
+        (() => {
+          const ta = (voteTargetIndex / total) * Math.PI * 2 - Math.PI / 2;
+          const tx = Math.cos(ta) * radius;
+          const tz = Math.sin(ta) * radius;
+          return (
+            <group rotation={[0, -(lookAngle + Math.PI), 0]}>
+              <VoteArrow from={[0, 1.5, 0]} to={[tx - x, 1.5, tz - z]} />
+            </group>
+          );
+        })()}
     </group>
   );
 }

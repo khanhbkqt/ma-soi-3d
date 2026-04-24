@@ -1,5 +1,12 @@
 import { io, Socket } from 'socket.io-client';
-import { SocketEvents, GameState, GameEvent, GameConfig, Phase, PlayerViewState } from '@ma-soi/shared';
+import {
+  SocketEvents,
+  GameState,
+  GameEvent,
+  GameConfig,
+  Phase,
+  PlayerViewState,
+} from '@ma-soi/shared';
 import { create } from 'zustand';
 
 interface GameStore {
@@ -41,7 +48,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     const bePort = import.meta.env.VITE_BE_PORT || '3001';
-    const socket = io(window.location.hostname === 'localhost' ? `http://localhost:${bePort}` : '/', { transports: ['websocket', 'polling'] });
+    const socket = io(
+      window.location.hostname === 'localhost' ? `http://localhost:${bePort}` : '/',
+      { transports: ['websocket', 'polling'] },
+    );
 
     socket.on('connect', () => set({ connected: true }));
     socket.on('disconnect', () => set({ connected: false }));
@@ -54,9 +64,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
 
     socket.on(SocketEvents.GAME_EVENT, (event: GameEvent) => {
-      set(s => {
+      set((s) => {
         // Deduplicate: skip if this event timestamp already exists
-        if (s.events.some(e => e.timestamp === event.timestamp && e.type === event.type)) {
+        if (s.events.some((e) => e.timestamp === event.timestamp && e.type === event.type)) {
           return s;
         }
         return { events: [...s.events, event] };
@@ -74,11 +84,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ socket });
   },
 
-  createGame(config) { get().socket?.emit(SocketEvents.CREATE_GAME, config); },
-  startGame() { get().socket?.emit(SocketEvents.START_GAME); set({ view: 'game', events: [] }); },
-  pauseGame() { get().socket?.emit(SocketEvents.PAUSE_GAME); },
-  resumeGame() { get().socket?.emit(SocketEvents.RESUME_GAME); },
-  stepGame() { get().socket?.emit(SocketEvents.STEP_GAME); },
+  createGame(config) {
+    get().socket?.emit(SocketEvents.CREATE_GAME, config);
+  },
+  startGame() {
+    get().socket?.emit(SocketEvents.START_GAME);
+    set({ view: 'game', events: [] });
+  },
+  pauseGame() {
+    get().socket?.emit(SocketEvents.PAUSE_GAME);
+  },
+  resumeGame() {
+    get().socket?.emit(SocketEvents.RESUME_GAME);
+  },
+  stepGame() {
+    get().socket?.emit(SocketEvents.STEP_GAME);
+  },
 
   setSpectatorMode(mode) {
     get().socket?.emit(SocketEvents.SET_SPECTATOR_MODE, mode);
@@ -98,5 +119,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  setView(view) { set({ view }); },
+  setView(view) {
+    set({ view });
+  },
 }));

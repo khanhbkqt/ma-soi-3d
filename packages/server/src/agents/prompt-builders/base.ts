@@ -5,18 +5,29 @@ import { compressedMemoryPrompt } from '../memory-compression.js';
 
 export function roleNameVi(role: Role): string {
   const map: Record<Role, string> = {
-    [Role.Werewolf]: 'Sói', [Role.AlphaWolf]: 'Sói Đầu Đàn', [Role.WolfCub]: 'Sói Con',
-    [Role.Villager]: 'Dân', [Role.Seer]: 'Tiên Tri', [Role.ApprenticeSeer]: 'Tiên Tri Tập Sự',
-    [Role.Witch]: 'Phù Thủy', [Role.Hunter]: 'Thợ Săn', [Role.Guard]: 'Bảo Vệ',
-    [Role.Cupid]: 'Thần Tình Yêu', [Role.Fool]: 'Kẻ Ngốc',
+    [Role.Werewolf]: 'Sói',
+    [Role.AlphaWolf]: 'Sói Đầu Đàn',
+    [Role.WolfCub]: 'Sói Con',
+    [Role.Villager]: 'Dân',
+    [Role.Seer]: 'Tiên Tri',
+    [Role.ApprenticeSeer]: 'Tiên Tri Tập Sự',
+    [Role.Witch]: 'Phù Thủy',
+    [Role.Hunter]: 'Thợ Săn',
+    [Role.Guard]: 'Bảo Vệ',
+    [Role.Cupid]: 'Thần Tình Yêu',
+    [Role.Fool]: 'Kẻ Ngốc',
   };
   return map[role] || role;
 }
 
 export function phaseNameVi(phase: Phase | string): string {
   const map: Record<string, string> = {
-    [Phase.Night]: 'Ban đêm', [Phase.Dawn]: 'Rạng sáng', [Phase.Day]: 'Ban ngày',
-    [Phase.Dusk]: 'Hoàng hôn', [Phase.Judgement]: 'Phán xét', [Phase.GameOver]: 'Kết thúc',
+    [Phase.Night]: 'Ban đêm',
+    [Phase.Dawn]: 'Rạng sáng',
+    [Phase.Day]: 'Ban ngày',
+    [Phase.Dusk]: 'Hoàng hôn',
+    [Phase.Judgement]: 'Phán xét',
+    [Phase.GameOver]: 'Kết thúc',
   };
   return map[phase] || String(phase);
 }
@@ -60,8 +71,8 @@ CÁCH SUY LUẬN — suy nghĩ kỹ trước khi nói/hành động:
 }
 
 export function playerContext(player: Player, state: GameState): string {
-  const alive = state.players.filter(p => p.alive);
-  const dead = state.players.filter(p => !p.alive);
+  const alive = state.players.filter((p) => p.alive);
+  const dead = state.players.filter((p) => !p.alive);
   const phaseVi = phaseNameVi(state.phase);
   let roundContext = `Vòng ${state.round} | ${phaseVi}.`;
   if (state.round === 1) roundContext += ` (Vòng đầu tiên.)`;
@@ -69,18 +80,20 @@ export function playerContext(player: Player, state: GameState): string {
   let coupleInfo = '';
   if (state.couple) {
     const { player1Id, player2Id } = state.couple;
-    const partnerId = player.id === player1Id ? player2Id : player.id === player2Id ? player1Id : null;
+    const partnerId =
+      player.id === player1Id ? player2Id : player.id === player2Id ? player1Id : null;
     if (partnerId) {
-      const partner = state.players.find(p => p.id === partnerId);
-      if (partner) coupleInfo = `\nGHÉP ĐÔI: Mày đang bị ghép đôi với ${partner.name}. Nếu ${partner.name} chết → mày cũng chết! BẢO VỆ NHAU!`;
+      const partner = state.players.find((p) => p.id === partnerId);
+      if (partner)
+        coupleInfo = `\nGHÉP ĐÔI: Mày đang bị ghép đôi với ${partner.name}. Nếu ${partner.name} chết → mày cũng chết! BẢO VỆ NHAU!`;
     }
   }
 
   const teamVi = isWolfRole(player.role) ? 'Sói' : 'Dân';
   return `Mày là "${player.name}" — ${roleNameVi(player.role)} (phe ${teamVi}).
 ${roundContext}
-Còn sống (${alive.length}): ${alive.map(p => p.name).join(', ')}.
-${dead.length ? `Đã chết: ${dead.map(p => `${p.name}(${roleNameVi(p.role)})`).join(', ')}.` : 'Chưa ai chết.'}${coupleInfo}`;
+Còn sống (${alive.length}): ${alive.map((p) => p.name).join(', ')}.
+${dead.length ? `Đã chết: ${dead.map((p) => `${p.name}(${roleNameVi(p.role)})`).join(', ')}.` : 'Chưa ai chết.'}${coupleInfo}`;
 }
 
 export function personalityPrompt(player: Player): string {
@@ -93,7 +106,7 @@ export function memoryPrompt(observations: string[], deductionBlock?: string): s
 
 export function conversationBlock(messages: DayMessage[]): string {
   if (!messages.length) return '\nMày là người nói đầu tiên. Mở lời đi.';
-  return `\nMọi người đang nói:\n${messages.map(m => `${m.playerName}: "${m.message}"`).join('\n')}`;
+  return `\nMọi người đang nói:\n${messages.map((m) => `${m.playerName}: "${m.message}"`).join('\n')}`;
 }
 
 // ── System prompt = heavy context (reused across all LLM calls for a player) ──
@@ -120,10 +133,23 @@ export function taskContext(observations: string[], deductionBlock?: string): st
 
 export interface PromptBuilder {
   systemPrompt(player: Player, state: GameState): string;
-  discuss(player: Player, state: GameState, observations: string[], messages: DayMessage[], round: number): string;
+  discuss(
+    player: Player,
+    state: GameState,
+    observations: string[],
+    messages: DayMessage[],
+    round: number,
+  ): string;
   vote(player: Player, state: GameState, observations: string[], messages: DayMessage[]): string;
   defense(player: Player, state: GameState, observations: string[], messages: DayMessage[]): string;
-  judgement(player: Player, state: GameState, observations: string[], accusedName: string, defenseSpeech: string, messages: DayMessage[]): string;
+  judgement(
+    player: Player,
+    state: GameState,
+    observations: string[],
+    accusedName: string,
+    defenseSpeech: string,
+    messages: DayMessage[],
+  ): string;
 }
 
 // ── Default implementations for day-phase prompts ──
@@ -169,14 +195,31 @@ export abstract class BasePromptBuilder implements PromptBuilder {
 
   // ── Day-phase user prompts: task-specific only ──
 
-  discuss(player: Player, state: GameState, observations: string[], messages: DayMessage[], round: number): string {
+  discuss(
+    player: Player,
+    state: GameState,
+    observations: string[],
+    messages: DayMessage[],
+    round: number,
+  ): string {
     const lastRound = round === state.config.discussionRounds;
-    const dead = state.players.filter(p => !p.alive);
+    const dead = state.players.filter((p) => !p.alive);
     const hasDeath = dead.length > 0;
-    const r1Hint = state.round === 1 && round === 1 ? '\nVÒNG 1: Chưa có info. Phá không khí, đọc phản ứng mọi người, ném nghi ngờ nhẹ dựa trên cảm giác.' : '';
-    const deathHint = hasDeath && round === 1 ? `\nCÓ NGƯỜI CHẾT — suy luận trước khi nói: Ai chết? Tại sao sói chọn người đó? Ai hưởng lợi? Ai hôm qua bảo vệ/tố người chết? Dùng info này để tố hoặc bênh ai đó.` : '';
-    const midHint = !lastRound && round > 1 ? '\nGIỮA GAME: React lại lời người khác — đồng ý, phản bác, hoặc hỏi dồn. Chỉ ra mâu thuẫn nếu thấy. Đừng lặp lại ý cũ.' : '';
-    const lastHint = lastRound ? '\nLƯỢT CUỐI: Kết luận dứt khoát. Chỉ đích danh 1 người đáng nghi nhất + lý do cụ thể. Kêu gọi mọi người vote cùng nếu tự tin.' : '';
+    const r1Hint =
+      state.round === 1 && round === 1
+        ? '\nVÒNG 1: Chưa có info. Phá không khí, đọc phản ứng mọi người, ném nghi ngờ nhẹ dựa trên cảm giác.'
+        : '';
+    const deathHint =
+      hasDeath && round === 1
+        ? `\nCÓ NGƯỜI CHẾT — suy luận trước khi nói: Ai chết? Tại sao sói chọn người đó? Ai hưởng lợi? Ai hôm qua bảo vệ/tố người chết? Dùng info này để tố hoặc bênh ai đó.`
+        : '';
+    const midHint =
+      !lastRound && round > 1
+        ? '\nGIỮA GAME: React lại lời người khác — đồng ý, phản bác, hoặc hỏi dồn. Chỉ ra mâu thuẫn nếu thấy. Đừng lặp lại ý cũ.'
+        : '';
+    const lastHint = lastRound
+      ? '\nLƯỢT CUỐI: Kết luận dứt khoát. Chỉ đích danh 1 người đáng nghi nhất + lý do cụ thể. Kêu gọi mọi người vote cùng nếu tự tin.'
+      : '';
     return `${taskContext(observations)}
 ${this.discussionHint(player, state)}${r1Hint}${deathHint}${midHint}${lastHint}
 Lượt thảo luận ${round}/${state.config.discussionRounds}.${conversationBlock(messages)}
@@ -190,8 +233,13 @@ JSON: {"wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)",
   }
 
   vote(player: Player, state: GameState, observations: string[], messages: DayMessage[]): string {
-    const targets = state.players.filter(p => p.alive && p.id !== player.id);
-    const convo = messages.length ? `Tóm tắt thảo luận:\n${messages.slice(-12).map(m => `${m.playerName}: "${m.message}"`).join('\n')}` : '';
+    const targets = state.players.filter((p) => p.alive && p.id !== player.id);
+    const convo = messages.length
+      ? `Tóm tắt thảo luận:\n${messages
+          .slice(-12)
+          .map((m) => `${m.playerName}: "${m.message}"`)
+          .join('\n')}`
+      : '';
     return `${taskContext(observations)}
 ${this.voteHint(player, state)}
 ${convo}
@@ -202,12 +250,22 @@ TRƯỚC KHI VOTE, suy luận trong "reasoning":
 - Ai hưởng lợi nếu người bị tố chết? Có ai đang dẫn dắt vote để giết dân không?
 - Ai im lặng bất thường? Ai nói nhiều nhưng không có nội dung?
 - Mày có nên vote theo đám đông hay tách ra vote người khác?
-Vote 1 người, hoặc "skip". Danh sách: ${targets.map(t => t.name).join(', ')}
+Vote 1 người, hoặc "skip". Danh sách: ${targets.map((t) => t.name).join(', ')}
 JSON: {"target":"Tên"|"skip","reasoning":"phân tích chi tiết trước khi vote"}`;
   }
 
-  defense(player: Player, state: GameState, observations: string[], messages: DayMessage[]): string {
-    const convo = messages.length ? `\nThảo luận trước đó:\n${messages.slice(-8).map(m => `${m.playerName}: "${m.message}"`).join('\n')}` : '';
+  defense(
+    player: Player,
+    state: GameState,
+    observations: string[],
+    messages: DayMessage[],
+  ): string {
+    const convo = messages.length
+      ? `\nThảo luận trước đó:\n${messages
+          .slice(-8)
+          .map((m) => `${m.playerName}: "${m.message}"`)
+          .join('\n')}`
+      : '';
     return `${taskContext(observations)}
 ${this.defenseHint(player, state)}${convo}
 MÀY ĐANG BỊ ĐƯA LÊN GIÀN! Mọi người sẽ vote giết hoặc tha mày sau khi nghe biện hộ.
@@ -220,8 +278,20 @@ NÓI 2-3 CÂU THUYẾT PHỤC. Dùng bằng chứng cụ thể, chỉ ra ai đá
 JSON: {"message":"lời biện hộ","reasoning":"phân tích tình huống + chiến thuật biện hộ"}`;
   }
 
-  judgement(player: Player, state: GameState, observations: string[], accusedName: string, defenseSpeech: string, messages: DayMessage[]): string {
-    const convo = messages.length ? `\nTóm tắt thảo luận ban ngày:\n${messages.slice(-8).map(m => `${m.playerName}: "${m.message}"`).join('\n')}` : '';
+  judgement(
+    player: Player,
+    state: GameState,
+    observations: string[],
+    accusedName: string,
+    defenseSpeech: string,
+    messages: DayMessage[],
+  ): string {
+    const convo = messages.length
+      ? `\nTóm tắt thảo luận ban ngày:\n${messages
+          .slice(-8)
+          .map((m) => `${m.playerName}: "${m.message}"`)
+          .join('\n')}`
+      : '';
     return `${taskContext(observations)}
 ${this.judgementHint(player, state)}${convo}
 PHÁN XÉT: ${accusedName} vừa biện hộ: "${defenseSpeech}"

@@ -82,13 +82,13 @@ startGame()
 
 ### Phase Details
 
-| Phase | What Happens | Resolver Methods Called |
-|-------|-------------|----------------------|
-| **Day** | Hybrid reactive discussion: each tick picks 2-3 candidates (prioritizing least-spoken), asks in parallel. Agents return `wantToSpeak: true/false`. Stops on time limit, max rounds, or 2 consecutive silent ticks. | `discuss(player, state, messages, round)` → `{message, wantToSpeak}` |
-| **Dusk** | Each alive player votes to nominate someone for trial. Most votes = accused (ties = no one). | `vote(player, state, messages)` |
-| **Judgement** | Accused gives defense speech. Others vote kill/spare. >50% kill = executed. Fool wins if executed here. | `defend(accused, state, messages)` then `judgeVote(voter, state, accusedName, defenseSpeech, messages)` |
-| **Night** | Sequential: Guard protects → Wolves attack → Witch heals/poisons → Seer investigates. Actions stored as `NightAction[]`. | `guardProtect`, `wolfKill`/`wolfDoubleKill`/`alphaInfect`, `witchAction`, `seerInvestigate` |
-| **Dawn** | Resolve night: check guard/heal blocks, apply deaths. Deaths trigger cascades (Hunter shot, Lover death, Wolf Cub revenge). | `hunterShot(hunter, state)` if Hunter dies |
+| Phase         | What Happens                                                                                                                                                                                                       | Resolver Methods Called                                                                                 |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| **Day**       | Hybrid reactive discussion: each tick picks 2-3 candidates (prioritizing least-spoken), asks in parallel. Agents return `wantToSpeak: true/false`. Stops on time limit, max rounds, or 2 consecutive silent ticks. | `discuss(player, state, messages, round)` → `{message, wantToSpeak}`                                    |
+| **Dusk**      | Each alive player votes to nominate someone for trial. Most votes = accused (ties = no one).                                                                                                                       | `vote(player, state, messages)`                                                                         |
+| **Judgement** | Accused gives defense speech. Others vote kill/spare. >50% kill = executed. Fool wins if executed here.                                                                                                            | `defend(accused, state, messages)` then `judgeVote(voter, state, accusedName, defenseSpeech, messages)` |
+| **Night**     | Sequential: Guard protects → Wolves attack → Witch heals/poisons → Seer investigates. Actions stored as `NightAction[]`.                                                                                           | `guardProtect`, `wolfKill`/`wolfDoubleKill`/`alphaInfect`, `witchAction`, `seerInvestigate`             |
+| **Dawn**      | Resolve night: check guard/heal blocks, apply deaths. Deaths trigger cascades (Hunter shot, Lover death, Wolf Cub revenge).                                                                                        | `hunterShot(hunter, state)` if Hunter dies                                                              |
 
 ### Key Mechanics
 
@@ -105,23 +105,24 @@ startGame()
 
 ### All Roles
 
-| Role | Team | Special Ability |
-|------|------|----------------|
-| `Werewolf` | Wolf | Votes to kill 1 villager each night |
-| `AlphaWolf` | Wolf | Can infect 1 player (convert to wolf) instead of killing, once per game |
-| `WolfCub` | Wolf | On death, wolves kill 2 next night (revenge) |
-| `Villager` | Village | No ability, uses logic and social deduction |
-| `Seer` | Village | Investigates 1 player per night: "Wolf" or "Not Wolf" |
-| `ApprenticeSeer` | Village | Inherits Seer power when original Seer dies |
-| `Witch` | Village | 1 heal potion (save wolf victim) + 1 kill potion (poison anyone). Each once per game |
-| `Hunter` | Village | On death (except witch poison): shoots 1 player |
-| `Guard` | Village | Protects 1 player per night from wolf kill. Can't protect same person twice in a row |
-| `Cupid` | Village | Pairs 2 players on first night. If one dies, the other dies too. Cross-team couple = Lovers team |
-| `Fool` | Village* | Wins instantly if executed by village vote. Dies normally to wolves |
+| Role             | Team      | Special Ability                                                                                  |
+| ---------------- | --------- | ------------------------------------------------------------------------------------------------ |
+| `Werewolf`       | Wolf      | Votes to kill 1 villager each night                                                              |
+| `AlphaWolf`      | Wolf      | Can infect 1 player (convert to wolf) instead of killing, once per game                          |
+| `WolfCub`        | Wolf      | On death, wolves kill 2 next night (revenge)                                                     |
+| `Villager`       | Village   | No ability, uses logic and social deduction                                                      |
+| `Seer`           | Village   | Investigates 1 player per night: "Wolf" or "Not Wolf"                                            |
+| `ApprenticeSeer` | Village   | Inherits Seer power when original Seer dies                                                      |
+| `Witch`          | Village   | 1 heal potion (save wolf victim) + 1 kill potion (poison anyone). Each once per game             |
+| `Hunter`         | Village   | On death (except witch poison): shoots 1 player                                                  |
+| `Guard`          | Village   | Protects 1 player per night from wolf kill. Can't protect same person twice in a row             |
+| `Cupid`          | Village   | Pairs 2 players on first night. If one dies, the other dies too. Cross-team couple = Lovers team |
+| `Fool`           | Village\* | Wins instantly if executed by village vote. Dies normally to wolves                              |
 
 ### Role Distribution
 
 `getRoleDistribution(playerCount, enabledRoles)` balances wolves vs village:
+
 - 6-8 players: 2 wolves
 - 9-12 players: 3 wolves
 - 13-16 players: 4 wolves
@@ -144,6 +145,7 @@ startGame()
 **File:** `packages/server/src/game/AgentManager.ts`
 
 Bridges GameMaster ↔ AgentBrains. Responsibilities:
+
 - **Setup:** Creates `Player[]` with shuffled roles, random personalities, and an `AgentBrain` per player.
 - **Memory feed:** Listens to `gameEvent` emissions → converts each event to a Vietnamese observation string via `eventToObservation()`, filtered by what each player should know (role-gated visibility).
 - **Action routing:** Implements `ActionResolver` interface — each method delegates to the correct `AgentBrain`.
@@ -152,17 +154,17 @@ Bridges GameMaster ↔ AgentBrains. Responsibilities:
 
 Not all agents see all events. `eventToObservation()` filters:
 
-| Event | Who Sees |
-|-------|---------|
-| Phase changes, deaths, day messages, votes | Everyone |
-| Seer result | Only the Seer |
-| Guard protect | Only the Guard |
-| Witch action | Only the Witch |
-| Wolf kill target | Only wolves |
-| Alpha infect | Wolves + infected target |
-| Wolf Cub revenge | Only wolves |
-| Cupid pair | Only Cupid |
-| Apprentice activation | Only the Apprentice |
+| Event                                      | Who Sees                 |
+| ------------------------------------------ | ------------------------ |
+| Phase changes, deaths, day messages, votes | Everyone                 |
+| Seer result                                | Only the Seer            |
+| Guard protect                              | Only the Guard           |
+| Witch action                               | Only the Witch           |
+| Wolf kill target                           | Only wolves              |
+| Alpha infect                               | Wolves + infected target |
+| Wolf Cub revenge                           | Only wolves              |
+| Cupid pair                                 | Only Cupid               |
+| Apprentice activation                      | Only the Apprentice      |
 
 ### AgentBrain
 
@@ -182,8 +184,8 @@ One per player. Core loop for every decision:
 
 ```typescript
 interface AgentMemory {
-  observations: string[];           // Vietnamese log of everything this agent knows
-  reflections: string[];            // (reserved, not yet used)
+  observations: string[]; // Vietnamese log of everything this agent knows
+  reflections: string[]; // (reserved, not yet used)
   knownRoles: Record<string, Role>; // (reserved, not yet used)
   suspicions: Record<string, number>; // (reserved, not yet used)
 }
@@ -217,6 +219,7 @@ All observations (e.g., 80 entries)
    - **Recent observations** are included verbatim
 
 **Prompt output example:**
+
 ```
 TÓM TẮT CÁC VÒNG TRƯỚC:
 Chết: Minh đã chết (bị sói cắn). Vai: Dân. | Lan đã chết (bị treo cổ). Vai: Sói.
@@ -231,6 +234,7 @@ NHẬT KÝ GẦN ĐÂY:
 ```
 
 **Key design choices:**
+
 - Rule-based, not LLM-based — no extra API calls, no latency, deterministic
 - Importance detection via regex patterns matching Vietnamese observation format
 - Integrated transparently: `memoryPrompt()` delegates to `compressedMemoryPrompt()`, so all prompt builders benefit automatically
@@ -243,19 +247,20 @@ Agents need structured knowledge about other players' roles — not just raw tex
 
 **What it tracks:**
 
-| Category | Source | Example |
-|----------|--------|---------|
-| Confirmed roles | Death events (`"X đã chết. Vai: Y"`) | `Lan = Sói (chết lộ role)` |
-| Seer results | Seer observations (`"Mày soi X: LÀ SÓI"`) | `Hùng = SÓI` |
-| Role claims | Chat/defense (`"tao là Thợ Săn"`) | `Hùng tự nhận Thợ Săn (vòng 3)` |
-| Accusations | Chat (`"thằng Y sói chắc luôn"`) | `Hùng (3 người tố)` |
-| ⚠ Conflicts | Claim matches agent's own role | `Hùng claim Thợ Săn nhưng MÀY mới là Thợ Săn thật → NÓI LÁO!` |
+| Category        | Source                                    | Example                                                       |
+| --------------- | ----------------------------------------- | ------------------------------------------------------------- |
+| Confirmed roles | Death events (`"X đã chết. Vai: Y"`)      | `Lan = Sói (chết lộ role)`                                    |
+| Seer results    | Seer observations (`"Mày soi X: LÀ SÓI"`) | `Hùng = SÓI`                                                  |
+| Role claims     | Chat/defense (`"tao là Thợ Săn"`)         | `Hùng tự nhận Thợ Săn (vòng 3)`                               |
+| Accusations     | Chat (`"thằng Y sói chắc luôn"`)          | `Hùng (3 người tố)`                                           |
+| ⚠ Conflicts     | Claim matches agent's own role            | `Hùng claim Thợ Săn nhưng MÀY mới là Thợ Săn thật → NÓI LÁO!` |
 
 **Extractor pattern:** Each extractor is a function `(obs, round) → Fact | null`. Adding new extractors = appending to an array, no core logic changes.
 
 **Integration:** The deduction block is injected at the `AgentBrain.ask()` level — prepended to the user prompt before every LLM call. Zero changes needed in prompt builders or the PromptBuilder interface.
 
 **Prompt output example:**
+
 ```
 PHÂN TÍCH ROLE:
 Xác nhận: Lan = Sói | Minh = Dân
@@ -305,6 +310,7 @@ BasePromptBuilder (abstract)
 **File:** `packages/server/src/agents/prompt-builders/`
 
 Each builder overrides:
+
 - `roleIdentity()` — Who you are, your secrets, your strategy
 - `discussionHint()` — How to behave during day discussion
 - `voteHint()` — How to vote (optional override)
@@ -317,6 +323,7 @@ Each builder overrides:
 **File:** `packages/server/src/agents/prompts.ts`
 
 `parseActionResponse(response, validNames)`:
+
 - Extracts first JSON object from LLM response via regex
 - Fuzzy-matches `target`, `target1`, `target2`, `player1`, `player2`, `killTarget` against valid player names (case-insensitive)
 - Falls back to random valid target if no match found
@@ -332,13 +339,13 @@ All LLM responses are expected as JSON: `{"target":"Name","reasoning":"..."}` (v
 
 16 predefined personalities, each with:
 
-| Field | Purpose |
-|-------|---------|
-| `id` | Unique key (e.g., `aggressive`, `analyst`) |
-| `name` | Display name (e.g., `Blaze`, `Sage`) |
-| `trait` | Vietnamese trait description injected into system prompt |
-| `speechStyle` | Vietnamese speech pattern instructions |
-| `emoji` | Visual identifier |
+| Field         | Purpose                                                  |
+| ------------- | -------------------------------------------------------- |
+| `id`          | Unique key (e.g., `aggressive`, `analyst`)               |
+| `name`        | Display name (e.g., `Blaze`, `Sage`)                     |
+| `trait`       | Vietnamese trait description injected into system prompt |
+| `speechStyle` | Vietnamese speech pattern instructions                   |
+| `emoji`       | Visual identifier                                        |
 
 Examples: aggressive accuser 🔥, calm analyst 🧠, suspicious detective 🔍, silent ghost 👻, trickster fox 🦊.
 
@@ -358,6 +365,7 @@ interface LLMProvider {
 ```
 
 Supported types:
+
 - `openai` / `openai-compatible` — OpenAI SDK (works with any OpenAI-compatible API)
 - `anthropic` — Anthropic SDK
 - `ollama` — Local Ollama instance
@@ -376,32 +384,32 @@ Express + Socket.IO server. Communication flow:
 
 ### Socket Events (Client → Server)
 
-| Event | Payload | Action |
-|-------|---------|--------|
-| `create_game` | `GameConfig` | Creates GameMaster + AgentManager, sets up players |
-| `start_game` | — | Starts the game loop (async, runs in background) |
-| `pause_game` | — | Pauses auto-play |
-| `resume_game` | — | Resumes auto-play |
-| `step_game` | — | Advances one step in manual mode |
-| `set_spectator_mode` | `'god' \| 'fog'` | God = see all events; Fog = public events only |
+| Event                | Payload          | Action                                             |
+| -------------------- | ---------------- | -------------------------------------------------- |
+| `create_game`        | `GameConfig`     | Creates GameMaster + AgentManager, sets up players |
+| `start_game`         | —                | Starts the game loop (async, runs in background)   |
+| `pause_game`         | —                | Pauses auto-play                                   |
+| `resume_game`        | —                | Resumes auto-play                                  |
+| `step_game`          | —                | Advances one step in manual mode                   |
+| `set_spectator_mode` | `'god' \| 'fog'` | God = see all events; Fog = public events only     |
 
 ### Socket Events (Server → Client)
 
-| Event | When |
-|-------|------|
-| `game_event` | Every GameEvent (filtered by god/fog view) |
+| Event        | When                                                          |
+| ------------ | ------------------------------------------------------------- |
+| `game_event` | Every GameEvent (filtered by god/fog view)                    |
 | `game_state` | On phase changes, game start, game over (full state snapshot) |
-| `error` | On any error |
+| `error`      | On any error                                                  |
 
 ### REST Endpoints
 
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /api/health` | Health check |
-| `GET /api/personalities` | List all 16 personalities |
-| `GET /api/default-provider` | Get env-configured default provider |
-| `GET /api/roles/:count` | Preview role distribution for N players |
-| `POST /api/providers/test` | Test an LLM provider connection |
+| Endpoint                    | Purpose                                 |
+| --------------------------- | --------------------------------------- |
+| `GET /api/health`           | Health check                            |
+| `GET /api/personalities`    | List all 16 personalities               |
+| `GET /api/default-provider` | Get env-configured default provider     |
+| `GET /api/roles/:count`     | Preview role distribution for N players |
+| `POST /api/providers/test`  | Test an LLM provider connection         |
 
 ---
 
@@ -410,26 +418,26 @@ Express + Socket.IO server. Communication flow:
 ```typescript
 interface GameState {
   id: string;
-  config: GameConfig;                // includes discussionRounds, discussionTimeLimitMs, phaseDelay
-  phase: Phase;                    // Lobby|Night|Dawn|Day|Dusk|Judgement|GameOver
+  config: GameConfig; // includes discussionRounds, discussionTimeLimitMs, phaseDelay
+  phase: Phase; // Lobby|Night|Dawn|Day|Dusk|Judgement|GameOver
   round: number;
-  players: Player[];               // All players with role, alive status, personality
-  events: GameEvent[];             // Full event log
-  nightActions: NightAction[];     // Current night's actions
-  votes: Vote[];                   // Current dusk nomination votes
-  witchPotions: WitchPotions;      // {healUsed, killUsed}
-  lastGuardedId: string | null;    // Guard can't protect same person twice
+  players: Player[]; // All players with role, alive status, personality
+  events: GameEvent[]; // Full event log
+  nightActions: NightAction[]; // Current night's actions
+  votes: Vote[]; // Current dusk nomination votes
+  witchPotions: WitchPotions; // {healUsed, killUsed}
+  lastGuardedId: string | null; // Guard can't protect same person twice
   winner: Team | 'Fool' | null;
   isPaused: boolean;
   discussionMessages: DayMessage[];
-  accusedId: string | null;        // Who's on trial in Judgement
+  accusedId: string | null; // Who's on trial in Judgement
   defenseSpeech: DefenseMessage | null;
   judgementVotes: JudgementVote[];
-  pendingDeaths: {playerId, playerName, cause}[];  // Night deaths awaiting Dawn
-  couple: CoupleState | null;      // Cupid pair
+  pendingDeaths: { playerId; playerName; cause }[]; // Night deaths awaiting Dawn
+  couple: CoupleState | null; // Cupid pair
   alphaInfectUsed: boolean;
   wolfCubDead: boolean;
-  wolfCubRevengeActive: boolean;   // Wolves kill 2 this night
+  wolfCubRevengeActive: boolean; // Wolves kill 2 this night
   originalSeerDead: boolean;
   apprenticeSeerActivated: boolean;
 }

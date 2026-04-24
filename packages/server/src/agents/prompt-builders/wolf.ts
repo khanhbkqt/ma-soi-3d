@@ -2,17 +2,17 @@ import { Player, GameState, isWolfRole } from '@ma-soi/shared';
 import { BasePromptBuilder, taskContext, roleNameVi } from './base.js';
 
 function wolfTeammates(player: Player, state: GameState): string {
-  const wolves = state.players.filter(p => isWolfRole(p.role) && p.id !== player.id);
-  const alive = wolves.filter(p => p.alive);
-  const dead = wolves.filter(p => !p.alive);
-  let s = `Đồng bọn sói: ${alive.length ? alive.map(w => `${w.name}(${roleNameVi(w.role)})`).join(', ') : 'không còn ai'}`;
-  if (dead.length) s += ` | Đã chết: ${dead.map(w => w.name).join(', ')}`;
+  const wolves = state.players.filter((p) => isWolfRole(p.role) && p.id !== player.id);
+  const alive = wolves.filter((p) => p.alive);
+  const dead = wolves.filter((p) => !p.alive);
+  let s = `Đồng bọn sói: ${alive.length ? alive.map((w) => `${w.name}(${roleNameVi(w.role)})`).join(', ') : 'không còn ai'}`;
+  if (dead.length) s += ` | Đã chết: ${dead.map((w) => w.name).join(', ')}`;
   return s;
 }
 
 function formatWolfDiscussion(discussion: { playerName: string; message: string }[]): string {
   if (!discussion.length) return '';
-  return `\nTHẢO LUẬN NỘI BỘ SÓI:\n${discussion.map(m => `${m.playerName}: "${m.message}"`).join('\n')}\n`;
+  return `\nTHẢO LUẬN NỘI BỘ SÓI:\n${discussion.map((m) => `${m.playerName}: "${m.message}"`).join('\n')}\n`;
 }
 
 export class WolfPromptBuilder extends BasePromptBuilder {
@@ -57,9 +57,9 @@ BREAK THE PATTERN (Chống rập khuôn): Thỉnh thoảng hãy vote một cách
   }
 
   judgementHint(player: Player, state: GameState): string {
-    const wolfIds = new Set(state.players.filter(p => isWolfRole(p.role)).map(p => p.id));
+    const wolfIds = new Set(state.players.filter((p) => isWolfRole(p.role)).map((p) => p.id));
     const accusedIsWolf = state.accusedId ? wolfIds.has(state.accusedId) : false;
-    const aliveWolves = state.players.filter(p => isWolfRole(p.role) && p.alive).length;
+    const aliveWolves = state.players.filter((p) => isWolfRole(p.role) && p.alive).length;
     if (accusedIsWolf) {
       return `MÀY LÀ SÓI. Bị cáo là ĐỒNG BỌN SÓI.
 Thí tốt hay Cứu?
@@ -78,13 +78,18 @@ BREAK THE PATTERN (Phá vỡ rập khuôn): Thỉnh thoảng (tỉ lệ nhỏ), 
 
   // ── Night actions ──
 
-  wolfDiscussionHint(player: Player, state: GameState, observations: string[], messages: { playerName: string; message: string }[]): string {
-    const targets = state.players.filter(p => p.alive && !isWolfRole(p.role));
-    const chat = messages.map(m => `${m.playerName}: "${m.message}"`).join('\n');
+  wolfDiscussionHint(
+    player: Player,
+    state: GameState,
+    observations: string[],
+    messages: { playerName: string; message: string }[],
+  ): string {
+    const targets = state.players.filter((p) => p.alive && !isWolfRole(p.role));
+    const chat = messages.map((m) => `${m.playerName}: "${m.message}"`).join('\n');
     return `${taskContext(observations)}
 ${wolfTeammates(player, state)}
 Đây là cuộc họp kín phe sói ban đêm. Bàn bạc chọn ai để cắn.
-Con mồi: ${targets.map(t => t.name).join(', ')}
+Con mồi: ${targets.map((t) => t.name).join(', ')}
 ${chat ? `Đồng bọn đã nói:\n${chat}\n` : ''}Chiến thuật chọn mồi (Bắt bài Bảo Vệ & Phù Thủy):
 - Tránh cắn đứa vừa được cứu đêm trước, hoặc đứa đang nổi nhất làng (rất dễ bị Bảo Vệ kê khiên).
 - Cắt đứt "đầu tàu" (đứa hay lead làng) để tụi dân như rắn mất đầu cắn xé nhau.
@@ -94,8 +99,13 @@ Nói 1-2 câu ngắn gọn: đề xuất target + lý do.
 JSON: {"message":"lời nói"}`;
   }
 
-  wolfKill(player: Player, state: GameState, observations: string[], discussion: { playerName: string; message: string }[] = []): string {
-    const targets = state.players.filter(p => p.alive && !isWolfRole(p.role));
+  wolfKill(
+    player: Player,
+    state: GameState,
+    observations: string[],
+    discussion: { playerName: string; message: string }[] = [],
+  ): string {
+    const targets = state.players.filter((p) => p.alive && !isWolfRole(p.role));
     return `${taskContext(observations)}
 ${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 Chọn 1 người để cắn đêm nay.
@@ -105,12 +115,17 @@ Chọn 1 người để cắn đêm nay.
 3. Đứa vừa được cứu hôm qua (Bảo Vệ không được cứu 2 lần liên tiếp cùng 1 người).
 4. "Đầu tàu" dẫn dắt làng (để làng như rắn mất đầu).
 TRÁNH CẮN: Mấy con "cừu ngu" đang vote bậy (giữ lại làm bia đỡ đạn vòng sau), đứa nổi nhất làng (dễ bị kê khiên).
-Danh sách con mồi: ${targets.map(t => t.name).join(', ')}
+Danh sách con mồi: ${targets.map((t) => t.name).join(', ')}
 JSON: {"target":"Tên","reasoning":"phân tích target priority"}`;
   }
 
-  wolfDoubleKill(player: Player, state: GameState, observations: string[], discussion: { playerName: string; message: string }[] = []): string {
-    const targets = state.players.filter(p => p.alive && !isWolfRole(p.role));
+  wolfDoubleKill(
+    player: Player,
+    state: GameState,
+    observations: string[],
+    discussion: { playerName: string; message: string }[] = [],
+  ): string {
+    const targets = state.players.filter((p) => p.alive && !isWolfRole(p.role));
     return `${taskContext(observations)}
 ${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 SÓI CON ĐÃ CHẾT! Đêm nay sói được cắn 2 NGƯỜI để trả thù!
@@ -118,7 +133,7 @@ Suy nghĩ chọn 2 target (trong reasoning):
 - Target 1: Cắt "đầu tàu" nguy hiểm (Tiên Tri, Phù Thủy, người dẫn dắt dân).
 - Target 2: Đứa "trung bình" để né khiên Bảo Vệ, hoặc đánh bồi 1 đứa mà Bảo Vệ có thể đỡ Target 1 (để chắc chắn 1 mạng ngã xuống).
 - Đừng phí mạng vào bọn "cừu ngu" đang bị cả làng nghi ngờ.
-Danh sách: ${targets.map(t => t.name).join(', ')}
+Danh sách: ${targets.map((t) => t.name).join(', ')}
 JSON: {"target1":"Tên1","target2":"Tên2","reasoning":"phân tích chọn 2 target"}`;
   }
 }
@@ -140,8 +155,13 @@ CHIẾN LƯỢC LÂY NHIỄM:
 - KHÔNG lây nhiễm Tiên Tri (nó soi rồi sẽ biết mày là sói) hoặc mấy con cừu ngu sắp bị treo cổ.`;
   }
 
-  alphaInfect(player: Player, state: GameState, observations: string[], discussion: { playerName: string; message: string }[] = []): string {
-    const targets = state.players.filter(p => p.alive && !isWolfRole(p.role));
+  alphaInfect(
+    player: Player,
+    state: GameState,
+    observations: string[],
+    discussion: { playerName: string; message: string }[] = [],
+  ): string {
+    const targets = state.players.filter((p) => p.alive && !isWolfRole(p.role));
     return `${taskContext(observations)}
 ${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 MÀY LÀ SÓI ĐẦU ĐÀN. Chọn: cắn bình thường hay LÂY NHIỄM (biến thành sói, dùng 1 lần duy nhất)?
@@ -149,7 +169,7 @@ Suy nghĩ trong reasoning:
 - LÂY NHIỄM khi: target là role cực mạnh (Bảo Vệ, Thợ Săn), hoặc người đang tin tưởng mày (pocketing → biến thành đồng minh thật).
 - CẮN THƯỜNG khi: Cần triệt tiêu gốc rễ (Tiên Tri đã come out), hoặc "đầu tàu" của làng.
 - KHÔNG lây nhiễm: Tiên Tri (nó đã biết mày sói), người sắp bị vote chết, hoặc mấy đứa cừu ngu không có giá trị.
-Danh sách: ${targets.map(t => t.name).join(', ')}
+Danh sách: ${targets.map((t) => t.name).join(', ')}
 JSON: {"target":"Tên","infect":true/false,"reasoning":"phân tích infect vs kill"}`;
   }
 }

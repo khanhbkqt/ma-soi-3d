@@ -28,7 +28,7 @@ Chỉ ra đứa đáng nghi nhất và hét lên: "Giết tao là làng mù mắ
   }
 
   seerInvestigate(player: Player, state: GameState, observations: string[]): string {
-    const targets = state.players.filter(p => p.alive && p.id !== player.id);
+    const targets = state.players.filter((p) => p.alive && p.id !== player.id);
     return `${taskContext(observations)}
 Chọn 1 người để soi đêm nay → kết quả "Sói" hoặc "Không phải Sói".
 TƯ DUY CHỌN MỤC TIÊU (IMPACT LỚN NHẤT):
@@ -36,7 +36,7 @@ TƯ DUY CHỌN MỤC TIÊU (IMPACT LỚN NHẤT):
 2. Kẻ tự nhận vai trò quan trọng (claim role) để xác minh xem có xạo lờ không.
 3. Kẻ hùa theo đám đông, núp lùm im lặng.
 (Tuyệt đối không soi người đã chết lộ role hoặc người đã soi rồi).
-Danh sách: ${targets.map(t => t.name).join(', ')}
+Danh sách: ${targets.map((t) => t.name).join(', ')}
 JSON: {"target":"Tên","reasoning":"lý do chọn target"}`;
   }
 }

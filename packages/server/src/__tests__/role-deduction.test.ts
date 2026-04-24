@@ -5,7 +5,9 @@ import { RoleDeductionTracker } from '../agents/role-deduction.js';
 describe('RoleDeductionTracker', () => {
   let tracker: RoleDeductionTracker;
 
-  beforeEach(() => { tracker = new RoleDeductionTracker(); });
+  beforeEach(() => {
+    tracker = new RoleDeductionTracker();
+  });
 
   it('extracts death with role reveal', () => {
     tracker.ingest('Minh đã chết (bị sói cắn). Vai: Dân.');

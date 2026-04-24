@@ -3,7 +3,11 @@ import { Player, GameState, GameConfig, Phase, Role, Team, AgentPersonality } fr
 import { GameMaster, ActionResolver } from '../game/GameMaster.js';
 
 const DEFAULT_PERSONALITY: AgentPersonality = {
-  id: 'test', name: 'Test', trait: 'test', speechStyle: 'test', emoji: '🧪',
+  id: 'test',
+  name: 'Test',
+  trait: 'test',
+  speechStyle: 'test',
+  emoji: '🧪',
 };
 
 let _counter = 0;
@@ -84,7 +88,11 @@ export function createMockResolver(overrides: Partial<ActionResolver> = {}): Act
 }
 
 /** Create a GameMaster with state initialized and resolver set. Ready to call private phase methods. */
-export function createTestGM(players: Player[], resolverOverrides: Partial<ActionResolver> = {}, stateOverrides: Partial<GameState> = {}) {
+export function createTestGM(
+  players: Player[],
+  resolverOverrides: Partial<ActionResolver> = {},
+  stateOverrides: Partial<GameState> = {},
+) {
   const gm = new GameMaster();
   const config = createMockConfig({ playerCount: players.length });
   gm.createGame(config, players);
