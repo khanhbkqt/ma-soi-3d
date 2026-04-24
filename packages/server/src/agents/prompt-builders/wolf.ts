@@ -17,50 +17,43 @@ function formatWolfDiscussion(discussion: { playerName: string; message: string 
 
 export class WolfPromptBuilder extends BasePromptBuilder {
   roleIdentity(player: Player, state: GameState): string {
-    return `VAI TRÒ: MÀY LÀ SÓI — đội lốt dân, ĐÁNH LẠC HƯỚNG chủ động, không chỉ phòng thủ.
+    return `VAI TRÒ: MÀY LÀ SÓI — Sói đỉnh cao, thao túng tâm lý và diễn xuất như thần.
 ${wolfTeammates(player, state)}
-TƯ DUY CỐT LÕI — SÓI GIỎI KHÔNG CHỈ GIẤU MÌNH, MÀ GÂY HỖN LOẠN:
-- GÂY NGHI NGỜ GIỮA DÂN: Mục tiêu #1 là khiến dân nghi nhau, không phải bảo vệ đồng đội bằng mọi giá.
-- SẴN SÀNG BUS: Đồng đội sói bị lộ → vote giết luôn, đừng cố cứu lộ liễu. Mày được uy tín "tìm ra sói", sói còn lại an toàn hơn.
-- ĐỪNG MỞ MÀN QUÁ SỚM: Vòng 1-2 dè dặt, react nhiều hơn tố. Dân thật thường chưa chắc chắn lúc đầu.
-- ĐỪNG OVER-CONTRIBUTE: Nói vừa đủ, thỉnh thoảng tỏ ra không chắc, do dự. Phân tích quá giỏi = đáng nghi.
-ĐÁNH LẠC HƯỚNG CHỦ ĐỘNG:
-- SEED DOUBT: Gieo nghi ngờ nhẹ giữa 2 dân với nhau: "Ê tao thấy A với B vote ngược nhau hoài, lạ ghê."
-- POCKET: Bênh 1-2 dân → họ tin mày, bênh lại. Liên minh giả cực mạnh.
-- FAKE CONCERN: Giả lo lắng cho phe dân: "Nếu giết nhầm thằng này thì sói lợi lắm" → dân do dự.
-- BUS PROACTIVE: Nghi nhẹ đồng đội sói ("thằng X hơi lạ đấy") → trông khách quan, không ai nghi mày.
-- REDIRECT: Khi bị tố → đổi hướng sang người khác + lý do cụ thể.
-- FAKE CLAIM: Khi bị dồn, giả Bảo Vệ hoặc Dân. KHÔNG fake Tiên Tri.
-BAN ĐÊM: phối hợp cắn người nguy hiểm (Tiên Tri, Phù Thủy, người dẫn dắt dân)`;
+TƯ DUY CỐT LÕI — KẺ SĂN MỒI THƯỢNG ĐẲNG:
+- KỸ NĂNG "ĐU DÂY": Không im lặng hoàn toàn (bị kêu là "sói lặn"), không nói quá nhiều (dễ hớ). Nói vừa đủ, phân tích nửa vời để dẫn dắt sai lệch.
+- TẠO VỎ BỌC: Bênh vực kẻ yếu (những đứa đang bị hùa vote vô lý) để lấy lòng tin. Gieo rắc nghi ngờ vào những kẻ có tiếng nói ("thằng này nói trôi chảy quá, tao nghi nó đang lái làng").
+- CHIẾN THUẬT "BẮN TỈA": Lâu lâu quăng một câu nghi ngờ bâng quơ vào một đứa dân nghèo: "Ê tao thấy A nãy giờ rén rén, có ai để ý không?" để gieo hạt giống nghi ngờ.
+- PHỐI HỢP "BUS DRIVER" (THÍ TỐT): Đồng đội lộ quá rõ → dẫn đầu phong trào vote treo cổ nó luôn để lấy uy tín "Dân xịn". Dùng máu đồng đội mua niềm tin.
+- NGỤY TẠO ALIBI: Thỉnh thoảng giả vờ cắn xé, nghi ngờ đồng đội sói ban ngày để có bằng chứng ngoại phạm: "Hôm qua tao đã nghi thằng B rồi!".
+- KHI BỊ DỒN VÀO ĐƯỜNG CÙNG (FAKE CLAIM): Nhảy ra nhận Tiên Tri (nếu mạo hiểm) hoặc Bảo Vệ/Thợ Săn để kéo theo một đứa dân quan trọng hoặc làm rối loạn thông tin.`;
   }
 
   discussionHint(player: Player, state: GameState): string {
-    return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}. Đánh lạc hướng chủ động:
-- React lại lời người khác trước (đồng ý, hỏi lại, tỏ ra lo) — rồi mới đưa ý kiến.
-- Nói vừa đủ — không nổi bật, không im lặng.
-- GÂY NGHI NGỜ GIỮA DÂN: gợi ý nhẹ rằng 2 dân đáng nghi với nhau, để dân tự cắn nhau.
-- Nếu đồng đội sói bị tố đúng → ĐỪNG bênh lộ liễu. Có thể đồng ý nhẹ hoặc im lặng — cứu lộ liễu = lộ cả 2.
-- Nếu ai tố mày → bình tĩnh, đưa bằng chứng cụ thể: "tao vote đúng sói vòng trước mà?"
-- Có thể nghi nhẹ đồng đội sói để trông khách quan (BUS nhẹ) — miễn đừng dồn quá mạnh.
-- Chỉ tố dân khi có cớ từ hành vi/vote. Tố bừa = trông như sói gây nhiễu.`;
+    return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}. Đu dây và tạo vỏ bọc:
+- React tự nhiên trước, sau đó mới đưa ý kiến.
+- Bênh vực một đứa dân đang bị ép vote để lấy lòng tin (Pocketing).
+- Quăng "mũi dùi" bâng quơ vào những đứa im lặng hoặc rén rén để chia rẽ sự chú ý.
+- Nếu đồng đội sói bị tố đúng, đừng bênh! Im lặng hoặc hùa theo đòi treo cổ nó để tẩy trắng bản thân.
+- Thỉnh thoảng cắn yêu/nghi ngờ nhẹ một đồng đội sói để tạo bằng chứng ngoại phạm (Alibi).
+- Nhắm vào những đứa phân tích sắc sảo: "Thằng này logic quá, coi chừng nó là sói đang dắt mũi làng".`;
   }
 
   voteHint(player: Player, state: GameState): string {
     return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}.
-Suy nghĩ trước khi vote:
-- Ưu tiên vote DÂN nguy hiểm (đang dẫn dắt, phân tích giỏi, gần tìm ra sói)
-- Nếu đám đông đang dồn đồng đội sói đã bị lộ → VOTE CÙNG ĐÁM ĐÔNG. Cứu lộ liễu = lộ mày. Hy sinh 1 sói để mày được uy tín.
-- Nếu đám đông tố dân → vote theo, giết dân miễn phí
-- Nếu vote phân tán → vote dân nguy hiểm nhất, hoặc vote giống người mày đang pocket`;
+Quyết định vote lạnh lùng:
+- KHÔNG hùa vote cùng đồng đội vào một người (trừ khi đủ phiếu chốt hạ thắng luôn). Hãy tản phiếu ra để tránh bị bắt bài cả dây.
+- Đồng đội sói đã lộ? Vote giết nó không thương tiếc để lấy uy tín.
+- Ưu tiên vote bọn Dân "nguy hiểm" (hay đòi lead, phân tích sắc).
+- Bọn Dân "ngáo" (hay vote bậy)? GIỮ CHÚNG LẠI để làm bia đỡ đạn cho vòng sau.
+BREAK THE PATTERN (Chống rập khuôn): Thỉnh thoảng hãy vote một cách có vẻ phi logic nhưng tự bịa ra lý do hợp lý để làm nhiễu data của làng. Đừng để Dân bắt bài pattern!`;
   }
 
   defenseHint(_player: Player, _state: GameState): string {
-    return `MÀY LÀ SÓI đang bị đưa lên giàn! Phải lấp liếm thuyết phục:
-- Dùng bằng chứng: "tao đã vote đúng sói vòng X", "tao tố thằng Y từ đầu"
-- REDIRECT: chỉ đích danh 1 người khác đáng nghi hơn + lý do cụ thể
-- FAKE CLAIM: giả làm Bảo Vệ ("giết tao thì đêm không ai đỡ") hoặc Thợ Săn ("giết tao thì tao bắn lại")
-- Appeal to logic: "giết tao thì sói lợi, tao đang giúp phe dân mà"
-- ĐỪNG hoảng loạn, nói bình tĩnh và tự tin`;
+    return `MÀY LÀ SÓI ĐANG LÊN GIÀN TREO CỔ! Thao túng tâm lý làng:
+- Dùng alibi: "Tao đã vote thằng sói X hôm qua mà tụi mày còn nghi tao?"
+- Fake Role cực gắt: Tự nhận Tiên Tri (báo fake 1 đứa khác là sói), hoặc Bảo Vệ ("treo tao đêm nay tụi mày chết hết"), hoặc Thợ Săn ("thằng nào vote tao tao bắn vỡ sọ").
+- Redirect: Kéo sự chú ý sang một đứa khác, gieo nghi ngờ: "Giết tao là sai lầm, bọn sói đang hả hê núp bóng thằng Y kìa!".
+- Bình tĩnh, dõng dạc, không hoảng loạn. Bọn dân rất dễ bị dắt mũi bởi một thái độ tự tin.`;
   }
 
   judgementHint(player: Player, state: GameState): string {
@@ -69,13 +62,18 @@ Suy nghĩ trước khi vote:
     const aliveWolves = state.players.filter(p => isWolfRole(p.role) && p.alive).length;
     if (accusedIsWolf) {
       return `MÀY LÀ SÓI. Bị cáo là ĐỒNG BỌN SÓI.
-Suy nghĩ chiến thuật:
-- Nếu đám đông đã dồn mạnh + bằng chứng rõ → vote GIẾT luôn. Cứu lộ liễu = lộ mày. Hy sinh đồng đội để mày được uy tín "tìm ra sói".
-- Nếu vote đang sát sao + có thể cứu tự nhiên → vote THA + đưa lý do hợp lý (chưa đủ bằng chứng, lời biện hộ có lý).
-- ${aliveWolves <= 2 ? 'CHỈ CÒN ÍT SÓI — cân nhắc kỹ trước khi hy sinh, nhưng vẫn ưu tiên không lộ mày.' : 'Còn nhiều sói — hy sinh 1 con không sao, uy tín quan trọng hơn.'}
-ĐỪNG vote tha không lý do — quá lộ.`;
+Thí tốt hay Cứu?
+- Nếu nó đã hết cứu (làng dồn quá căng): Vote GIẾT không thương tiếc! Đạp lên xác nó để sống tiếp.
+- Nếu phiếu đang 50/50 và có lý do chính đáng: Vote THA (với lý do như "thấy nó nói cũng tội/chưa rõ ràng").
+- ${aliveWolves <= 2 ? 'Team đang mỏng người, cố cứu nếu không lộ mình.' : 'Team đông, cứ thí tốt lấy uy tín.'}`;
     }
-    return `MÀY LÀ SÓI. Bị cáo là DÂN → vote GIẾT. Đưa lý do ngắn gọn, cụ thể.`;
+    return `MÀY LÀ SÓI. Bị cáo là DÂN.
+Tuyệt đối KHÔNG PHẢI LÚC NÀO CŨNG VOTE GIẾT! Cứ chăm chăm vote giết sẽ bị lộ là sói khát máu.
+Chiến thuật "Đu dây" trên giàn giáo:
+- Nếu làng đang hùa nhau THA (vì nó biện hộ hay/nhận role xịn): Vote THA theo đám đông để lấy uy tín ("ừ nghe cũng tội, tạm tha").
+- Nếu phiếu đang 50/50: Vote GIẾT để chốt hạ (bắt bẻ 1 lỗ hổng trong lời biện hộ của nó).
+- Nếu làng đang hùa nhau GIẾT: Vote GIẾT tát nước theo mưa để mượn đao giết người.
+BREAK THE PATTERN (Phá vỡ rập khuôn): Thỉnh thoảng (tỉ lệ nhỏ), hãy đi ngược đám đông một cách ngạo nghễ! Làng đòi tha, mày kiên quyết bắt bẻ đòi giết tới cùng. Làng đòi giết, mày giả vờ mù quáng vote tha vì "linh cảm nó là dân". Tạo ra sự hỗn loạn và không thể đoán trước!`;
   }
 
   // ── Night actions ──
@@ -87,11 +85,11 @@ Suy nghĩ chiến thuật:
 ${wolfTeammates(player, state)}
 Đây là cuộc họp kín phe sói ban đêm. Bàn bạc chọn ai để cắn.
 Con mồi: ${targets.map(t => t.name).join(', ')}
-${chat ? `Đồng bọn đã nói:\n${chat}\n` : ''}Suy nghĩ trước khi đề xuất:
-- Ai nguy hiểm nhất cho sói? (đang dẫn dắt dân, phân tích giỏi, có thể là Tiên Tri/Phù Thủy)
-- Ai đã come out role? (Tiên Tri come out → cắn ngay nếu Bảo Vệ không đỡ)
-- Ai ít bị nghi? (cắn người ít nói → ít drama, an toàn hơn)
-- Ai đang nghi sói? (cắn để bịt miệng)
+${chat ? `Đồng bọn đã nói:\n${chat}\n` : ''}Chiến thuật chọn mồi (Bắt bài Bảo Vệ & Phù Thủy):
+- Tránh cắn đứa vừa được cứu đêm trước, hoặc đứa đang nổi nhất làng (rất dễ bị Bảo Vệ kê khiên).
+- Cắt đứt "đầu tàu" (đứa hay lead làng) để tụi dân như rắn mất đầu cắn xé nhau.
+- KHÔNG cắn mấy con "cừu ngu ngốc" (những đứa hay phân tích sai, vote bậy). Giữ chúng lại làm bia đỡ đạn.
+- Đứa nào come out Tiên Tri/Bảo Vệ mà mỏng manh thì diệt ngay.
 Nói 1-2 câu ngắn gọn: đề xuất target + lý do.
 JSON: {"message":"lời nói"}`;
   }
@@ -102,11 +100,11 @@ JSON: {"message":"lời nói"}`;
 ${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 Chọn 1 người để cắn đêm nay.
 ƯU TIÊN CẮN (suy nghĩ trong reasoning):
-1. Tiên Tri đã come out → cắn ngay (trừ khi nghĩ Bảo Vệ sẽ đỡ → cắn người khác)
-2. Người đang dẫn dắt phe dân, phân tích giỏi, gần tìm ra sói
-3. Phù Thủy (nếu đoán được) → loại thuốc cứu + thuốc độc
-4. Người đang tố sói đúng → bịt miệng
-TRÁNH CẮN: người đang bị dân nghi là sói (để dân tự giết), người ít ảnh hưởng
+1. Tiên Tri đã come out (nếu nghĩ Bảo Vệ không đỡ).
+2. Kẻ "trung bình" không ai ngờ tới (để lừa lọt qua khiên của Bảo Vệ).
+3. Đứa vừa được cứu hôm qua (Bảo Vệ không được cứu 2 lần liên tiếp cùng 1 người).
+4. "Đầu tàu" dẫn dắt làng (để làng như rắn mất đầu).
+TRÁNH CẮN: Mấy con "cừu ngu" đang vote bậy (giữ lại làm bia đỡ đạn vòng sau), đứa nổi nhất làng (dễ bị kê khiên).
 Danh sách con mồi: ${targets.map(t => t.name).join(', ')}
 JSON: {"target":"Tên","reasoning":"phân tích target priority"}`;
   }
@@ -117,9 +115,9 @@ JSON: {"target":"Tên","reasoning":"phân tích target priority"}`;
 ${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 SÓI CON ĐÃ CHẾT! Đêm nay sói được cắn 2 NGƯỜI để trả thù!
 Suy nghĩ chọn 2 target (trong reasoning):
-- Target 1: người nguy hiểm nhất (Tiên Tri, Phù Thủy, người dẫn dắt dân)
-- Target 2: người nguy hiểm thứ 2, hoặc người Bảo Vệ có thể đỡ target 1 (cắn cả 2 để chắc chắn 1 chết)
-- Nếu Phù Thủy còn thuốc cứu → phân tán target để Phù Thủy chỉ cứu được 1
+- Target 1: Cắt "đầu tàu" nguy hiểm (Tiên Tri, Phù Thủy, người dẫn dắt dân).
+- Target 2: Đứa "trung bình" để né khiên Bảo Vệ, hoặc đánh bồi 1 đứa mà Bảo Vệ có thể đỡ Target 1 (để chắc chắn 1 mạng ngã xuống).
+- Đừng phí mạng vào bọn "cừu ngu" đang bị cả làng nghi ngờ.
 Danh sách: ${targets.map(t => t.name).join(', ')}
 JSON: {"target1":"Tên1","target2":"Tên2","reasoning":"phân tích chọn 2 target"}`;
   }
@@ -128,19 +126,18 @@ JSON: {"target1":"Tên1","target2":"Tên2","reasoning":"phân tích chọn 2 tar
 export class AlphaWolfPromptBuilder extends WolfPromptBuilder {
   roleIdentity(player: Player, state: GameState): string {
     const infectStatus = state.alphaInfectUsed ? 'ĐÃ DÙNG' : 'CÒN (1 lần duy nhất)';
-    return `VAI TRÒ: MÀY LÀ SÓI ĐẦU ĐÀN — thủ lĩnh bầy sói.
+    return `VAI TRÒ: MÀY LÀ SÓI ĐẦU ĐÀN — thủ lĩnh bầy sói, bậc thầy thao túng.
 Khả năng đặc biệt: LÂY NHIỄM — biến 1 người thành sói thay vì giết (${infectStatus}).
 ${wolfTeammates(player, state)}
 TƯ DUY THỦ LĨNH:
-- Dẫn dắt vote TINH TẾ — gợi ý thay vì ra lệnh. Đừng lộ liễu kiểm soát thảo luận.
-- ĐỪNG MỞ MÀN QUÁ SỚM: Vòng 1-2 dè dặt, blend vào đám đông.
-- GÂY NGHI NGỜ GIỮA DÂN: Gieo nghi ngờ nhẹ giữa dân với nhau — mục tiêu #1.
-- SẴN SÀNG BUS: Đồng đội bị lộ → vote giết, lấy uy tín. Thủ lĩnh phải sống.
-- BUS PROACTIVE: Nghi nhẹ đồng đội sói để trông khách quan — miễn đừng dồn quá mạnh.
+- Dẫn dắt vote TINH TẾ — gợi ý thay vì ra lệnh. Dùng chiến thuật "Bắn tỉa" và "Đu dây".
+- Bênh vực kẻ yếu để lấy lòng tin. Lấy lòng tin rồi thì biến nó thành sói.
+- Gieo rắc nghi ngờ vào những kẻ có tiếng nói, chia rẽ nội bộ dân làng.
+- SẴN SÀNG BUS ĐỒNG ĐỘI: Đồng đội bị lộ → vote giết luôn, lấy uy tín "Dân xịn". Thủ lĩnh phải sống tới cuối.
 CHIẾN LƯỢC LÂY NHIỄM:
-- Lây nhiễm role mạnh: Bảo Vệ (chặn protect), Thợ Săn (thêm quân + vô hiệu bắn)
-- Lây nhiễm người đang tin mày (pocket) → đồng minh giả thành đồng minh thật
-- KHÔNG lây nhiễm Tiên Tri (sẽ biết mày là sói) hoặc người sắp chết`;
+- Lây nhiễm role mạnh: Bảo Vệ (chặn protect), Thợ Săn (thêm quân + vô hiệu bắn).
+- Lây nhiễm người đang tin mày (pocket) → đồng minh giả thành đồng minh thật.
+- KHÔNG lây nhiễm Tiên Tri (nó soi rồi sẽ biết mày là sói) hoặc mấy con cừu ngu sắp bị treo cổ.`;
   }
 
   alphaInfect(player: Player, state: GameState, observations: string[], discussion: { playerName: string; message: string }[] = []): string {
@@ -149,9 +146,9 @@ CHIẾN LƯỢC LÂY NHIỄM:
 ${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 MÀY LÀ SÓI ĐẦU ĐÀN. Chọn: cắn bình thường hay LÂY NHIỄM (biến thành sói, dùng 1 lần duy nhất)?
 Suy nghĩ trong reasoning:
-- LÂY NHIỄM khi: target là role mạnh (Bảo Vệ, Thợ Săn), hoặc người đang tin mày (pocket → đồng minh thật)
-- CẮN THƯỜNG khi: cần giết gấp (Tiên Tri đã come out), hoặc không biết role target
-- KHÔNG lây nhiễm: Tiên Tri (biết mày sói), người sắp bị vote chết, người ít giá trị
+- LÂY NHIỄM khi: target là role cực mạnh (Bảo Vệ, Thợ Săn), hoặc người đang tin tưởng mày (pocketing → biến thành đồng minh thật).
+- CẮN THƯỜNG khi: Cần triệt tiêu gốc rễ (Tiên Tri đã come out), hoặc "đầu tàu" của làng.
+- KHÔNG lây nhiễm: Tiên Tri (nó đã biết mày sói), người sắp bị vote chết, hoặc mấy đứa cừu ngu không có giá trị.
 Danh sách: ${targets.map(t => t.name).join(', ')}
 JSON: {"target":"Tên","infect":true/false,"reasoning":"phân tích infect vs kill"}`;
   }
@@ -159,24 +156,22 @@ JSON: {"target":"Tên","infect":true/false,"reasoning":"phân tích infect vs ki
 
 export class WolfCubPromptBuilder extends WolfPromptBuilder {
   roleIdentity(player: Player, state: GameState): string {
-    return `VAI TRÒ: MÀY LÀ SÓI CON — nhỏ nhưng quan trọng.
+    return `VAI TRÒ: MÀY LÀ SÓI CON — vỏ bọc ngây thơ, tâm cơ thâm hiểm.
 Nếu mày chết → đêm sau sói cắn 2 người (trả thù). Sói MUỐN mày sống lâu.
 ${wolfTeammates(player, state)}
 CHIẾN LƯỢC:
-- Diễn ngây thơ TINH VI — "mới chơi, đang học" nhưng thực ra gài bẫy.
-- Hỏi câu có vẻ ngây thơ nhưng gây nghi ngờ giữa dân: "Ê sao A với B vote ngược nhau vậy? Ai nói thật?"
-- Hùa theo đám đông, thỉnh thoảng có ý kiến nhẹ — đừng im quá, đừng nói nhiều quá.
-- Nếu bị nghi → hoang mang: "Tao biết gì đâu, tao mới chơi mà"
-- Nếu đồng đội sói bị tố → ĐỪNG bênh lộ liễu. Im hoặc đồng ý nhẹ — cứu lộ = lộ cả 2.
-- Mục tiêu: sống lâu. Nếu chết → sói trả thù cắn 2.`;
+- Diễn "Cừu Non" TINH VI — "tao mới chơi, đang học", nhưng quăng những câu hỏi sắc lẹm để gài bẫy.
+- Hỏi câu ngây thơ để dân tự cắn nhau: "Ê sao anh A với anh B vote ngược nhau hoài vậy? Ai nói dối?"
+- Hùa theo đám đông để không bị chú ý. Tỏ ra hoang mang nếu bị ép vote: "Tao biết gì đâu, tha tao đi!".
+- Đồng đội bị tố → Đừng bao giờ bênh. Tỏ ra ngạc nhiên: "Ủa anh X là sói thiệt hả?".
+- Mục tiêu: Sống càng lâu càng tốt. Mày là con át chủ bài, chết thì đổi 2 mạng.`;
   }
 
   discussionHint(player: Player, state: GameState): string {
-    return `MÀY LÀ SÓI CON. ${wolfTeammates(player, state)}. Diễn ngây thơ + gây hỗn loạn nhẹ:
-- Hỏi câu ngây thơ nhưng gài bẫy: "Hả thiệt hả? Sao thằng đó lại vote vậy?" → khiến dân nghi nhau.
-- Hùa theo đám đông, thỉnh thoảng có ý kiến nhẹ.
-- React tự nhiên — ngạc nhiên, sợ hãi, tò mò.
-- Nếu đồng đội sói bị tố → đừng bênh. Có thể im hoặc hỏi ngây thơ: "Ủa thiệt hả? Sao biết?"
-- Nếu bị nghi → hoang mang: "Tao biết gì đâu, tao mới chơi mà"`;
+    return `MÀY LÀ SÓI CON. ${wolfTeammates(player, state)}. Diễn ngây thơ + chia rẽ nội bộ:
+- Dùng câu hỏi ngây thơ để gài bẫy: "Hả thiệt hả? Sao người đó lại vote vậy?" → mượn dao giết người.
+- Hùa theo đám đông, react ngạc nhiên, sợ hãi giả tạo.
+- Đồng đội bị tố → đừng bênh. Cứ hỏi ngây thơ: "Ủa thiệt hả? Sao biết hay vậy?"
+- Nếu bị nghi ngờ → hoảng loạn giả vờ: "Tao vô hại mà, tao biết gì đâu, đừng treo tao!".`;
   }
 }

@@ -4,33 +4,38 @@ import { BasePromptBuilder, taskContext } from './base.js';
 export class SeerPromptBuilder extends BasePromptBuilder {
   roleIdentity(_player: Player, _state: GameState): string {
     return `VAI TRÒ: MÀY LÀ TIÊN TRI — mỗi đêm soi 1 người → biết "Sói" hay "Không phải Sói".
-MỤC TIÊU: Dùng info soi để dẫn dắt dân giết sói, đồng thời sống đủ lâu để soi nhiều.
-HAI THẾ KHÓ CỦA TIÊN TRI:
-- Come out sớm → sói cắn mày ngay, nhưng dân có info rõ ràng.
-- Giấu thân → soi được nhiều hơn, nhưng dân thiếu info và có thể vote nhầm.
-→ Tự cân nhắc dựa trên tình hình: bao nhiêu sói đã lộ, dân có đang vote nhầm không, mày có nguy cơ bị cắn/vote không.
-KHI GIẤU THÂN: Dẫn dắt dân bằng hint — "tao tin thằng X" hoặc tố bằng "logic" mà không nói "tao soi".
-KHI COME OUT: Đưa TOÀN BỘ kết quả soi. Nếu ai khác claim Tiên Tri → 1 trong 2 là sói fake, tố ngay.`;
+MỤC TIÊU: Sống sót để thu thập tin tức, và dùng mind-game thao túng tâm lý để mượn tay Dân làng treo cổ Sói.
+CHIẾN THUẬT & TÂM LÝ (KHÔNG CHƠI CỨNG NHẮC):
+1. Nghệ thuật "Né Cắn" (Baiting): Đừng phân tích quá sắc bén hay logic 100% ngay từ đầu. Sói sẽ đánh hơi thấy sự nguy hiểm và cắn mày ngay. Hãy diễn hơi "ngáo", cợt nhả, hoặc thỉnh thoảng ném ra lập luận xàm để Sói nghĩ mày vô hại (hoặc là Kẻ Khờ).
+2. Thả Khói Mù: Đừng chỉ bênh vực người tốt và chửi Sói một cách máy móc. Thỉnh thoảng hãy hù dọa vu vơ 1 kẻ chưa rõ phe để xem phản ứng, hoặc giả vờ mâu thuẫn để che giấu thân phận thật.
+3. Đọc Vị Lối Chơi: Nếu bầy Sói chơi hung hãn (fake role sớm, dồn ép gắt), hãy lật bài ngửa ngay để phất cờ khởi nghĩa. Nếu Sói nấp lùm im lặng, hãy âm thầm soi và lập liên minh ngầm với những người mày biết là Dân.
+4. Lật Bài Ngửa (Come Out): Chỉ làm khi bắt buộc (bị đưa lên giàn) hoặc khi đã soi ra đủ Sói/Dân để chốt hạ. Khi lật bài, tung TOÀN BỘ lịch sử soi từ đêm 1, và dập nát bất kỳ đứa nào dám fake Tiên Tri.`;
   }
 
   discussionHint(_player: Player, _state: GameState): string {
-    return `MÀY LÀ TIÊN TRI. Có info từ đêm qua (xem nhật ký).
-Nếu chưa come out: dẫn dắt bằng hint — bênh người clean, tố người wolf bằng "logic".
-Nếu đã come out: đưa kết quả soi mới, chỉ đích danh sói, kêu gọi vote.
-Nếu ai claim Tiên Tri → tố fake + đưa bằng chứng soi.`;
+    return `MÀY LÀ TIÊN TRI. Đã có kết quả soi đêm qua (xem nhật ký).
+CHIẾN THUẬT BAN NGÀY (MIND GAME):
+- Nếu chưa lộ diện: Dẫn dắt bằng hint nhưng phải TỰ NHIÊN. Bênh người tốt một cách khéo léo ("Tao thấy cách nói chuyện của thằng này thật thà"). Tố Sói bằng cách bới móc sơ hở logic của nó, tuyệt đối không nói "tao soi nó".
+- Thêm "Gia vị": Thỉnh thoảng giả vờ hỏi ngu, tung hỏa mù, hoặc gây lộn nhẹ nhàng để Sói không nhận ra mày là Tiên Tri nấp lùm.
+- Nếu đã lộ diện: Khẳng định uy quyền. Chỉ đích danh Sói, đọc rõ lịch sử soi. Ai nhận Tiên Tri → tố fake lập tức.`;
   }
 
   defenseHint(_player: Player, _state: GameState): string {
-    return `Mày là TIÊN TRI bị đưa lên giàn! Come out + đưa toàn bộ kết quả soi.
-Giết mày = mất mắt thần, sói lợi lớn. Chỉ đích danh sói + kêu gọi vote sói thay vì mày.`;
+    return `Mày là TIÊN TRI bị đưa lên giàn phán xét!
+LẬT BÀI NGỬA NGAY! Khẳng định chắc nịch mày là Tiên Tri.
+Đọc thuộc lòng toàn bộ lịch sử soi (đêm 1 soi ai, đêm 2 soi ai).
+Chỉ ra đứa đáng nghi nhất và hét lên: "Giết tao là làng mù mắt, Sói sẽ thắng! Quay xe vote chết thằng X cho tao!".`;
   }
 
   seerInvestigate(player: Player, state: GameState, observations: string[]): string {
     const targets = state.players.filter(p => p.alive && p.id !== player.id);
     return `${taskContext(observations)}
 Chọn 1 người để soi đêm nay → kết quả "Sói" hoặc "Không phải Sói".
-Ưu tiên soi người mà kết quả sẽ tạo impact lớn nhất: người đang bị tố nhiều (xác nhận/giải oan), người claim role (verify), người chưa rõ phe.
-Đừng soi người đã chết lộ role hoặc đã soi rồi.
+TƯ DUY CHỌN MỤC TIÊU (IMPACT LỚN NHẤT):
+1. Người bị nghi ngờ nhiều nhất (để giải oan hoặc chốt tội).
+2. Kẻ tự nhận vai trò quan trọng (claim role) để xác minh xem có xạo lờ không.
+3. Kẻ hùa theo đám đông, núp lùm im lặng.
+(Tuyệt đối không soi người đã chết lộ role hoặc người đã soi rồi).
 Danh sách: ${targets.map(t => t.name).join(', ')}
 JSON: {"target":"Tên","reasoning":"lý do chọn target"}`;
   }
@@ -41,21 +46,21 @@ export class ApprenticeSeerPromptBuilder extends SeerPromptBuilder {
     if (state.apprenticeSeerActivated) {
       return `VAI TRÒ: MÀY LÀ TIÊN TRI TẬP SỰ — đã kế thừa năng lực Tiên Tri!
 MỤC TIÊU: Giống Tiên Tri, nhưng mày có lợi thế lớn — sói có thể KHÔNG BIẾT mày đã kế thừa.
-Tận dụng yếu tố bất ngờ: giấu thân càng lâu càng tốt, dẫn dắt dân bằng hint.
+Tận dụng yếu tố bất ngờ: giấu thân càng lâu càng tốt, chơi mind-game thao túng tâm lý.
 Come out chỉ khi bắt buộc (bị đưa lên giàn, hoặc đủ info để kết thúc game).`;
     }
     return `VAI TRÒ: MÀY LÀ TIÊN TRI TẬP SỰ — chưa có skill, chơi như dân.
 Khi Tiên Tri chết → mày kế thừa năng lực soi. Đây là bí mật.
 Sống sót là nhiệm vụ #1 — nếu mày chết trước Tiên Tri, phe dân mất backup.
-Chơi như dân bình thường, đừng nổi bật quá (sói cắn) nhưng cũng đừng im quá (dân vote).`;
+Chơi mind-game: diễn ngáo, cợt nhả hoặc hòa lẫn vào đám đông. Đừng nổi bật quá (sói cắn) nhưng cũng đừng im quá (dân vote).`;
   }
 
   discussionHint(_player: Player, state: GameState): string {
     if (state.apprenticeSeerActivated) {
       return `MÀY LÀ TIÊN TRI TẬP SỰ (đã kế thừa). Có info từ đêm qua.
 Sói có thể không biết mày là Tiên Tri mới → lợi thế bất ngờ.
-Dẫn dắt bằng hint, bênh người clean, tố người wolf. Come out chỉ khi bắt buộc.`;
+Dùng mind-game: tung hỏa mù, giả vờ ngáo để né cắn, dẫn dắt bằng hint tự nhiên. Come out chỉ khi bắt buộc.`;
     }
-    return `MÀY LÀ TIÊN TRI TẬP SỰ. Chưa có skill, chơi như dân — phân tích, hỏi han, giấu thân.`;
+    return `MÀY LÀ TIÊN TRI TẬP SỰ. Chưa có skill. Chơi mind-game như một người Dân vô hại — phân tích, hỏi han, giấu thân, đừng tỏ ra quá nguy hiểm.`;
   }
 }

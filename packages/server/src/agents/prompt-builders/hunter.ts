@@ -6,20 +6,21 @@ export class HunterPromptBuilder extends BasePromptBuilder {
     return `VAI TRÒ: MÀY LÀ THỢ SĂN — chết thì bắn 1 phát cuối kéo theo 1 người.
 Bị sói cắn hoặc treo cổ → được bắn. Bị Phù Thủy đầu độc → chết im, không bắn.
 MỤC TIÊU: Sống thì dẫn dắt dân tìm sói. Chết thì bắn đúng sói → swing game.
-LỢI THẾ ĐỘC NHẤT: Mày không sợ chết — chết còn bắn được. Dùng lợi thế này:
-- Chơi tự tin, dám nói dám tố — sói ngại cắn mày vì sợ bị bắn.
-- Doạ khi bị dồn: "giết tao thì tao bắn lại" → sói ngại, dân ngại.
-- Luôn theo dõi ai đáng nghi nhất → sẵn sàng bắn nếu chết bất ngờ.`;
+LỢI THẾ ĐỘC NHẤT: Mày không sợ chết — chết còn bắn được.
+TƯ DUY ĐỈNH CAO: Nếu Sói sợ không dám cắn mày, mày sẽ VÔ DỤNG. Đừng quá hổ báo để Sói né!
+- Chiến thuật mồi chài (Baiting): Ban ngày hãy tỏ ra nguy hiểm ngầm (giống Tiên Tri hoặc Phù Thủy đang giấu bài). Mục đích là LỪA SÓI CẮN MÀY vào ban đêm. Khi đó mày chết nhưng kéo theo 1 con Sói → 1 đổi 1 phe Dân cực hời.
+- Tránh bị dồn lên giàn: Nếu mày hổ báo sai, Làng sẽ vote treo cổ hoặc Phù Thủy ném độc (bị độc = không được bắn). Hãy chơi khôn ngoan.
+- Doạ khi thực sự nguy kịch: Chỉ doạ "giết tao thì tao bắn lại" khi chắc chắn bị Làng dồn lên giàn.`;
   }
 
   discussionHint(_player: Player, _state: GameState): string {
-    return `MÀY LÀ THỢ SĂN. Chết thì kéo theo 1 thằng — mày có "bảo hiểm".
-Chơi tự tin, tham gia tích cực. Luôn theo dõi ai đáng nghi nhất để sẵn sàng bắn.`;
+    return `MÀY LÀ THỢ SĂN. Chết thì kéo theo 1 thằng.
+CHIẾN THUẬT: Đừng quá hung hăng lộ liễu khiến Sói né không cắn. Hãy "câu nhử" bằng cách tỏ ra nguy hiểm ngầm, đóng giả Tiên Tri hoặc Phù Thủy để Sói cắn nhầm mày vào ban đêm. Theo dõi kỹ ai là Sói để ghim mục tiêu.`;
   }
 
   defenseHint(_player: Player, _state: GameState): string {
-    return `Mày là THỢ SĂN bị đưa lên giàn! Come out + doạ: "giết tao thì tao bắn thằng [tên nghi nhất] ngay!"
-Sói sẽ ngại vote giết mày vì sợ bị bắn.`;
+    return `Mày là THỢ SĂN bị đưa lên giàn! Come out + doạ: "Tao là Thợ Săn. Nếu Làng vote treo tao, tao thề sẽ bắn thằng [tên nghi nhất] ngay lập tức!"
+Chỉ ra mục tiêu bắn của mày để Làng hoặc Sói phải chùn bước.`;
   }
 
   hunterShot(player: Player, state: GameState, observations: string[]): string {
