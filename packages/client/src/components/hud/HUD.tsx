@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { Phase, isWolfRole } from '@ma-soi/shared';
 import { PHASE_INFO } from './constants';
@@ -7,6 +8,7 @@ import GameControls from './GameControls';
 import PlayerViewPanel from './PlayerViewPanel';
 
 export default function HUD() {
+  const [showRoster, setShowRoster] = useState(true);
   const gameState = useGameStore(s => s.gameState);
   const spectatorMode = useGameStore(s => s.spectatorMode);
   const playerViewState = useGameStore(s => s.playerViewState);
@@ -58,16 +60,28 @@ export default function HUD() {
             <>
               <PlayerViewPanel />
               <div className="border-t border-gray-700/30">
-                <div className="text-[10px] text-gray-500 font-medium px-3 py-1.5">NGƯỜI CHƠI</div>
-                <div className="overflow-y-auto max-h-[200px] px-2 pb-2">
+                <div 
+                  className="flex items-center justify-between px-3 py-1.5 cursor-pointer hover:bg-white/5 transition-colors"
+                  onClick={() => setShowRoster(!showRoster)}
+                >
+                  <div className="text-[10px] text-gray-500 font-medium">NGƯỜI CHƠI</div>
+                  <div className="text-[10px] text-gray-500">{showRoster ? '▼' : '▲'}</div>
+                </div>
+                <div className={`overflow-y-auto px-2 transition-all duration-300 ${showRoster ? 'max-h-[200px] pb-2 opacity-100' : 'max-h-0 pb-0 opacity-0'}`}>
                   <PlayerRoster />
                 </div>
               </div>
             </>
           ) : (
             <>
-              <div className="text-xs text-gray-500 font-medium p-2 px-3">NGƯỜI CHƠI</div>
-              <div className="flex-1 overflow-y-auto px-2">
+              <div 
+                className="flex items-center justify-between p-2 px-3 cursor-pointer hover:bg-white/5 transition-colors"
+                onClick={() => setShowRoster(!showRoster)}
+              >
+                <div className="text-xs text-gray-500 font-medium">NGƯỜI CHƠI</div>
+                <div className="text-[10px] text-gray-500">{showRoster ? '▼' : '▲'}</div>
+              </div>
+              <div className={`overflow-y-auto px-2 transition-all duration-300 ${showRoster ? 'flex-1 opacity-100' : 'h-0 opacity-0 overflow-hidden'}`}>
                 <PlayerRoster />
               </div>
             </>
