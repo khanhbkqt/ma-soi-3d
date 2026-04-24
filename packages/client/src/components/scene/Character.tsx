@@ -105,6 +105,32 @@ function PotionBurst({ color }: { color: string }) {
   );
 }
 
+function LoveParticles() {
+  const ref = useRef<THREE.Group>(null);
+  const [life, setLife] = useState(1);
+  useFrame((_, dt) => {
+    setLife(l => Math.max(0, l - dt * 0.2));
+    if (!ref.current) return;
+    ref.current.children.forEach((c, i) => {
+      const t = ((Date.now() * 0.001 + i * 0.3) % 2) / 2;
+      c.position.y = t * 3;
+      c.position.x = Math.sin(t * 8 + i) * 0.5;
+      (c as THREE.Mesh).scale.setScalar((1 - t) * 0.25 * life);
+    });
+  });
+  if (life <= 0) return null;
+  return (
+    <group ref={ref} position={[0, 1.5, 0]}>
+      {Array.from({ length: 8 }).map((_, i) => (
+        <mesh key={i}>
+          <sphereGeometry args={[1, 6, 6]} />
+          <meshBasicMaterial color="#ff66b2" transparent opacity={0.6 * life} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function DefenseSpotlight({ isDefending }: { isDefending: boolean }) {
   const coneRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
@@ -343,6 +369,7 @@ export default function Character({ player, index, total, gameState }: { player:
   const isSeer = (player.role === Role.Seer || (player.role === Role.ApprenticeSeer && gameState.apprenticeSeerActivated)) && recentEvents.some(e => e.type === GameEventType.SeerResult && e.data.seerId === player.id && Date.now() - e.timestamp < 4000);
   const witchHeal = recentEvents.some(e => e.type === GameEventType.WitchAction && e.data.action === 'heal' && e.data.targetName === player.name && Date.now() - e.timestamp < 4000);
   const witchKill = recentEvents.some(e => e.type === GameEventType.WitchAction && e.data.action === 'kill' && e.data.targetName === player.name && Date.now() - e.timestamp < 4000);
+  const isCupidPair = recentEvents.some(e => e.type === GameEventType.CupidPair && (e.data.player1Name === player.name || e.data.player2Name === player.name) && Date.now() - e.timestamp < 6000);
 
   // Vote tracking
   const lastVote = [...events].reverse().find(e => e.type === GameEventType.VoteCast && e.data.voterName === player.name && Date.now() - e.timestamp < 5000);
@@ -496,6 +523,7 @@ export default function Character({ player, index, total, gameState }: { player:
         {isSeerTarget && spectatorMode === 'god' && <SeerGlow />}
         {witchHeal && spectatorMode === 'god' && <PotionBurst color="#44ff44" />}
         {witchKill && spectatorMode === 'god' && <PotionBurst color="#aa00ff" />}
+        {isCupidPair && spectatorMode === 'god' && <LoveParticles />}
       </group>
 
       {/* Name label */}
