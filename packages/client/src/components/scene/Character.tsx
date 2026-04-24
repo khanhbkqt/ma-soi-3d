@@ -20,6 +20,106 @@ const ROLE_NAMES_VI: Record<Role, string> = {
 const SKIN_COLORS = ['#e8b89d', '#d4956b', '#c68642', '#8d5524', '#f5d0a9', '#e0ac69', '#c49a6c', '#a0785a',
   '#f3c9a8', '#d9a87c', '#b8865e', '#9c6e4a', '#deb887', '#cd853f', '#d2a679', '#b5916b'];
 
+// ── Outfit System ──
+const HAT_COLORS = ['#4a2a6a', '#2a4a2a', '#6a2a2a', '#2a3a5a', '#5a4a1a', '#3a5a5a', '#5a2a4a', '#4a4a2a'];
+const CLOAK_COLORS = ['#3a1a5a', '#1a3a1a', '#5a1a1a', '#1a2a4a', '#4a3a0a', '#2a4a4a', '#4a1a3a', '#3a3a1a'];
+
+function seededRng(seed: number) {
+  let s = seed;
+  return () => { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
+}
+
+function getOutfit(index: number) {
+  const rng = seededRng(index * 7919 + 31);
+  return {
+    hatType: Math.floor(rng() * 5) as 0 | 1 | 2 | 3 | 4, // wizard, farmer, hood, bandana, crown
+    hatColor: HAT_COLORS[Math.floor(rng() * HAT_COLORS.length)],
+    hasCloak: rng() > 0.3,
+    cloakColor: CLOAK_COLORS[Math.floor(rng() * CLOAK_COLORS.length)],
+    hasBelt: rng() > 0.5,
+    beltColor: `hsl(${Math.floor(rng() * 360)}, 30%, 25%)`,
+  };
+}
+
+// Hat components
+function WizardHat({ color }: { color: string }) {
+  return (
+    <group position={[0, 0.65, 0]}>
+      <mesh><coneGeometry args={[0.12, 0.35, 8]} /><meshStandardMaterial color={color} roughness={0.8} /></mesh>
+      <mesh position={[0, -0.12, 0]}><cylinderGeometry args={[0.18, 0.18, 0.03, 12]} /><meshStandardMaterial color={color} roughness={0.8} /></mesh>
+    </group>
+  );
+}
+function FarmerHat({ color }: { color: string }) {
+  return (
+    <group position={[0, 0.65, 0]}>
+      <mesh><cylinderGeometry args={[0.12, 0.13, 0.1, 8]} /><meshStandardMaterial color={color} roughness={0.9} /></mesh>
+      <mesh position={[0, -0.03, 0]}><cylinderGeometry args={[0.22, 0.22, 0.02, 12]} /><meshStandardMaterial color={color} roughness={0.9} /></mesh>
+    </group>
+  );
+}
+function Hood({ color }: { color: string }) {
+  return (
+    <mesh position={[0, 0.55, -0.05]}>
+      <sphereGeometry args={[0.2, 8, 8, 0, Math.PI * 2, 0, Math.PI * 0.6]} />
+      <meshStandardMaterial color={color} roughness={0.85} side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+function Bandana({ color }: { color: string }) {
+  return (
+    <mesh position={[0, 0.58, 0.02]}>
+      <boxGeometry args={[0.3, 0.06, 0.25]} />
+      <meshStandardMaterial color={color} roughness={0.8} />
+    </mesh>
+  );
+}
+function Crown() {
+  return (
+    <group position={[0, 0.65, 0]}>
+      <mesh><cylinderGeometry args={[0.14, 0.16, 0.08, 8]} /><meshStandardMaterial color="#c8a820" metalness={0.6} roughness={0.3} /></mesh>
+      {[0, 1, 2, 3, 4].map(i => {
+        const a = (i / 5) * Math.PI * 2;
+        return (
+          <mesh key={i} position={[Math.cos(a) * 0.13, 0.06, Math.sin(a) * 0.13]}>
+            <coneGeometry args={[0.02, 0.06, 4]} />
+            <meshStandardMaterial color="#dab830" metalness={0.6} roughness={0.3} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
+function Hat({ type, color }: { type: number; color: string }) {
+  switch (type) {
+    case 0: return <WizardHat color={color} />;
+    case 1: return <FarmerHat color={color} />;
+    case 2: return <Hood color={color} />;
+    case 3: return <Bandana color={color} />;
+    case 4: return <Crown />;
+    default: return null;
+  }
+}
+
+function Cloak({ color }: { color: string }) {
+  return (
+    <mesh position={[0, 0.05, -0.18]} rotation={[0.15, 0, 0]} castShadow>
+      <boxGeometry args={[0.35, 0.55, 0.04]} />
+      <meshStandardMaterial color={color} roughness={0.85} />
+    </mesh>
+  );
+}
+
+function WolfEyes() {
+  return <>
+    <mesh position={[-0.06, 0.52, 0.16]}><sphereGeometry args={[0.03, 6, 6]} /><meshBasicMaterial color="#ff2200" /></mesh>
+    <mesh position={[0.06, 0.52, 0.16]}><sphereGeometry args={[0.03, 6, 6]} /><meshBasicMaterial color="#ff2200" /></mesh>
+    <mesh position={[-0.06, 0.52, 0.16]}><sphereGeometry args={[0.05, 6, 6]} /><meshBasicMaterial color="#ff4400" transparent opacity={0.3} /></mesh>
+    <mesh position={[0.06, 0.52, 0.16]}><sphereGeometry args={[0.05, 6, 6]} /><meshBasicMaterial color="#ff4400" transparent opacity={0.3} /></mesh>
+  </>;
+}
+
 // ── VFX Components ──
 
 function ZzzParticles() {
@@ -357,6 +457,8 @@ export default function Character({ player, index, total, gameState }: { player:
   const isDusk = gameState.phase === Phase.Dusk;
   const isJudgement = gameState.phase === Phase.Judgement;
   const isAccused = isJudgement && gameState.accusedId === player.id;
+  const outfit = useMemo(() => getOutfit(index), [index]);
+  const showWolfEyes = isNight && player.alive && isWolfRole(player.role) && spectatorMode === 'god';
 
   // Active effects from recent events
   const recentEvents = events.slice(-20);
@@ -482,6 +584,16 @@ export default function Character({ player, index, total, gameState }: { player:
       {hasVoted && player.alive && <VoterGlow />}
 
       <group ref={bodyRef} position={[0, 0.9, 0]}>
+        {/* Legs */}
+        <mesh position={[-0.1, -0.45, 0]} castShadow>
+          <capsuleGeometry args={[0.055, 0.25, 4, 8]} />
+          <meshStandardMaterial color={player.alive ? '#3a3a3a' : '#222'} roughness={0.8} transparent opacity={player.alive ? 1 : 0.4} />
+        </mesh>
+        <mesh position={[0.1, -0.45, 0]} castShadow>
+          <capsuleGeometry args={[0.055, 0.25, 4, 8]} />
+          <meshStandardMaterial color={player.alive ? '#3a3a3a' : '#222'} roughness={0.8} transparent opacity={player.alive ? 1 : 0.4} />
+        </mesh>
+
         {/* Torso */}
         <mesh castShadow>
           <capsuleGeometry args={[0.22, 0.4, 8, 16]} />
@@ -491,21 +603,44 @@ export default function Character({ player, index, total, gameState }: { player:
           />
         </mesh>
 
+        {/* Belt */}
+        {outfit.hasBelt && player.alive && (
+          <mesh position={[0, -0.15, 0]}>
+            <cylinderGeometry args={[0.23, 0.23, 0.04, 12]} />
+            <meshStandardMaterial color={outfit.beltColor} roughness={0.7} />
+          </mesh>
+        )}
+
+        {/* Cloak */}
+        {outfit.hasCloak && player.alive && <Cloak color={outfit.cloakColor} />}
+
+        {/* Neck */}
+        <mesh position={[0, 0.35, 0]}>
+          <cylinderGeometry args={[0.06, 0.08, 0.1, 8]} />
+          <meshStandardMaterial color={player.alive ? skinColor : '#555'} roughness={0.6} transparent opacity={player.alive ? 1 : 0.4} />
+        </mesh>
+
         {/* Head */}
         <mesh position={[0, 0.5, 0]} castShadow>
           <sphereGeometry args={[0.18, 16, 16]} />
           <meshStandardMaterial color={player.alive ? skinColor : '#555'} roughness={0.6} transparent opacity={player.alive ? 1 : 0.4} />
         </mesh>
 
-        {/* Eyes */}
-        {player.alive && !isNight && <>
+        {/* Hat */}
+        {player.alive && <Hat type={outfit.hatType} color={outfit.hatColor} />}
+
+        {/* Eyes — normal */}
+        {player.alive && !isNight && !showWolfEyes && <>
           <mesh position={[-0.06, 0.52, 0.15]}><sphereGeometry args={[0.03, 8, 8]} /><meshBasicMaterial color={(isSpeaking || isDefending) ? '#ffffff' : '#222'} /></mesh>
           <mesh position={[0.06, 0.52, 0.15]}><sphereGeometry args={[0.03, 8, 8]} /><meshBasicMaterial color={(isSpeaking || isDefending) ? '#ffffff' : '#222'} /></mesh>
         </>}
-        {player.alive && isNight && <>
+        {/* Eyes — sleeping (night, non-wolf or fog mode) */}
+        {player.alive && isNight && !showWolfEyes && <>
           <mesh position={[-0.06, 0.52, 0.16]} rotation={[0, 0, Math.PI / 6]}><boxGeometry args={[0.06, 0.01, 0.01]} /><meshBasicMaterial color="#222" /></mesh>
           <mesh position={[0.06, 0.52, 0.16]} rotation={[0, 0, -Math.PI / 6]}><boxGeometry args={[0.06, 0.01, 0.01]} /><meshBasicMaterial color="#222" /></mesh>
         </>}
+        {/* Eyes — wolf glowing (night, god mode) */}
+        {showWolfEyes && <WolfEyes />}
 
         {/* Arms */}
         <mesh position={[-0.3, -0.05, 0]} rotation={[0, 0, (isSpeaking || isDefending) ? -0.6 : hasVoted ? -0.8 : -0.3]} castShadow>
