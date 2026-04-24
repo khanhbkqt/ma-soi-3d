@@ -231,6 +231,29 @@ function LoveParticles() {
   );
 }
 
+const NIGHT_ROLE_COLORS: Record<string, string> = { wolf: '#cc2222', guard: '#2266cc', seer: '#9933cc', witch: '#22aa66' };
+const NIGHT_ROLE_ICONS: Record<string, string> = { wolf: '🐾', guard: '🛡️', seer: '👁️', witch: '🧪' };
+
+function NightActiveGlow({ role }: { role: string }) {
+  const ringRef = useRef<THREE.Mesh>(null);
+  const col = NIGHT_ROLE_COLORS[role] || '#ffffff';
+  useFrame(() => {
+    if (!ringRef.current) return;
+    const t = Date.now() * 0.003;
+    (ringRef.current.material as THREE.MeshBasicMaterial).opacity = 0.2 + Math.sin(t) * 0.1;
+    ringRef.current.rotation.z += 0.01;
+  });
+  return (
+    <group>
+      <mesh ref={ringRef} position={[0, 0.04, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.45, 0.7, 24]} />
+        <meshBasicMaterial color={col} transparent opacity={0.25} side={THREE.DoubleSide} />
+      </mesh>
+      <pointLight position={[0, 0.5, 0]} color={col} intensity={2} distance={3} decay={2} />
+    </group>
+  );
+}
+
 function DefenseSpotlight({ isDefending }: { isDefending: boolean }) {
   const coneRef = useRef<THREE.Mesh>(null);
   const ringRef = useRef<THREE.Mesh>(null);
@@ -460,6 +483,24 @@ export default function Character({ player, index, total, gameState }: { player:
   const outfit = useMemo(() => getOutfit(index), [index]);
   const showWolfEyes = isNight && player.alive && isWolfRole(player.role) && spectatorMode === 'god';
 
+  // ── Night actor detection (god mode only) ──
+  const nightActive = useMemo(() => {
+    if (!isNight || !player.alive || spectatorMode !== 'god') return null;
+    const recent = events.slice(-10);
+    const now = Date.now();
+    const WINDOW = 6000;
+    // Check in reverse night-action order so the latest actor wins
+    for (let i = recent.length - 1; i >= 0; i--) {
+      const e = recent[i];
+      if (now - e.timestamp > WINDOW) continue;
+      if (e.type === GameEventType.SeerResult && (e.data.seerId === player.id || e.data.targetName === player.name)) return 'seer';
+      if (e.type === GameEventType.WitchAction && player.role === Role.Witch) return 'witch';
+      if ((e.type === GameEventType.WolfDiscussMessage || (e.type === GameEventType.NightActionPerformed && (e.data.action === 'wolf_kill' || e.data.action === 'wolf_double_kill'))) && isWolfRole(player.role)) return 'wolf';
+      if (e.type === GameEventType.GuardProtect && e.data.guardId === player.id) return 'guard';
+    }
+    return null;
+  }, [isNight, player.alive, player.id, player.role, spectatorMode, events.length]);
+
   // Active effects from recent events
   const recentEvents = events.slice(-20);
   const isSpeaking = recentEvents.some(e => e.type === GameEventType.DayMessage && e.data.playerId === player.id && Date.now() - e.timestamp < 3000) && gameState.phase === Phase.Day;
@@ -553,9 +594,14 @@ export default function Character({ player, index, total, gameState }: { player:
         bodyRef.current.position.y = -deathProgress * 0.3;
       }
 
-      // Night head droop
+      // Night head droop (sleeping) vs wake-up (active)
       if (isNight && player.alive) {
-        bodyRef.current.rotation.x = Math.sin(Date.now() * 0.001) * 0.05 + 0.1;
+        if (nightActive) {
+          bodyRef.current.rotation.x *= 0.85; // snap upright
+          bodyRef.current.position.y = Math.sin(Date.now() * 0.004) * 0.03; // subtle breathing
+        } else {
+          bodyRef.current.rotation.x = Math.sin(Date.now() * 0.001) * 0.05 + 0.1;
+        }
       } else if (player.alive) {
         bodyRef.current.rotation.x *= 0.95;
       }
@@ -651,7 +697,7 @@ export default function Character({ player, index, total, gameState }: { player:
         </mesh>
 
         {/* VFX */}
-        {isNight && player.alive && <ZzzParticles />}
+        {isNight && player.alive && !nightActive && <ZzzParticles />}
         {wasAttacked && spectatorMode === 'god' && <WolfSlash active />}
         {isGuarded && spectatorMode === 'god' && <ShieldBubble />}
         {isSeer && spectatorMode === 'god' && <SeerGlow />}
@@ -660,6 +706,18 @@ export default function Character({ player, index, total, gameState }: { player:
         {witchKill && spectatorMode === 'god' && <PotionBurst color="#aa00ff" />}
         {isCupidPair && spectatorMode === 'god' && <LoveParticles />}
       </group>
+
+      {/* Night active glow (outside bodyRef so it stays on ground) */}
+      {nightActive && <NightActiveGlow role={nightActive} />}
+
+      {/* Night action icon indicator */}
+      {nightActive && (
+        <Html position={[0, 2.5, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+          <div className="text-2xl animate-bounce" style={{ filter: `drop-shadow(0 0 6px ${NIGHT_ROLE_COLORS[nightActive]})` }}>
+            {NIGHT_ROLE_ICONS[nightActive]}
+          </div>
+        </Html>
+      )}
 
       {/* Name label */}
       <Html position={[0, 2.1, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
