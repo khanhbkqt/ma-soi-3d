@@ -459,12 +459,32 @@ function VoteParticles() {
   );
 }
 
+// ── Hover Glow ──
+
+function HoverGlow() {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(() => {
+    if (!ref.current) return;
+    const t = Date.now() * 0.003;
+    (ref.current.material as THREE.MeshBasicMaterial).opacity = 0.12 + Math.sin(t) * 0.06;
+    ref.current.rotation.y += 0.015;
+  });
+  return (
+    <mesh ref={ref} position={[0, 0.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <ringGeometry args={[0.5, 0.8, 32]} />
+      <meshBasicMaterial color="#66ccff" transparent opacity={0.15} side={THREE.DoubleSide} />
+    </mesh>
+  );
+}
+
 // ── Main Character ──
 
 export default function Character({ player, index, total, gameState }: { player: Player; index: number; total: number; gameState: GameState }) {
   const groupRef = useRef<THREE.Group>(null);
   const bodyRef = useRef<THREE.Group>(null);
+  const [hovered, setHovered] = useState(false);
   const spectatorMode = useGameStore(s => s.spectatorMode);
+  const setPlayerView = useGameStore(s => s.setPlayerView);
   const events = useGameStore(s => s.events);
 
   const angle = (index / total) * Math.PI * 2 - Math.PI / 2;
@@ -609,12 +629,39 @@ export default function Character({ player, index, total, gameState }: { player:
   });
 
   return (
-    <group ref={groupRef} position={[x, 0, z]} rotation={[0, lookAngle + Math.PI, 0]}>
+    <group ref={groupRef} position={[x, 0, z]} rotation={[0, lookAngle + Math.PI, 0]}
+      onPointerOver={(e) => { e.stopPropagation(); setHovered(true); document.body.style.cursor = 'pointer'; }}
+      onPointerOut={() => { setHovered(false); document.body.style.cursor = 'auto'; }}
+      onClick={(e) => { e.stopPropagation(); setPlayerView(player.id); }}
+    >
       {/* Seat */}
       <mesh position={[0, 0.2, 0]} castShadow>
         <cylinderGeometry args={[0.35, 0.4, 0.4, 8]} />
         <meshStandardMaterial color="#5c3a1e" roughness={0.9} />
       </mesh>
+
+      {/* Hover glow */}
+      {hovered && <HoverGlow />}
+
+      {/* Hover tooltip */}
+      {hovered && (
+        <Html position={[0, 2.4, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+          <div className="bg-gray-900/95 backdrop-blur-sm border border-cyan-500/40 rounded-lg px-3 py-2 shadow-xl whitespace-nowrap" style={{ boxShadow: '0 0 15px rgba(100,200,255,0.15)' }}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-base">{player.personality.emoji}</span>
+              <span className="text-sm font-bold text-cyan-200">{player.name}</span>
+              {!player.alive && <span className="text-[9px] px-1 py-0.5 rounded bg-red-900/60 text-red-400">💀</span>}
+            </div>
+            {showRole && (
+              <div className="text-[11px] font-medium" style={{ color: roleColor }}>
+                {ROLE_NAMES_VI[player.role]}
+              </div>
+            )}
+            <div className="text-[10px] text-gray-400 mt-0.5">{player.personality.name}</div>
+            <div className="text-[9px] text-cyan-500/60 mt-1">Click để xem góc nhìn</div>
+          </div>
+        </Html>
+      )}
 
       {/* Defense spotlight */}
       {isAccused && <DefenseSpotlight isDefending={isDefending} />}
@@ -712,7 +759,7 @@ export default function Character({ player, index, total, gameState }: { player:
 
       {/* Night action icon indicator */}
       {nightActive && (
-        <Html position={[0, 2.5, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+        <Html position={[0, 2.1, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
           <div className="text-2xl animate-bounce" style={{ filter: `drop-shadow(0 0 6px ${NIGHT_ROLE_COLORS[nightActive]})` }}>
             {NIGHT_ROLE_ICONS[nightActive]}
           </div>
@@ -720,7 +767,7 @@ export default function Character({ player, index, total, gameState }: { player:
       )}
 
       {/* Name label */}
-      <Html position={[0, 2.1, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+      <Html position={[0, 1.7, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
         <div className="text-center whitespace-nowrap">
           <div className={`text-xs font-bold px-2 py-0.5 rounded-full ${
             isAccused ? 'bg-red-900/90 text-red-200 border border-red-500/50' :
@@ -734,7 +781,7 @@ export default function Character({ player, index, total, gameState }: { player:
 
       {/* Vote count badge */}
       {isDusk && votesReceived > 0 && player.alive && (
-        <Html position={[0.4, 2.4, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+        <Html position={[0.4, 2.0, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
           <div className="vote-badge-3d flex items-center justify-center w-7 h-7 rounded-full font-bold text-sm text-white shadow-lg"
             style={{
               background: votesReceived >= 3 ? 'linear-gradient(135deg, #ef4444, #dc2626)' : votesReceived >= 2 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'linear-gradient(135deg, #eab308, #ca8a04)',
@@ -747,7 +794,7 @@ export default function Character({ player, index, total, gameState }: { player:
 
       {/* Accused badge during Judgement */}
       {isAccused && (
-        <Html position={[0, 2.6, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+        <Html position={[0, 2.2, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
           <div className="judgement-phase-pulse text-sm px-3 py-1 rounded-full bg-red-600/90 text-white font-bold whitespace-nowrap shadow-lg" style={{ boxShadow: '0 0 20px #ef444466' }}>
             ⚖️ Đang bị phán xét
           </div>
@@ -756,7 +803,7 @@ export default function Character({ player, index, total, gameState }: { player:
 
       {/* "Đã bỏ phiếu" indicator */}
       {isDusk && hasVoted && player.alive && (
-        <Html position={[0, 2.5, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+        <Html position={[0, 2.1, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
           <div className="text-[10px] px-2 py-0.5 rounded-full bg-amber-600/90 text-white font-medium whitespace-nowrap shadow-md">
             🗳️ Đã bỏ phiếu
           </div>
@@ -765,7 +812,7 @@ export default function Character({ player, index, total, gameState }: { player:
 
       {/* Speech bubble */}
       {(isSpeaking || isDefending) && lastSpeech && (
-        <Html position={[0, 2.7, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+        <Html position={[0, 2.3, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
           <div className={`text-sm px-4 py-2.5 rounded-xl max-w-[480px] min-w-[280px] shadow-lg animate-pulse ${
             isDefending ? 'bg-red-50/95 text-red-900 border-2 border-red-400/50' : 'bg-white/95 text-black'
           }`}>
@@ -778,7 +825,7 @@ export default function Character({ player, index, total, gameState }: { player:
 
       {/* Death marker */}
       {!player.alive && (
-        <Html position={[0, 1.8, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+        <Html position={[0, 1.4, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
           <div className="text-3xl drop-shadow-lg">💀</div>
         </Html>
       )}

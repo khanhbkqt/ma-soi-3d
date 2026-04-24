@@ -10,7 +10,7 @@ import Ground from './Ground';
 import Trees from './Trees';
 import WorldProps from './WorldProps';
 import Atmosphere from './Atmosphere';
-import SceneOverlay from './SceneOverlay';
+
 
 // ── Phase lighting targets ──
 const PHASE_LIGHTING: Record<string, { ambient: number; ambientCol: string; dir: number; dirCol: string; bg: string; campfire: number; campfireCol: string; sunPos: [number, number, number]; moonPos: [number, number, number]; sunCol: string; sunScale: number; moonScale: number; starsOpacity: number; fogNear: number; fogFar: number; fogOn: boolean }> = {
@@ -184,7 +184,6 @@ export default function VillageScene() {
       <Trees />
       <WorldProps gameState={gameState} />
       <Atmosphere phase={phase} />
-      <SceneOverlay />
 
       {/* Characters */}
       {gameState?.players.map((player, i) => (

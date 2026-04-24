@@ -120,6 +120,7 @@ export default function Lobby() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [enabledRoles, setEnabledRoles] = useState<Role[]>(() => getDefaultEnabledRoles(8));
   const [providerModels, setProviderModels] = useState<Record<string, string[]>>({});
+  const [showViewPicker, setShowViewPicker] = useState(false);
 
   useEffect(() => {
     providers.forEach(p => {
@@ -226,7 +227,13 @@ export default function Lobby() {
       enabledSpecialRoles: enabledRoles,
     };
     createGame(config);
-    setTimeout(() => startGame(), 500);
+    setShowViewPicker(true);
+  };
+
+  const confirmStart = (mode: 'god' | 'fog') => {
+    setShowViewPicker(false);
+    useGameStore.getState().setSpectatorMode(mode);
+    setTimeout(() => startGame(), 400);
   };
 
   return (
@@ -431,6 +438,37 @@ export default function Lobby() {
           {!providers.length && <p className="text-gray-500 text-sm mt-2">Thêm nhà cung cấp AI để bắt đầu</p>}
         </div>
       </div>
+
+      {/* View Mode Picker Modal */}
+      {showViewPicker && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+            <h3 className="text-2xl font-bold text-center text-white mb-2">👁 Chọn Chế Độ Xem</h3>
+            <p className="text-gray-400 text-sm text-center mb-6">Bạn muốn xem trận đấu như thế nào?</p>
+            <div className="space-y-3">
+              <button onClick={() => confirmStart('god')}
+                className="w-full flex items-center gap-4 bg-gray-800 hover:bg-amber-900/40 border border-gray-700 hover:border-amber-500/50 rounded-xl px-5 py-4 transition-all group">
+                <span className="text-3xl">👁</span>
+                <div className="text-left">
+                  <div className="text-white font-semibold group-hover:text-amber-300 transition-colors">Toàn Cảnh (God Mode)</div>
+                  <div className="text-gray-500 text-xs mt-0.5">Xem tất cả — vai trò, hành động đêm, bàn bạc sói</div>
+                </div>
+              </button>
+              <button onClick={() => confirmStart('fog')}
+                className="w-full flex items-center gap-4 bg-gray-800 hover:bg-blue-900/40 border border-gray-700 hover:border-blue-500/50 rounded-xl px-5 py-4 transition-all group">
+                <span className="text-3xl">🌫</span>
+                <div className="text-left">
+                  <div className="text-white font-semibold group-hover:text-blue-300 transition-colors">Sương Mù (Fog of War)</div>
+                  <div className="text-gray-500 text-xs mt-0.5">Chỉ thấy thông tin công khai — như dân làng thật</div>
+                </div>
+              </button>
+            </div>
+            <button onClick={() => setShowViewPicker(false)} className="w-full mt-4 text-gray-500 hover:text-gray-300 text-sm py-2 transition-colors">
+              ← Quay lại
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

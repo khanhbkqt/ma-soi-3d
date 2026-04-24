@@ -2,6 +2,7 @@ import { Canvas } from '@react-three/fiber';
 import { EffectComposer, Bloom, Vignette, N8AO } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import VillageScene from '../scene/VillageScene';
+import SceneOverlay from '../scene/SceneOverlay';
 import HUD from '../hud/HUD';
 import { useGameStore } from '../../store/gameStore';
 import { Phase } from '@ma-soi/shared';
@@ -43,6 +44,7 @@ export default function GameView() {
         <VillageScene />
         <PostProcessing />
       </Canvas>
+      <SceneOverlay />
       <HUD />
 
       {!gameState && (
