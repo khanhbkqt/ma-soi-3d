@@ -8,7 +8,7 @@ export class OllamaProvider implements LLMProvider {
     if (options?.jsonMode) body.format = 'json';
     const res = await fetch(`${this.baseUrl}/api/chat`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body), signal: AbortSignal.timeout(60000),
+      body: JSON.stringify(body), signal: AbortSignal.timeout(180000),
     });
     if (!res.ok) throw new Error(`Ollama error: ${res.status} ${await res.text()}`);
     const data = await res.json() as any;
@@ -18,7 +18,7 @@ export class OllamaProvider implements LLMProvider {
   async test(model?: string) { await this.chat([{ role: 'user', content: 'Say "ok"' }], { maxTokens: 5, model }); return true; }
 
   async getModels(): Promise<string[]> {
-    const res = await fetch(`${this.baseUrl}/api/tags`, { signal: AbortSignal.timeout(10000) });
+    const res = await fetch(`${this.baseUrl}/api/tags`, { signal: AbortSignal.timeout(30000) });
     if (!res.ok) throw new Error(`Failed to fetch ollama models: ${res.status}`);
     const data = await res.json() as any;
     return data.models.map((m: any) => m.name);

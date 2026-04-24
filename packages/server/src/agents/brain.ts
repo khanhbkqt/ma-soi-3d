@@ -12,6 +12,7 @@ import { RoleDeductionTracker } from './role-deduction.js';
 export class AgentBrain {
   memory: AgentMemory = { observations: [], reflections: [], knownRoles: {}, suspicions: {} };
   readonly deduction = new RoleDeductionTracker();
+  lastReasoning: string | undefined;
 
   constructor(public player: Player, private provider: LLMProvider) {}
 
@@ -35,9 +36,15 @@ export class AgentBrain {
       { role: 'user', content: userContent },
     ];
     try {
-      return await this.provider.chat(messages, { temperature: 0.85, maxTokens: 300, jsonMode, model: this.player.modelName });
+      const res = await this.provider.chat(messages, { temperature: 0.85, maxTokens: 300, jsonMode, model: this.player.modelName });
+      try {
+        const json = JSON.parse(res.match(/\{[\s\S]*\}/)?.[0] || '{}');
+        this.lastReasoning = json.reasoning || undefined;
+      } catch { this.lastReasoning = undefined; }
+      return res;
     } catch (e) {
       console.error(`[AgentBrain] ${this.player.name} LLM error:`, e);
+      this.lastReasoning = undefined;
       return '{}';
     }
   }

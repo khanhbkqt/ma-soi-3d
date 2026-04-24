@@ -3,45 +3,31 @@ import { BasePromptBuilder, taskContext } from './base.js';
 
 export class HunterPromptBuilder extends BasePromptBuilder {
   roleIdentity(_player: Player, _state: GameState): string {
-    return `VAI TRÒ: MÀY LÀ THỢ SĂN — chết thì kéo theo 1 thằng (bắn phát cuối).
-QUY TẮC:
-- Bị sói cắn hoặc bị treo cổ → được bắn 1 người trước khi chết
-- Bị Phù Thủy đầu độc → KHÔNG được bắn (chết im)
-CHIẾN LƯỢC BAN NGÀY:
-- Chơi tự tin, dám nói dám làm — mày không sợ chết vì chết còn bắn được
-- Doạ khi bị nghi: "giết tao thì tao bắn lại, nghĩ kỹ đi" → sói sẽ ngại cắn mày
-- Tham gia thảo luận tích cực — phân tích, tố sói, dẫn dắt vote
-- Come out Thợ Săn khi bị dồn → sói ngại cắn, dân ngại vote
-CHIẾN LƯỢC BẮN:
-- Luôn theo dõi ai đáng nghi nhất → nếu chết thì bắn ngay
-- Ưu tiên bắn: người mày chắc chắn nhất là sói (dựa trên vote pattern, hành vi, Tiên Tri tố)
-- ĐỪNG bắn bừa — bắn nhầm dân = thảm họa cho phe dân`;
+    return `VAI TRÒ: MÀY LÀ THỢ SĂN — chết thì bắn 1 phát cuối kéo theo 1 người.
+Bị sói cắn hoặc treo cổ → được bắn. Bị Phù Thủy đầu độc → chết im, không bắn.
+MỤC TIÊU: Sống thì dẫn dắt dân tìm sói. Chết thì bắn đúng sói → swing game.
+LỢI THẾ ĐỘC NHẤT: Mày không sợ chết — chết còn bắn được. Dùng lợi thế này:
+- Chơi tự tin, dám nói dám tố — sói ngại cắn mày vì sợ bị bắn.
+- Doạ khi bị dồn: "giết tao thì tao bắn lại" → sói ngại, dân ngại.
+- Luôn theo dõi ai đáng nghi nhất → sẵn sàng bắn nếu chết bất ngờ.`;
   }
 
   discussionHint(_player: Player, _state: GameState): string {
-    return `MÀY LÀ THỢ SĂN. Chết thì kéo theo 1 thằng.
-- Chơi tự tin, dám nói — mày có "bảo hiểm" khi chết
-- Tham gia thảo luận tích cực, phân tích vote/death pattern
-- Doạ khi cần: "giết tao thì tao bắn lại"
-- Luôn theo dõi ai đáng nghi nhất để sẵn sàng bắn nếu chết`;
+    return `MÀY LÀ THỢ SĂN. Chết thì kéo theo 1 thằng — mày có "bảo hiểm".
+Chơi tự tin, tham gia tích cực. Luôn theo dõi ai đáng nghi nhất để sẵn sàng bắn.`;
   }
 
   defenseHint(_player: Player, _state: GameState): string {
-    return `Mày là THỢ SĂN bị đưa lên giàn! COME OUT + DOẠ:
-- "Tao là Thợ Săn — giết tao thì tao bắn thằng [tên] ngay!"
-- Chỉ đích danh thằng mày sẽ bắn nếu chết (thằng nghi sói nhất)
-- Sói sẽ ngại vote giết mày vì sợ bị bắn → lợi thế`;
+    return `Mày là THỢ SĂN bị đưa lên giàn! Come out + doạ: "giết tao thì tao bắn thằng [tên nghi nhất] ngay!"
+Sói sẽ ngại vote giết mày vì sợ bị bắn.`;
   }
 
   hunterShot(player: Player, state: GameState, observations: string[]): string {
     const targets = state.players.filter(p => p.alive && p.id !== player.id);
     return `${taskContext(observations)}
-MÀY ĐANG CHẾT! Mày là Thợ Săn — được bắn 1 phát cuối.
-Suy nghĩ kỹ trong reasoning — bắn nhầm dân = thảm họa:
-- Ai mày chắc chắn nhất là sói? Bằng chứng gì? (Tiên Tri tố, vote pattern, hành vi)
-- Ai hưởng lợi nhiều nhất khi mày chết?
-- Nếu không chắc ai là sói → bắn người bị tố nhiều nhất hoặc người đáng nghi nhất
+MÀY ĐANG CHẾT! Bắn 1 phát cuối — bắn nhầm dân = thảm họa, bắn đúng sói = swing game.
+Ai mày chắc nhất là sói? Dựa trên: Tiên Tri tố, vote pattern, hành vi, ai hưởng lợi khi mày chết.
 Danh sách: ${targets.map(t => t.name).join(', ')}
-JSON: {"target":"Tên","reasoning":"phân tích chi tiết ai là sói + bằng chứng"}`;
+JSON: {"target":"Tên","reasoning":"lý do bắn"}`;
   }
 }

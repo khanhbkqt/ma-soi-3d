@@ -10,7 +10,7 @@ export class OpenAIProvider implements LLMProvider {
     if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`;
     const res = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST', headers,
-      body: JSON.stringify(body), signal: AbortSignal.timeout(30000),
+      body: JSON.stringify(body), signal: AbortSignal.timeout(180000),
     });
     if (!res.ok) throw new Error(`OpenAI error: ${res.status} ${await res.text()}`);
     const data = await res.json() as any;
@@ -22,7 +22,7 @@ export class OpenAIProvider implements LLMProvider {
   async getModels(): Promise<string[]> {
     const headers: Record<string, string> = {};
     if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`;
-    const res = await fetch(`${this.baseUrl}/models`, { headers, signal: AbortSignal.timeout(10000) });
+    const res = await fetch(`${this.baseUrl}/models`, { headers, signal: AbortSignal.timeout(30000) });
     if (!res.ok) throw new Error(`Failed to fetch models: ${res.status}`);
     const data = await res.json() as any;
     return data.data.map((m: any) => m.id);

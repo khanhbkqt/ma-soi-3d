@@ -17,37 +17,41 @@ function formatWolfDiscussion(discussion: { playerName: string; message: string 
 
 export class WolfPromptBuilder extends BasePromptBuilder {
   roleIdentity(player: Player, state: GameState): string {
-    return `VAI TRÒ: MÀY LÀ SÓI — đội lốt dân, diễn cho giỏi, đừng để ai phát hiện.
+    return `VAI TRÒ: MÀY LÀ SÓI — đội lốt dân, ĐÁNH LẠC HƯỚNG chủ động, không chỉ phòng thủ.
 ${wolfTeammates(player, state)}
-KỸ THUẬT DIỄN XUẤT:
-- REDIRECT: Khi ai tố mày hoặc đồng đội → lập tức đổi hướng sang người khác, đưa lý do cụ thể
-- POCKET: Chọn 1-2 dân để bênh vực → họ sẽ tin mày và bênh lại. Tạo liên minh giả.
-- BUS: Nếu đồng đội sói sắp bị lộ → có thể hy sinh (vote giết) để tạo uy tín "tao tìm ra sói"
-- BLEND: Vote giống đám đông dân, nói giống dân, react giống dân. Đừng nổi bật.
-- FAKE CLAIM: Khi bị dồn, giả làm Bảo Vệ hoặc Dân thường. KHÔNG fake Tiên Tri (dễ bị check).
-CHIẾN LƯỢC:
-- Ban ngày: đóng giả dân, phân tích "logic" để trông thông minh, tố dân để giết dân
-- Ban đêm: phối hợp cắn người nguy hiểm (Tiên Tri, Phù Thủy, người đang dẫn dắt dân)
-- TUYỆT ĐỐI KHÔNG vote/nghi ngờ đồng bọn sói trừ khi BUS có chiến thuật`;
+TƯ DUY CỐT LÕI — SÓI GIỎI KHÔNG CHỈ GIẤU MÌNH, MÀ GÂY HỖN LOẠN:
+- GÂY NGHI NGỜ GIỮA DÂN: Mục tiêu #1 là khiến dân nghi nhau, không phải bảo vệ đồng đội bằng mọi giá.
+- SẴN SÀNG BUS: Đồng đội sói bị lộ → vote giết luôn, đừng cố cứu lộ liễu. Mày được uy tín "tìm ra sói", sói còn lại an toàn hơn.
+- ĐỪNG MỞ MÀN QUÁ SỚM: Vòng 1-2 dè dặt, react nhiều hơn tố. Dân thật thường chưa chắc chắn lúc đầu.
+- ĐỪNG OVER-CONTRIBUTE: Nói vừa đủ, thỉnh thoảng tỏ ra không chắc, do dự. Phân tích quá giỏi = đáng nghi.
+ĐÁNH LẠC HƯỚNG CHỦ ĐỘNG:
+- SEED DOUBT: Gieo nghi ngờ nhẹ giữa 2 dân với nhau: "Ê tao thấy A với B vote ngược nhau hoài, lạ ghê."
+- POCKET: Bênh 1-2 dân → họ tin mày, bênh lại. Liên minh giả cực mạnh.
+- FAKE CONCERN: Giả lo lắng cho phe dân: "Nếu giết nhầm thằng này thì sói lợi lắm" → dân do dự.
+- BUS PROACTIVE: Nghi nhẹ đồng đội sói ("thằng X hơi lạ đấy") → trông khách quan, không ai nghi mày.
+- REDIRECT: Khi bị tố → đổi hướng sang người khác + lý do cụ thể.
+- FAKE CLAIM: Khi bị dồn, giả Bảo Vệ hoặc Dân. KHÔNG fake Tiên Tri.
+BAN ĐÊM: phối hợp cắn người nguy hiểm (Tiên Tri, Phù Thủy, người dẫn dắt dân)`;
   }
 
   discussionHint(player: Player, state: GameState): string {
-    return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}. Đóng giả dân:
-- React lại lời người khác tự nhiên — đồng ý, phản bác, hỏi lại. ĐỪNG chỉ tố người.
-- Nếu ai tố đồng đội sói → REDIRECT: đổi hướng sang người khác, đưa lý do cụ thể
-- Nếu ai tố mày → phản đòn bằng bằng chứng: "tao vote đúng sói vòng trước mà?"
-- Tố 1 người DÂN cụ thể + lý do dựa trên vote/hành vi (đừng tố bừa)
-- Giả vờ phân tích cái chết đêm qua để trông có vẻ dân thông minh
-- KHÔNG bao giờ nghi ngờ/tố đồng bọn sói (trừ khi BUS có chiến thuật)`;
+    return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}. Đánh lạc hướng chủ động:
+- React lại lời người khác trước (đồng ý, hỏi lại, tỏ ra lo) — rồi mới đưa ý kiến.
+- Nói vừa đủ — không nổi bật, không im lặng.
+- GÂY NGHI NGỜ GIỮA DÂN: gợi ý nhẹ rằng 2 dân đáng nghi với nhau, để dân tự cắn nhau.
+- Nếu đồng đội sói bị tố đúng → ĐỪNG bênh lộ liễu. Có thể đồng ý nhẹ hoặc im lặng — cứu lộ liễu = lộ cả 2.
+- Nếu ai tố mày → bình tĩnh, đưa bằng chứng cụ thể: "tao vote đúng sói vòng trước mà?"
+- Có thể nghi nhẹ đồng đội sói để trông khách quan (BUS nhẹ) — miễn đừng dồn quá mạnh.
+- Chỉ tố dân khi có cớ từ hành vi/vote. Tố bừa = trông như sói gây nhiễu.`;
   }
 
   voteHint(player: Player, state: GameState): string {
     return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}.
 Suy nghĩ trước khi vote:
-- Vote 1 thằng DÂN. Ưu tiên: dân nguy hiểm (đang dẫn dắt, phân tích giỏi, gần tìm ra sói)
-- KHÔNG vote đồng bọn sói (trừ khi BUS — hy sinh đồng đội sắp bị lộ để tạo uy tín)
-- Nên vote theo đám đông nếu đám đông đang tố dân → giết dân miễn phí
-- Nếu đám đông tố đồng đội sói → cân nhắc BUS hoặc vote người khác để phân tán vote`;
+- Ưu tiên vote DÂN nguy hiểm (đang dẫn dắt, phân tích giỏi, gần tìm ra sói)
+- Nếu đám đông đang dồn đồng đội sói đã bị lộ → VOTE CÙNG ĐÁM ĐÔNG. Cứu lộ liễu = lộ mày. Hy sinh 1 sói để mày được uy tín.
+- Nếu đám đông tố dân → vote theo, giết dân miễn phí
+- Nếu vote phân tán → vote dân nguy hiểm nhất, hoặc vote giống người mày đang pocket`;
   }
 
   defenseHint(_player: Player, _state: GameState): string {
@@ -62,9 +66,16 @@ Suy nghĩ trước khi vote:
   judgementHint(player: Player, state: GameState): string {
     const wolfIds = new Set(state.players.filter(p => isWolfRole(p.role)).map(p => p.id));
     const accusedIsWolf = state.accusedId ? wolfIds.has(state.accusedId) : false;
-    return `MÀY LÀ SÓI. ${accusedIsWolf
-      ? 'BỊ CÁO LÀ ĐỒNG BỌN SÓI → vote THA. Nhưng DIỄN TỰ NHIÊN: đưa lý do hợp lý để tha (lời biện hộ thuyết phục, chưa đủ bằng chứng, cần điều tra thêm). ĐỪNG vote tha không lý do.'
-      : 'Bị cáo là DÂN → vote GIẾT. Đưa lý do tố cụ thể để thuyết phục người khác vote giết cùng.'}`;
+    const aliveWolves = state.players.filter(p => isWolfRole(p.role) && p.alive).length;
+    if (accusedIsWolf) {
+      return `MÀY LÀ SÓI. Bị cáo là ĐỒNG BỌN SÓI.
+Suy nghĩ chiến thuật:
+- Nếu đám đông đã dồn mạnh + bằng chứng rõ → vote GIẾT luôn. Cứu lộ liễu = lộ mày. Hy sinh đồng đội để mày được uy tín "tìm ra sói".
+- Nếu vote đang sát sao + có thể cứu tự nhiên → vote THA + đưa lý do hợp lý (chưa đủ bằng chứng, lời biện hộ có lý).
+- ${aliveWolves <= 2 ? 'CHỈ CÒN ÍT SÓI — cân nhắc kỹ trước khi hy sinh, nhưng vẫn ưu tiên không lộ mày.' : 'Còn nhiều sói — hy sinh 1 con không sao, uy tín quan trọng hơn.'}
+ĐỪNG vote tha không lý do — quá lộ.`;
+    }
+    return `MÀY LÀ SÓI. Bị cáo là DÂN → vote GIẾT. Đưa lý do ngắn gọn, cụ thể.`;
   }
 
   // ── Night actions ──
@@ -120,15 +131,16 @@ export class AlphaWolfPromptBuilder extends WolfPromptBuilder {
     return `VAI TRÒ: MÀY LÀ SÓI ĐẦU ĐÀN — thủ lĩnh bầy sói.
 Khả năng đặc biệt: LÂY NHIỄM — biến 1 người thành sói thay vì giết (${infectStatus}).
 ${wolfTeammates(player, state)}
-KỸ THUẬT DIỄN XUẤT (giống Sói thường + thêm):
-- Mày là thủ lĩnh ngầm — dẫn dắt vote, tạo narrative, kiểm soát thảo luận
-- REDIRECT, POCKET, BUS, BLEND — dùng tất cả kỹ thuật sói
-- Tự tin hơn sói thường — nói chắc nịch, tạo cảm giác đáng tin
+TƯ DUY THỦ LĨNH:
+- Dẫn dắt vote TINH TẾ — gợi ý thay vì ra lệnh. Đừng lộ liễu kiểm soát thảo luận.
+- ĐỪNG MỞ MÀN QUÁ SỚM: Vòng 1-2 dè dặt, blend vào đám đông.
+- GÂY NGHI NGỜ GIỮA DÂN: Gieo nghi ngờ nhẹ giữa dân với nhau — mục tiêu #1.
+- SẴN SÀNG BUS: Đồng đội bị lộ → vote giết, lấy uy tín. Thủ lĩnh phải sống.
+- BUS PROACTIVE: Nghi nhẹ đồng đội sói để trông khách quan — miễn đừng dồn quá mạnh.
 CHIẾN LƯỢC LÂY NHIỄM:
 - Lây nhiễm role mạnh: Bảo Vệ (chặn protect), Thợ Săn (thêm quân + vô hiệu bắn)
 - Lây nhiễm người đang tin mày (pocket) → đồng minh giả thành đồng minh thật
-- KHÔNG lây nhiễm Tiên Tri (sẽ biết mày là sói) hoặc người sắp chết
-- TUYỆT ĐỐI KHÔNG vote/nghi ngờ đồng bọn sói trừ khi BUS có chiến thuật`;
+- KHÔNG lây nhiễm Tiên Tri (sẽ biết mày là sói) hoặc người sắp chết`;
   }
 
   alphaInfect(player: Player, state: GameState, observations: string[], discussion: { playerName: string; message: string }[] = []): string {
@@ -150,21 +162,21 @@ export class WolfCubPromptBuilder extends WolfPromptBuilder {
     return `VAI TRÒ: MÀY LÀ SÓI CON — nhỏ nhưng quan trọng.
 Nếu mày chết → đêm sau sói cắn 2 người (trả thù). Sói MUỐN mày sống lâu.
 ${wolfTeammates(player, state)}
-CHIẾN LƯỢC DIỄN XUẤT:
-- Diễn ngây thơ nhưng TINH VI — không phải ngây ngô ngu ngốc, mà là "mới chơi, đang học"
-- Hỏi câu hỏi có vẻ ngây thơ nhưng thực ra gài bẫy: "Ê tại sao mày vote thằng A mà không vote thằng B?"
-- Hùa theo người khác nhưng thỉnh thoảng có ý kiến riêng (để không bị nghi im quá)
-- Nếu bị nghi → tỏ ra hoang mang, sợ hãi, "tao mới chơi lần đầu mà"
-- Mục tiêu: sống càng lâu càng tốt. Nếu chết → sói trả thù cắn 2.
-- KHÔNG bao giờ nghi ngờ/tố đồng bọn sói`;
+CHIẾN LƯỢC:
+- Diễn ngây thơ TINH VI — "mới chơi, đang học" nhưng thực ra gài bẫy.
+- Hỏi câu có vẻ ngây thơ nhưng gây nghi ngờ giữa dân: "Ê sao A với B vote ngược nhau vậy? Ai nói thật?"
+- Hùa theo đám đông, thỉnh thoảng có ý kiến nhẹ — đừng im quá, đừng nói nhiều quá.
+- Nếu bị nghi → hoang mang: "Tao biết gì đâu, tao mới chơi mà"
+- Nếu đồng đội sói bị tố → ĐỪNG bênh lộ liễu. Im hoặc đồng ý nhẹ — cứu lộ = lộ cả 2.
+- Mục tiêu: sống lâu. Nếu chết → sói trả thù cắn 2.`;
   }
 
   discussionHint(player: Player, state: GameState): string {
-    return `MÀY LÀ SÓI CON. ${wolfTeammates(player, state)}. Diễn ngây thơ tinh vi:
-- Hỏi câu có vẻ ngây thơ nhưng gài bẫy: "Hả thiệt hả? Sao thằng đó lại vote vậy?"
-- Hùa theo đám đông nhưng thỉnh thoảng có ý kiến nhẹ
-- React lại người khác tự nhiên — ngạc nhiên, sợ hãi, tò mò
-- Nếu bị nghi → hoang mang: "Tao biết gì đâu, tao mới chơi mà"
-- ĐỪNG im hoàn toàn — im quá cũng bị nghi`;
+    return `MÀY LÀ SÓI CON. ${wolfTeammates(player, state)}. Diễn ngây thơ + gây hỗn loạn nhẹ:
+- Hỏi câu ngây thơ nhưng gài bẫy: "Hả thiệt hả? Sao thằng đó lại vote vậy?" → khiến dân nghi nhau.
+- Hùa theo đám đông, thỉnh thoảng có ý kiến nhẹ.
+- React tự nhiên — ngạc nhiên, sợ hãi, tò mò.
+- Nếu đồng đội sói bị tố → đừng bênh. Có thể im hoặc hỏi ngây thơ: "Ủa thiệt hả? Sao biết?"
+- Nếu bị nghi → hoang mang: "Tao biết gì đâu, tao mới chơi mà"`;
   }
 }

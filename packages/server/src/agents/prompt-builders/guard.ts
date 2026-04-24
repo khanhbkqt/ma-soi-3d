@@ -3,48 +3,34 @@ import { BasePromptBuilder, taskContext } from './base.js';
 
 export class GuardPromptBuilder extends BasePromptBuilder {
   roleIdentity(_player: Player, _state: GameState): string {
-    return `VAI TRÒ: MÀY LÀ BẢO VỆ — mỗi đêm chọn 1 người để bảo vệ khỏi sói cắn.
-QUY TẮC:
-- Không được bảo vệ cùng 1 người 2 đêm liên tiếp
-- Mày CÓ THỂ bảo vệ chính mình
-- Bảo vệ chỉ chặn sói cắn, KHÔNG chặn thuốc độc Phù Thủy
-CHIẾN LƯỢC BẢO VỆ:
-- Tiên Tri đã come out → bảo vệ Tiên Tri (sói sẽ cắn). Nhưng sói biết mày sẽ đỡ → có thể cắn người khác → mind game!
-- Không ai come out → đoán sói nhắm ai: người đang dẫn dắt dân, người phân tích giỏi, người vừa tố sói đúng
-- Đừng predictable — nếu sói đoán được pattern bảo vệ → cắn người khác
-- Tự bảo vệ khi: mày bị nghi, hoặc cảm thấy sói biết mày là Bảo Vệ
-CHIẾN LƯỢC BAN NGÀY:
-- Giấu thân TUYỆT ĐỐI — chơi như dân bình thường
-- Come out khi bị đưa lên giàn: "giết tao thì đêm không ai đỡ"
-- Nếu Tiên Tri come out → ĐỪNG nói "tao sẽ đỡ Tiên Tri" (lộ role cho sói)`;
+    return `VAI TRÒ: MÀY LÀ BẢO VỆ — mỗi đêm chọn 1 người bảo vệ khỏi sói cắn.
+Ràng buộc: không bảo vệ cùng 1 người 2 đêm liên tiếp. Có thể bảo vệ chính mình. Chỉ chặn sói, không chặn thuốc độc.
+MỤC TIÊU: Đoán đúng target sói → chặn kill → phe dân lợi lớn.
+THẾ KHÓ CỦA BẢO VỆ:
+- Tiên Tri come out → sói muốn cắn Tiên Tri → mày muốn đỡ Tiên Tri. Nhưng sói biết mày sẽ đỡ → có thể cắn người khác. Mind game nhiều lớp.
+- Không ai come out → phải đoán sói nhắm ai dựa trên: ai đang dẫn dắt dân, ai vừa tố sói đúng, ai nguy hiểm cho sói.
+- Đừng predictable — sói sẽ đọc pattern bảo vệ.
+BAN NGÀY: Giấu thân, chơi như dân. Come out khi bị đưa lên giàn.`;
   }
 
   discussionHint(_player: Player, _state: GameState): string {
-    return `MÀY LÀ BẢO VỆ. Giấu thân, nói chuyện như dân bình thường.
-- Tham gia thảo luận tích cực — phân tích, hỏi han, tố nghi phạm
-- ĐỪNG lộ role. ĐỪNG nói "tao đỡ ai đêm qua" hay hint gì về bảo vệ.
-- Nếu ai come out Tiên Tri → ĐỪNG nói "tao sẽ đỡ" (lộ cho sói)`;
+    return `MÀY LÀ BẢO VỆ. Giấu thân, nói như dân. Tham gia thảo luận tự nhiên.
+Đừng hint gì về bảo vệ. Nếu ai come out Tiên Tri → đừng nói "tao sẽ đỡ" (lộ cho sói).`;
   }
 
   defenseHint(_player: Player, _state: GameState): string {
-    return `Mày là BẢO VỆ bị đưa lên giàn! COME OUT:
-- "Tao là Bảo Vệ, giết tao thì đêm không ai đỡ — sói cắn thoải mái!"
-- Nếu đã đỡ thành công trước đó → nói ra làm bằng chứng
-- Chỉ ra ai đáng nghi hơn mày`;
+    return `Mày là BẢO VỆ bị đưa lên giàn! Come out — giết mày thì đêm không ai đỡ, sói cắn thoải mái.
+Nếu đã đỡ thành công trước đó → nói ra làm bằng chứng.`;
   }
 
   guardProtect(player: Player, state: GameState, observations: string[], lastGuardedId: string | null): string {
     const targets = state.players.filter(p => p.alive && p.id !== lastGuardedId);
     const lastGuardedName = lastGuardedId ? state.players.find(p => p.id === lastGuardedId)?.name : null;
     return `${taskContext(observations)}
-Chọn 1 người để bảo vệ đêm nay. Mày CÓ THỂ bảo vệ chính mình.
-${lastGuardedName ? `KHÔNG được bảo vệ ${lastGuardedName} (đêm trước đã bảo vệ rồi).` : ''}
-Suy nghĩ trong reasoning:
-- Ai sói sẽ cắn đêm nay? (Tiên Tri come out → cắn Tiên Tri. Nhưng sói biết mày đỡ → có thể cắn người khác)
-- Ai đang nguy hiểm? (người vừa tố sói, người dẫn dắt dân)
-- Đừng predictable — sói sẽ đoán pattern bảo vệ
-- Tự bảo vệ nếu cảm thấy sói biết mày là Bảo Vệ
+Chọn 1 người để bảo vệ đêm nay (có thể bảo vệ chính mình).
+${lastGuardedName ? `Không được bảo vệ ${lastGuardedName} (đêm trước đã bảo vệ).` : ''}
+Đoán xem sói sẽ cắn ai → bảo vệ người đó. Nghĩ nhiều lớp: sói biết mày sẽ đỡ ai → có thể cắn người khác.
 Danh sách: ${targets.map(t => t.name).join(', ')}
-JSON: {"target":"Tên","reasoning":"phân tích ai cần bảo vệ + mind game với sói"}`;
+JSON: {"target":"Tên","reasoning":"lý do chọn target"}`;
   }
 }

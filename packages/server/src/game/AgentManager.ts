@@ -8,6 +8,7 @@ import { roleNameVi } from '../agents/prompt-builders/base.js';
 
 export class AgentManager implements ActionResolver {
   private brains = new Map<string, AgentBrain>();
+  private pendingReasoning = new Map<string, string>();
 
   constructor(private gm: GameMaster) {}
 
@@ -50,6 +51,41 @@ export class AgentManager implements ActionResolver {
 
     // Listen to game events to update agent memories
     this.gm.on('gameEvent', (event) => {
+      // Attach pending reasoning to relevant events before they reach clients
+      const d = event.data;
+      const reasoningEventTypes = new Set([
+        GameEventType.DayMessage, GameEventType.VoteCast, GameEventType.DefenseSpeech,
+        GameEventType.JudgementVoteCast, GameEventType.NightActionPerformed,
+        GameEventType.GuardProtect, GameEventType.WitchAction, GameEventType.SeerResult,
+        GameEventType.AlphaInfect, GameEventType.WolfDiscussMessage,
+      ]);
+      if (reasoningEventTypes.has(event.type)) {
+        // Try direct playerId fields first, then name-based lookup
+        const playerId = d.playerId || d.guardId || d.seerId || d.alphaId
+          || (d.voterName && this.gm.state.players.find(p => p.name === d.voterName)?.id)
+          || (d.witchId);
+        if (playerId) {
+          const reasoning = this.pendingReasoning.get(playerId);
+          if (reasoning) { d.reasoning = reasoning; this.pendingReasoning.delete(playerId); }
+        }
+        // Wolf night actions: use the first alive wolf's pending reasoning
+        if (!d.reasoning && event.type === GameEventType.NightActionPerformed) {
+          const wolf = this.gm.state.players.find(p => isWolfRole(p.role) && p.alive);
+          if (wolf) {
+            const reasoning = this.pendingReasoning.get(wolf.id);
+            if (reasoning) { d.reasoning = reasoning; this.pendingReasoning.delete(wolf.id); }
+          }
+        }
+        // Witch: find witch player
+        if (!d.reasoning && event.type === GameEventType.WitchAction) {
+          const witch = this.gm.state.players.find(p => p.role === Role.Witch);
+          if (witch) {
+            const reasoning = this.pendingReasoning.get(witch.id);
+            if (reasoning) { d.reasoning = reasoning; this.pendingReasoning.delete(witch.id); }
+          }
+        }
+      }
+
       // Update alive names for deduction trackers on phase changes
       if (event.type === GameEventType.PhaseChanged) {
         const alive = this.gm.state.players.filter(p => p.alive).map(p => p.name);
@@ -57,14 +93,17 @@ export class AgentManager implements ActionResolver {
       }
       for (const [id, brain] of this.brains) {
         const obs = this.eventToObservation(event, brain.player);
-        if (obs) brain.addObservation(obs);
+        if (obs) {
+          const items = Array.isArray(obs) ? obs : [obs];
+          for (const o of items) brain.addObservation(o);
+        }
       }
     });
 
     return players;
   }
 
-  private eventToObservation(event: any, viewer: Player): string | null {
+  private eventToObservation(event: any, viewer: Player): string | string[] | null {
     const d = event.data;
     const causeVi: Record<string, string> = {
       wolf_kill: 'bị sói cắn', witch_kill: 'bị đầu độc', judged: 'bị treo cổ',
@@ -124,6 +163,18 @@ export class AgentManager implements ActionResolver {
       case GameEventType.WolfDiscussMessage:
         if (isWolfRole(viewer.role)) return `[Họp sói] ${d.playerName}: "${d.message}"`;
         return null;
+      case GameEventType.InfectResolved: {
+        if (viewer.id !== d.targetId) return null;
+        // Retroactively give the infected player wolf context they missed
+        const parts: string[] = [];
+        const teammates = d.wolfTeammates.map((w: any) => `${w.name}(${roleNameVi(w.role)})`).join(', ');
+        parts.push(`[Sói nội bộ] Đồng bọn sói: ${teammates}`);
+        for (const m of d.wolfDiscussion) {
+          parts.push(`[Họp sói] ${m.playerName}: "${m.message}"`);
+        }
+        if (d.wolfKillTarget) parts.push(`Sói cắn ${d.wolfKillTarget} đêm nay.`);
+        return parts;
+      }
       case GameEventType.CupidPair:
         if (viewer.role === Role.Cupid) return `Mày đã ghép đôi ${d.player1Name} và ${d.player2Name}.`;
         return null;
@@ -216,57 +267,100 @@ export class AgentManager implements ActionResolver {
     return this.brains.get(player.id)!;
   }
 
+  private storeReasoning(player: Player, brain: AgentBrain) {
+    if (brain.lastReasoning) this.pendingReasoning.set(player.id, brain.lastReasoning);
+  }
+
   async wolfKill(wolves: Player[], state: GameState, discussion: WolfDiscussMessage[]): Promise<string> {
     if (!wolves.length) return '';
-    return this.getBrain(wolves[0]).decideWolfKill(state, discussion);
+    const brain = this.getBrain(wolves[0]);
+    const result = await brain.decideWolfKill(state, discussion);
+    this.storeReasoning(wolves[0], brain);
+    return result;
   }
 
   async wolfDoubleKill(wolves: Player[], state: GameState, discussion: WolfDiscussMessage[]): Promise<[string, string]> {
     if (!wolves.length) return ['', ''];
-    return this.getBrain(wolves[0]).decideWolfDoubleKill(state, discussion);
+    const brain = this.getBrain(wolves[0]);
+    const result = await brain.decideWolfDoubleKill(state, discussion);
+    this.storeReasoning(wolves[0], brain);
+    return result;
   }
 
   async alphaInfect(alpha: Player, state: GameState, discussion: WolfDiscussMessage[]): Promise<{ target: string; infect: boolean }> {
-    return this.getBrain(alpha).decideAlphaInfect(state, discussion);
+    const brain = this.getBrain(alpha);
+    const result = await brain.decideAlphaInfect(state, discussion);
+    this.storeReasoning(alpha, brain);
+    return result;
   }
 
   async wolfDiscuss(wolf: Player, state: GameState, messages: WolfDiscussMessage[], round: number): Promise<string> {
-    return this.getBrain(wolf).decideWolfDiscuss(state, messages, round);
+    const brain = this.getBrain(wolf);
+    const result = await brain.decideWolfDiscuss(state, messages, round);
+    this.storeReasoning(wolf, brain);
+    return result;
   }
 
   async seerInvestigate(seer: Player, state: GameState): Promise<string> {
-    return this.getBrain(seer).decideSeerInvestigate(state);
+    const brain = this.getBrain(seer);
+    const result = await brain.decideSeerInvestigate(state);
+    this.storeReasoning(seer, brain);
+    return result;
   }
 
   async witchAction(witch: Player, state: GameState, killedName: string | null, potions: WitchPotions): Promise<{ heal: boolean; killTarget: string | null }> {
-    return this.getBrain(witch).decideWitchAction(state, killedName, potions);
+    const brain = this.getBrain(witch);
+    const result = await brain.decideWitchAction(state, killedName, potions);
+    this.storeReasoning(witch, brain);
+    return result;
   }
 
   async guardProtect(guard: Player, state: GameState, lastGuardedId: string | null): Promise<string> {
-    return this.getBrain(guard).decideGuardProtect(state, lastGuardedId);
+    const brain = this.getBrain(guard);
+    const result = await brain.decideGuardProtect(state, lastGuardedId);
+    this.storeReasoning(guard, brain);
+    return result;
   }
 
   async cupidPair(cupid: Player, state: GameState): Promise<[string, string]> {
-    return this.getBrain(cupid).decideCupidPair(state);
+    const brain = this.getBrain(cupid);
+    const result = await brain.decideCupidPair(state);
+    this.storeReasoning(cupid, brain);
+    return result;
   }
 
   async discuss(player: Player, state: GameState, messages: DayMessage[], round: number): Promise<{ message: string; wantToSpeak: boolean }> {
-    return this.getBrain(player).discuss(state, messages, round);
+    const brain = this.getBrain(player);
+    const result = await brain.discuss(state, messages, round);
+    this.storeReasoning(player, brain);
+    return result;
   }
 
   async vote(player: Player, state: GameState, messages: DayMessage[]): Promise<string> {
-    return this.getBrain(player).vote(state, messages);
+    const brain = this.getBrain(player);
+    const result = await brain.vote(state, messages);
+    this.storeReasoning(player, brain);
+    return result;
   }
 
   async defend(player: Player, state: GameState, messages: DayMessage[]): Promise<string> {
-    return this.getBrain(player).defend(state, messages);
+    const brain = this.getBrain(player);
+    const result = await brain.defend(state, messages);
+    this.storeReasoning(player, brain);
+    return result;
   }
 
   async judgeVote(player: Player, state: GameState, accusedName: string, defenseSpeech: string, messages: DayMessage[]): Promise<'kill' | 'spare'> {
-    return this.getBrain(player).judgeVote(state, accusedName, defenseSpeech, messages);
+    const brain = this.getBrain(player);
+    const result = await brain.judgeVote(state, accusedName, defenseSpeech, messages);
+    this.storeReasoning(player, brain);
+    return result;
   }
 
   async hunterShot(hunter: Player, state: GameState): Promise<string> {
-    return this.getBrain(hunter).hunterShot(state);
+    const brain = this.getBrain(hunter);
+    const result = await brain.hunterShot(state);
+    this.storeReasoning(hunter, brain);
+    return result;
   }
 }

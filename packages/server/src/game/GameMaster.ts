@@ -352,7 +352,10 @@ export class GameMaster extends EventEmitter {
       const target = this.findByName(targetName);
       if (target) {
         this.state.nightActions.push({ type: 'seer_investigate', actorId: activeSeer.id, targetId: target.id });
-        const isWolf = isWolfRole(target.role);
+        // Seer sees the role as it was BEFORE this night's infect resolves
+        // (per standard Werewolf rules, infect takes effect after dawn)
+        const pendingInfect = this.state.nightActions.some(a => a.type === 'wolf_infect' && a.targetId === target.id);
+        const isWolf = pendingInfect ? false : isWolfRole(target.role);
         this.emitEvent(GameEventType.SeerResult, { seerId: activeSeer.id, targetId: target.id, targetName: target.name, isWolf }, false);
       }
       await this.delay(this.state.config.phaseDelay / 3);
@@ -365,6 +368,16 @@ export class GameMaster extends EventEmitter {
       const target = this.state.players.find(p => p.id === infectAction.targetId);
       if (target) {
         target.role = Role.Werewolf; // Convert to regular werewolf
+        // Notify AgentManager so it can inject wolf-context observations
+        // (wolf discussion, kill target, teammates) into the infected player's memory
+        const wolves = this.state.players.filter(p => isWolfRole(p.role) && p.id !== target.id);
+        this.emitEvent(GameEventType.InfectResolved, {
+          targetId: target.id,
+          targetName: target.name,
+          wolfTeammates: wolves.map(w => ({ name: w.name, role: w.role, alive: w.alive })),
+          wolfKillTarget: wolfTargets[0]?.name || null,
+          wolfDiscussion: wolfDiscussion.map(m => ({ playerName: m.playerName, message: m.message })),
+        }, false);
       }
     }
 

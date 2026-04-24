@@ -10,7 +10,7 @@ export class AnthropicProvider implements LLMProvider {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': this.apiKey, 'anthropic-version': '2023-06-01' },
       body: JSON.stringify({ model: options?.model || this.model, max_tokens: options?.maxTokens ?? 1024, system, messages: msgs, temperature: options?.temperature ?? 0.8 }),
-      signal: AbortSignal.timeout(30000),
+      signal: AbortSignal.timeout(180000),
     });
     if (!res.ok) throw new Error(`Anthropic error: ${res.status} ${await res.text()}`);
     const data = await res.json() as any;
