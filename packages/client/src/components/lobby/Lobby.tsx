@@ -187,7 +187,13 @@ export default function Lobby() {
       const next = DEFAULT_NAMES.slice(0, playerCount).map((name, i) => {
         if (prev[i]) return prev[i];
         const randomProvider = providers.length > 0 ? providers[Math.floor(Math.random() * providers.length)] : null;
-        return { name, providerId: randomProvider?.id || '', modelName: '' };
+        let randomModel = '';
+        if (randomProvider) {
+          const providerType = randomProvider.type || 'openai';
+          const models = providerModels[randomProvider.id] || MODEL_SUGGESTIONS[providerType] || [];
+          if (models.length > 0) randomModel = models[Math.floor(Math.random() * models.length)];
+        }
+        return { name, providerId: randomProvider?.id || '', modelName: randomModel };
       });
       return next.slice(0, playerCount);
     });
@@ -396,17 +402,21 @@ export default function Lobby() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold text-amber-400">👥 Người Chơi</h2>
             <button 
+              type="button"
               onClick={() => {
                 if (!providers.length) return;
                 setPlayers(prev => prev.map(p => {
                   const pr = providers[Math.floor(Math.random() * providers.length)];
-                  return { ...p, providerId: pr.id, modelName: '' };
+                  const providerType = pr.type || 'openai';
+                  const models = providerModels[pr.id] || MODEL_SUGGESTIONS[providerType] || [];
+                  const randomModel = models.length > 0 ? models[Math.floor(Math.random() * models.length)] : '';
+                  return { ...p, providerId: pr.id, modelName: randomModel };
                 }));
               }}
               className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-2"
               title="Phân chia ngẫu nhiên AI cho từng người chơi"
             >
-              <span>🎲</span> Random Provider
+              <span>🎲</span> Random Provider/Model
             </button>
           </div>
           <div className="grid grid-cols-2 gap-2">
