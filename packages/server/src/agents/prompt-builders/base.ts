@@ -78,6 +78,7 @@ export function speechRules(): string {
 - Xưng hô tự nhiên: tao/mày, tui/bạn, anh/chị, ông/bà — tùy personality.
 - PHẢI react lại lời người khác — đồng ý, phản bác, chọc, hỏi lại. KHÔNG nói như đang độc thoại.
 - CẤM nói chung chung kiểu "tao thấy thằng X đáng nghi" mà không có lý do cụ thể. Phải nêu BẰNG CHỨNG: vote gì, nói gì, im lúc nào, bảo vệ ai.
+- TUYỆT ĐỐI KHÔNG được bịa thông tin mà mày không có trong nhật ký. Không được tự sáng tác kết quả soi, role người khác, hay sự kiện chưa xảy ra.
 - Luôn trả lời bằng JSON đúng format được yêu cầu.
 
 CÁCH SUY LUẬN — suy nghĩ kỹ trước khi nói/hành động:
@@ -85,7 +86,18 @@ CÁCH SUY LUẬN — suy nghĩ kỹ trước khi nói/hành động:
 - PHÂN TÍCH VOTE: Ai vote giống nhau liên tục? (có thể cùng phe). Ai đổi vote phút cuối? Ai vote người vô hại thay vì nghi phạm chính?
 - PHÂN TÍCH HÀNH VI: Ai im lặng khi đồng minh bị tố? Ai nói nhiều nhưng không có nội dung? Ai đổi ý đột ngột? Ai luôn hùa theo đám đông?
 - PHÂN TÍCH TIMING: Ai come out role lúc nào? (sớm quá = đáng ngờ, muộn quá = đáng ngờ). Ai tố người khác ngay sau khi bị tố? (redirect).
-- PHÂN TÍCH LIÊN MINH: Ai luôn bênh ai? Ai không bao giờ tố ai? Cặp đôi ngầm = có thể cùng phe sói.`;
+- PHÂN TÍCH LIÊN MINH: Ai luôn bênh ai? Ai không bao giờ tố ai? Cặp đôi ngầm = có thể cùng phe sói.
+- ĐÁNH GIÁ NGÔN NGỮ KHÁCH QUAN: Khi ai đó nói "cắn X", "X bị cắn", "đêm qua cắn"... ĐỪNG vội kết luận người đó là sói! Trong Ma Sói, BẤT KỲ AI cũng có thể dùng ngôn ngữ này để bluff, đánh lạc hướng, hoặc test phản ứng. Đánh giá dựa trên TỔNG THỂ hành vi (vote pattern, logic, timing) chứ không phải chỉ vì dùng từ "cắn".`;
+}
+
+export function informationRules(): string {
+  return `⛔ LUẬT THÔNG TIN — VI PHẠM = PHẠM LUẬT GAME:
+1. CHỈ ĐƯỢC dùng thông tin có trong NHẬT KÝ và PHÂN TÍCH ROLE. TUYỆT ĐỐI KHÔNG tự sáng tác.
+2. KHÔNG BỊA kết quả soi, role người khác, ai claim gì, ai vote gì — nếu không có trong nhật ký.
+3. Khi tố ai "claim role X" → PHẢI có bằng chứng: "vòng N, thằng A nói...". Không có bằng chứng = không được tố.
+4. Nếu nhớ lờ mờ → nói "tao nhớ không rõ" thay vì bịa chi tiết cụ thể.
+5. KHÔNG vô ý tiết lộ thông tin bí mật (kết quả soi chính xác, ai mày bảo vệ) trừ khi chủ ý come out. Tuy nhiên, nói kiểu "cắn X", "X bị cắn" như chiến thuật bluff/đánh lạc hướng là HOÀN TOÀN HỢP LỆ — đây là một phần của game.
+6. Các phát biểu cùng lượt là ĐỒNG THỜI — không ai "reply" ai trong cùng lượt. Chỉ reply lại phát biểu từ LƯỢT TRƯỚC.`;
 }
 
 export function playerContext(player: Player, state: GameState): string {
@@ -142,6 +154,8 @@ export function systemContext(player: Player, state: GameState, roleHint: string
   return `${gameRules()}
 
 ${speechRules()}
+
+${informationRules()}
 
 ${playerContext(player, state)}
 

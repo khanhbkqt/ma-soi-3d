@@ -6,15 +6,16 @@ export class FoolPromptBuilder extends BasePromptBuilder {
     return `VAI TRÒ: MÀY LÀ KẺ NGỐC — mày THẮNG ngay lập tức khi bị dân vote treo cổ. Bị sói cắn = chết bình thường, không thắng.
 MỤC TIÊU: Khiến dân nghĩ mày là SÓI → vote treo cổ mày → mày thắng.
 THẾ KHÓ: Ai cố tình diễn "đáng ngờ" (nói ngắc ngứ, vote ngược bầy) sẽ bị Làng nhận ra ngay là Kẻ Ngốc và BƠ ĐI.
-TƯ DUY ĐỈNH CAO: Để được Làng vote treo cổ, mày phải chơi như 1 con Sói đang CỐ GẮNG LÀM NGƯỜI nhưng thất bại, HOẶC làm 1 Dân Làng cực kỳ XẠO LÁO.
-- Tấn công sai: Cố tình tấn công gắt gao 1 người chắc chắn là Dân, để khi Làng nhận ra, họ sẽ ghét và treo cổ mày.
-- Fake Claim (Nhận vơ vai trò): Sáng ra tự nhận là Tiên Tri, chỉ đại 1 người là Sói. Nếu trật, Làng sẽ nghĩ mày là Sói đóng giả Tiên Tri và treo cổ mày ngay lập tức!
-- Tuyệt đối KHÔNG tự nhận là Kẻ Ngốc và KHÔNG lấp liếm vụng về. Hãy diễn một cách hung hăng.`;
+TƯ DUY ĐỈNH CAO — TINH TẾ, KHÔNG LỘ LIỄU:
+- Tạo nghi ngờ DẦN DẦN: Nói mâu thuẫn nhẹ giữa các vòng (vòng trước bênh A, vòng sau tố A). Bênh sai người một cách "tự nhiên". Vote lệch có chủ đích nhưng luôn có lý do nghe được.
+- Giả Sói khéo: Chơi như 1 con Sói đang CỐ GẮNG LÀM NGƯỜI nhưng thất bại — bảo vệ đồng minh sói (giả) quá lộ, redirect khi bị hỏi, đổi target phút cuối.
+- Fake Claim THÔNG MINH: Nếu claim role, phải có chuẩn bị — đừng claim rồi bị bóc ngay lập tức. Tốt nhất là claim vào thời điểm hỗn loạn khi nhiều người đang cãi nhau.
+- Tuyệt đối KHÔNG tự nhận là Kẻ Ngốc và KHÔNG lấp liếm vụng về.`;
   }
 
   discussionHint(_player: Player, _state: GameState): string {
     return `MÀY LÀ KẺ NGỐC. Mục tiêu: bị treo cổ.
-TƯ DUY PHẢN BẮT BÀI: Đừng cố tình ăn nói ngập ngừng hay lấp liếm, dân khôn sẽ biết mày là Ngốc và không vote. Hãy chơi HUNG HĂNG: tấn công sai người hoặc nhận vơ là Tiên Tri soi bậy để dân phẫn nộ nghĩ mày là Sói xạo láo.`;
+TƯ DUY TINH TẾ: Tạo nghi ngờ VỪA ĐỦ — nói mâu thuẫn nhẹ, bênh sai người, vote lệch có chủ đích. Đừng fake claim quá lộ liễu khiến dân nhận ra mày là Ngốc và bơ đi. Chơi như Sói đang cố giấu chứ không phải Ngốc đang cố chết.`;
   }
 
   voteHint(_player: Player, _state: GameState): string {

@@ -1,4 +1,4 @@
-import { Player, GameState, isWolfRole } from '@ma-soi/shared';
+import { Player, GameState, Role, isWolfRole } from '@ma-soi/shared';
 import { BasePromptBuilder, taskContext, roleNameVi } from './base.js';
 
 function wolfTeammates(player: Player, state: GameState): string {
@@ -30,6 +30,8 @@ TƯ DUY CỐT LÕI — KẺ SĂN MỒI THƯỢNG ĐẲNG:
 
   discussionHint(player: Player, state: GameState): string {
     return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}. Đu dây và tạo vỏ bọc:
+
+CHIẾN THUẬT:
 - React tự nhiên trước, sau đó mới đưa ý kiến.
 - Bênh vực một đứa dân đang bị ép vote để lấy lòng tin (Pocketing).
 - Quăng "mũi dùi" bâng quơ vào những đứa im lặng hoặc rén rén để chia rẽ sự chú ý.
@@ -61,7 +63,17 @@ BREAK THE PATTERN (Chống rập khuôn): Thỉnh thoảng hãy vote một cách
     const accusedIsWolf = state.accusedId ? wolfIds.has(state.accusedId) : false;
     const aliveWolves = state.players.filter((p) => isWolfRole(p.role) && p.alive).length;
     if (accusedIsWolf) {
-      return `MÀY LÀ SÓI. Bị cáo là ĐỒNG BỌN SÓI.
+      const accused = state.players.find((p) => p.id === state.accusedId);
+      let valueWarning = '';
+      if (accused?.role === Role.AlphaWolf && !state.alphaInfectUsed) {
+        valueWarning =
+          '\nĐồng bọn là SÓI ĐẦU ĐÀN chưa dùng Lây Nhiễm -- mất nó = mất siêu vũ khí! Cố cứu nếu có thể.';
+      }
+      if (accused?.role === Role.WolfCub) {
+        valueWarning =
+          '\nSói Con chết thì sói cắn 2 đêm sau. Có thể hời ngắn hạn, nhưng mất quân dài hạn.';
+      }
+      return `MÀY LÀ SÓI. Bị cáo là ĐỒNG BỌN SÓI.${valueWarning}
 Thí tốt hay Cứu?
 - Nếu nó đã hết cứu (làng dồn quá căng): Vote GIẾT không thương tiếc! Đạp lên xác nó để sống tiếp.
 - Nếu phiếu đang 50/50 và có lý do chính đáng: Vote THA (với lý do như "thấy nó nói cũng tội/chưa rõ ràng").
@@ -189,6 +201,9 @@ CHIẾN LƯỢC:
 
   discussionHint(player: Player, state: GameState): string {
     return `MÀY LÀ SÓI CON. ${wolfTeammates(player, state)}. Diễn ngây thơ + chia rẽ nội bộ:
+
+Nói "cắn X" hay "X bị cắn" là bình thường, ai cũng nói vậy trong game. Chỉ cẩn thận đừng xác nhận chính xác target thật kết hợp với chi tiết đêm.
+
 - Dùng câu hỏi ngây thơ để gài bẫy: "Hả thiệt hả? Sao người đó lại vote vậy?" → mượn dao giết người.
 - Hùa theo đám đông, react ngạc nhiên, sợ hãi giả tạo.
 - Đồng đội bị tố → đừng bênh. Cứ hỏi ngây thơ: "Ủa thiệt hả? Sao biết hay vậy?"

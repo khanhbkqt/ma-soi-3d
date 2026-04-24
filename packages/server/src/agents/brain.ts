@@ -216,10 +216,38 @@ export class AgentBrain {
     const res = await this.ask(prompt, state);
     try {
       const json = JSON.parse(res.match(/\{[\s\S]*\}/)?.[0] || '{}');
-      return { message: json.message || '...', wantToSpeak: json.wantToSpeak !== false };
+      const message = this.sanitizeWolfMessage(json.message || '...', state);
+      return { message, wantToSpeak: json.wantToSpeak !== false };
     } catch {
       return { message: '...', wantToSpeak: true };
     }
+  }
+
+  /**
+   * Post-processing filter: detect if a wolf agent leaked night-only information
+   * in their day discussion message. Logs a warning if detected.
+   */
+  private sanitizeWolfMessage(message: string, _state: GameState): string {
+    if (!isWolfRole(this.player.role)) return message;
+
+    const nightLeakPatterns = [
+      /cắn .+? (đêm|đêm qua)/i, // "cắn Trang đêm qua"
+      /đêm qua cắn/i, // "đêm qua cắn"
+      /sói cắn/i, // "sói cắn"
+      /cắn mà không chết/i, // "cắn mà không chết"
+      /\[Họp sói\]/i, // wolf meeting content leak
+      /bị cắn .+? không chết/i, // "bị cắn mà không chết"
+    ];
+
+    for (const pattern of nightLeakPatterns) {
+      if (pattern.test(message)) {
+        console.warn(
+          `[AgentBrain] Wolf ${this.player.name} leaked night info: "${message.substring(0, 80)}..."`,
+        );
+        break;
+      }
+    }
+    return message;
   }
 
   async vote(state: GameState, messages: DayMessage[]): Promise<string> {

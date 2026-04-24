@@ -3,7 +3,12 @@
  *
  * Problem: observations.slice(-30) drops early-game facts (deaths, seer results, vote outcomes).
  * Solution: Compress older observations into a structured summary, keep recent ones raw.
+ *
+ * Key design: uses shared helpers from role-deduction.ts (isRoleClaim, isDefenseSpeech)
+ * to ensure claim detection consistency between memory and deduction systems.
  */
+
+import { isRoleClaim, isDefenseSpeech } from './role-deduction.js';
 
 const RECENT_COUNT = 20;
 
@@ -53,7 +58,8 @@ function isChat(obs: string): boolean {
  * Compress observations into summary + recent raw observations.
  * - Extracts key facts (deaths, seer results, votes, executions) from older observations
  * - Keeps the last RECENT_COUNT observations raw
- * - Chat messages in old observations are condensed to vote/accusation patterns only
+ * - Preserves role claims and defense speeches from old rounds (critical for consistency)
+ * - Normal chat messages from old rounds are dropped (noise by that point)
  */
 export function compressMemory(observations: string[]): CompressedMemory {
   if (observations.length <= RECENT_COUNT) {
@@ -70,6 +76,7 @@ export function compressMemory(observations: string[]): CompressedMemory {
   const executions: string[] = [];
   const keyEvents: string[] = [];
   const votePatterns: string[] = []; // who voted whom (condensed)
+  const roleClaims: string[] = []; // role claims & defense speeches preserved
 
   for (const obs of old) {
     if (isPhaseMarker(obs)) continue;
@@ -86,8 +93,14 @@ export function compressMemory(observations: string[]): CompressedMemory {
       keyEvents.push(obs);
     } else if (VOTE_PATTERN.test(obs) && !isChat(obs)) {
       votePatterns.push(obs);
+    } else if (isChat(obs) || isDefenseSpeech(obs)) {
+      // Preserve chat messages that contain role claims or defense speeches
+      // These are critical for agents to remember who claimed what
+      if (isRoleClaim(obs) || isDefenseSpeech(obs)) {
+        roleClaims.push(obs);
+      }
+      // Drop normal chat messages — they're noise by now
     }
-    // Chat messages from old rounds are dropped — they're noise by now
   }
 
   // Build compact summary
@@ -96,6 +109,7 @@ export function compressMemory(observations: string[]): CompressedMemory {
   if (seerResults.length) parts.push(`Soi: ${seerResults.join(' | ')}`);
   if (executions.length) parts.push(`Phán xét: ${executions.join(' | ')}`);
   if (keyEvents.length) parts.push(`Sự kiện: ${keyEvents.join(' | ')}`);
+  if (roleClaims.length) parts.push(`Claim role: ${roleClaims.join(' | ')}`);
   if (votePatterns.length) {
     // Condense votes: keep only unique vote targets with voter counts
     const voteSummary = condenseVotes(votePatterns);

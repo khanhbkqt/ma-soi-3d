@@ -158,7 +158,7 @@ export class GameMaster extends EventEmitter {
     return null;
   }
 
-  private async killPlayer(player: Player, cause: string): Promise<boolean> {
+  private async killPlayer(player: Player, cause: string): Promise<void> {
     player.alive = false;
 
     // Track Wolf Cub death
@@ -219,6 +219,16 @@ export class GameMaster extends EventEmitter {
       }
     }
 
+    // NOTE: Win check is deferred to the caller (dawnPhase, judgementPhase, etc.)
+    // so that ALL cascading deaths (Hunter shot, Lover death) resolve first.
+    // Previously, checkWin() here could end the game before Hunter gets to shoot.
+  }
+
+  /**
+   * Check win condition and end game if there's a winner.
+   * Called AFTER all cascading deaths from killPlayer() have resolved.
+   */
+  private checkAndResolveWin(): boolean {
     const winner = this.checkWin();
     if (winner) {
       this.state.winner = winner;
@@ -648,12 +658,15 @@ export class GameMaster extends EventEmitter {
     for (const death of deaths) {
       const player = this.state.players.find((p) => p.id === death.playerId);
       if (player && player.alive) {
-        const gameOver = await this.killPlayer(player, death.cause);
-        if (gameOver) return;
+        await this.killPlayer(player, death.cause);
       }
     }
 
     this.state.pendingDeaths = [];
+
+    // Check win AFTER all cascading deaths (Hunter shot, Lover) have resolved
+    if (this.checkAndResolveWin()) return;
+
     await this.delay(this.state.config.phaseDelay / 2);
   }
 
@@ -681,22 +694,18 @@ export class GameMaster extends EventEmitter {
       const topHalf = pool.slice(0, Math.max(batchSize, Math.ceil(pool.length / 2)));
       const candidates = topHalf.sort(() => Math.random() - 0.5).slice(0, batchSize);
 
-      // Ask candidates in parallel
-      const results = await Promise.all(
-        candidates.map(async (player) => ({
-          player,
-          ...(await this.resolver.discuss(
-            player,
-            this.state,
-            this.state.discussionMessages,
-            round,
-          )),
-        })),
-      );
-
-      // Emit messages from those who wanted to speak
+      // Ask candidates SEQUENTIALLY (not parallel) so each agent sees previous messages
+      // from the current batch. Prevents hallucination where agents in the same batch
+      // appear to "reply" to each other despite speaking independently.
       let anyoneSpoke = false;
-      for (const { player, message, wantToSpeak } of results) {
+      for (const player of candidates) {
+        const { message, wantToSpeak } = await this.resolver.discuss(
+          player,
+          this.state,
+          this.state.discussionMessages,
+          round,
+        );
+
         if (!wantToSpeak) continue;
         const dayMsg: DayMessage = {
           playerId: player.id,
@@ -909,6 +918,9 @@ export class GameMaster extends EventEmitter {
       }
 
       await this.killPlayer(accused, 'judged');
+
+      // Check win AFTER all cascading deaths resolve
+      if (this.checkAndResolveWin()) return;
     }
 
     this.state.accusedId = null;

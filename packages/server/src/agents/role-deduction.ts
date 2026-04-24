@@ -66,6 +66,23 @@ const CLAIM_PREFIXES = [
   /chị là/,
 ];
 
+/** Patterns that mention roles but are NOT self-claims (accusations, descriptions of others) */
+const CLAIM_NEGATIVES = [
+  /nhận .+ nghe mùi/, // "nhận Tiên Tri nghe mùi" = tố cáo
+  /claim .+ để/, // "claim TT để chặn" = mô tả hành vi người khác
+  /nhảy ra nhận/, // "nó nhảy ra nhận" = mô tả người khác
+  /nhảy ra claim/, // "nhảy ra claim" = mô tả người khác
+  /nó tự nhận/, // Nói về người khác tự nhận
+  /hắn tự nhận/, // Nói về người khác tự nhận
+  /nó là/, // "nó là Tiên Tri" = nói về người khác
+  /hắn là/, // "hắn là Bảo Vệ" = nói về người khác
+  /thằng .+ là/, // "thằng A là sói" = nói về người khác
+  /con .+ là/, // "con B là Phù Thủy" = nói về người khác
+  /fake|giả|xạo|láo/, // Tố cáo claim giả
+  /claim .+ mâu thuẫn/, // "claim X mâu thuẫn" = phân tích
+  /đã nhận|đã claim/, // "nó đã nhận" = nói về quá khứ người khác
+];
+
 const ACCUSE_PATTERNS = [/sói/, /fake/, /giả/, /nói láo/, /nói xạo/, /chắc luôn/, /đéo tin/];
 
 // ── Extractors ──
@@ -84,13 +101,17 @@ const extractSeer: Extractor = (obs) => {
   return null;
 };
 
-/** Role claims from chat: 'X nói: "tao là Thợ Săn..."' */
+/** Role claims from chat: 'X nói: "tao là Thợ Săn..."' — only self-claims, not accusations */
 const extractClaim: Extractor = (obs, round) => {
   const chatMatch = obs.match(/^(.+?) (?:nói|biện hộ): "(.+)"$/);
   if (!chatMatch) return null;
   const [, speaker, text] = chatMatch;
   const lower = text.toLowerCase();
 
+  // Reject if matches any negative pattern (accusations, descriptions of others)
+  if (CLAIM_NEGATIVES.some((p) => p.test(lower))) return null;
+
+  // Only extract first-person self-claims
   for (const prefix of CLAIM_PREFIXES) {
     if (!prefix.test(lower)) continue;
     for (const [keyword, roleName] of ROLE_KEYWORDS) {
@@ -101,6 +122,19 @@ const extractClaim: Extractor = (obs, round) => {
   }
   return null;
 };
+
+/**
+ * Exported helper: checks if an observation string contains a valid role claim.
+ * Used by memory-compression to preserve claim-containing chats.
+ */
+export function isRoleClaim(obs: string): boolean {
+  return extractClaim(obs, 0) !== null;
+}
+
+/** Checks if an observation is a defense speech */
+export function isDefenseSpeech(obs: string): boolean {
+  return /biện hộ: "/.test(obs);
+}
 
 /** Accusations from chat: 'X nói: "thằng Y sói chắc luôn"' */
 const extractAccusation: Extractor = (obs, round) => {
@@ -213,6 +247,19 @@ export class RoleDeductionTracker {
         cs.map((c) => `${p} tự nhận ${c.role} (vòng ${c.round})`).join(', '),
       );
       lines.push(`Claim: ${items.join(' | ')}`);
+    }
+
+    // Claim consistency — detect role-switching (same person claiming different roles)
+    for (const [player, cs] of this.claims) {
+      if (cs.length >= 2) {
+        const roles = cs.map((c) => c.role);
+        const uniqueRoles = [...new Set(roles)];
+        if (uniqueRoles.length >= 2) {
+          lines.push(
+            `⚠ ${player} ĐỔI ROLE: ${cs.map((c) => `${c.role}(vòng ${c.round})`).join(' → ')} — RẤT ĐÁNG NGỜ!`,
+          );
+        }
+      }
     }
 
     // Conflict detection — someone claims MY role

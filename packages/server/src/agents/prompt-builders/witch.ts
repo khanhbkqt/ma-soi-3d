@@ -48,7 +48,9 @@ Chỉ ra kẻ đáng nghi nhất và kêu gọi vote người đó.`;
           ? 'Thuốc cứu đã dùng.'
           : 'Đêm nay không ai bị cắn.';
     const killInfo = !potions.killUsed
-      ? `Đầu độc ai không? Chỉ độc khi có bằng chứng mạnh — độc nhầm dân = thảm họa. Độc Thợ Săn → không được bắn phát cuối.\nDanh sách: ${targets.map((t) => t.name).join(', ')}`
+      ? `Đầu độc ai không? Chỉ độc khi có bằng chứng mạnh — độc nhầm dân = thảm họa. Độc Thợ Săn → không được bắn phát cuối.
+⚠ CẢNH BÁO TRƯỚC KHI ĐỘC: (1) Game có Kẻ Ngốc — kẻ chơi bẩn/xạo/claim sai chưa chắc là Sói, có thể là Ngốc đang câu treo. (2) KHÔNG độc người đã lộ role phe dân (xem PHÂN TÍCH ROLE mục Xác nhận). Chỉ độc khi có BẰNG CHỨNG CỨNG là Sói.
+Danh sách: ${targets.map((t) => t.name).join(', ')}`
       : 'Thuốc độc đã dùng.';
     return `${taskContext(observations)}
 ${healInfo}
