@@ -7,6 +7,7 @@ import PlayerRoster from './PlayerRoster';
 import GameControls from './GameControls';
 import PlayerViewPanel from './PlayerViewPanel';
 import TokenUsagePanel from './TokenUsagePanel';
+import DiscussionCountdown from './DiscussionCountdown';
 
 export default function HUD() {
   const [showRoster, setShowRoster] = useState(true);
@@ -20,6 +21,7 @@ export default function HUD() {
   const wolves = gameState.players.filter((p) => p.alive && isWolfRole(p.role)).length;
   const isDusk = gameState.phase === Phase.Dusk;
   const isJudgement = gameState.phase === Phase.Judgement;
+  const isDay = gameState.phase === Phase.Day;
   const isPlayerView = spectatorMode === 'player';
 
   return (
@@ -44,6 +46,7 @@ export default function HUD() {
             {phase.icon} {phase.label}
           </span>
           <span className="text-gray-400 text-xs">Vòng {gameState.round}</span>
+          {isDay && <DiscussionCountdown />}
           {isPlayerView && playerViewState && (
             <span className="text-cyan-300 text-xs font-medium px-2 py-0.5 rounded bg-cyan-900/40 border border-cyan-700/30">
               👤 {playerViewState.playerName}

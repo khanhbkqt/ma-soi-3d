@@ -3,6 +3,7 @@ import { EffectComposer, Bloom, Vignette, N8AO } from '@react-three/postprocessi
 import * as THREE from 'three';
 import VillageScene from '../scene/VillageScene';
 import SceneOverlay from '../scene/SceneOverlay';
+import NarratorOverlay from '../hud/NarratorOverlay';
 import HUD from '../hud/HUD';
 import { useGameStore } from '../../store/gameStore';
 import { Phase } from '@ma-soi/shared';
@@ -50,6 +51,7 @@ export default function GameView() {
         <PostProcessing />
       </Canvas>
       <SceneOverlay />
+      <NarratorOverlay />
       <HUD />
 
       {!gameState && (
