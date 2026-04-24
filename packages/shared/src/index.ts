@@ -398,6 +398,25 @@ export function getRoleDistribution(playerCount: number, enabledRoles?: Role[]):
   return roles;
 }
 
+// ── Token Usage ──
+export interface TokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+export interface PlayerTokenUsage {
+  playerId: string;
+  playerName: string;
+  usage: TokenUsage;
+  callCount: number;
+}
+
+export interface GameTokenUsage {
+  total: TokenUsage;
+  perPlayer: PlayerTokenUsage[];
+}
+
 // ── Socket Events ──
 export const SocketEvents = {
   // Client -> Server
@@ -414,5 +433,6 @@ export const SocketEvents = {
   GAME_STATE: 'game_state',
   PLAYER_VIEW_STATE: 'player_view_state',
   PROVIDER_TEST_RESULT: 'provider_test_result',
+  TOKEN_USAGE: 'token_usage',
   ERROR: 'error',
 } as const;

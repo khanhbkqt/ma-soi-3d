@@ -6,6 +6,7 @@ import {
   GameConfig,
   Phase,
   PlayerViewState,
+  GameTokenUsage,
 } from '@ma-soi/shared';
 import { create } from 'zustand';
 
@@ -17,6 +18,7 @@ interface GameStore {
   spectatorMode: 'god' | 'fog' | 'player';
   playerViewState: PlayerViewState | null;
   playerViewId: string | null;
+  tokenUsage: GameTokenUsage | null;
   view: 'lobby' | 'game';
 
   connect(): void;
@@ -38,6 +40,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   spectatorMode: 'god',
   playerViewState: null,
   playerViewId: null,
+  tokenUsage: null,
   view: 'lobby',
 
   connect() {
@@ -75,6 +78,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     socket.on(SocketEvents.PLAYER_VIEW_STATE, (pvs: PlayerViewState) => {
       set({ playerViewState: pvs });
+    });
+
+    socket.on(SocketEvents.TOKEN_USAGE, (usage: GameTokenUsage) => {
+      set({ tokenUsage: usage });
     });
 
     socket.on(SocketEvents.ERROR, (err: { message: string }) => {

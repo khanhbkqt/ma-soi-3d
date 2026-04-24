@@ -1,4 +1,4 @@
-import { LLMProvider, LLMMessage, LLMOptions } from './types.js';
+import { LLMProvider, LLMMessage, LLMOptions, LLMResponse } from './types.js';
 
 export class OpenAIProvider implements LLMProvider {
   constructor(
@@ -7,7 +7,7 @@ export class OpenAIProvider implements LLMProvider {
     private baseUrl = 'https://api.openai.com/v1',
   ) {}
 
-  async chat(messages: LLMMessage[], options?: LLMOptions): Promise<string> {
+  async chat(messages: LLMMessage[], options?: LLMOptions): Promise<LLMResponse> {
     const body: any = {
       model: options?.model || this.model,
       messages,
@@ -25,7 +25,16 @@ export class OpenAIProvider implements LLMProvider {
     });
     if (!res.ok) throw new Error(`OpenAI error: ${res.status} ${await res.text()}`);
     const data = (await res.json()) as any;
-    return data.choices[0].message.content;
+    return {
+      content: data.choices[0].message.content,
+      usage: data.usage
+        ? {
+            promptTokens: data.usage.prompt_tokens || 0,
+            completionTokens: data.usage.completion_tokens || 0,
+            totalTokens: data.usage.total_tokens || 0,
+          }
+        : undefined,
+    };
   }
 
   async test(model?: string) {

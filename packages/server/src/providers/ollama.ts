@@ -1,4 +1,4 @@
-import { LLMProvider, LLMMessage, LLMOptions } from './types.js';
+import { LLMProvider, LLMMessage, LLMOptions, LLMResponse } from './types.js';
 
 export class OllamaProvider implements LLMProvider {
   constructor(
@@ -6,7 +6,7 @@ export class OllamaProvider implements LLMProvider {
     private baseUrl = 'http://localhost:11434',
   ) {}
 
-  async chat(messages: LLMMessage[], options?: LLMOptions): Promise<string> {
+  async chat(messages: LLMMessage[], options?: LLMOptions): Promise<LLMResponse> {
     const body: any = {
       model: options?.model || this.model,
       messages,
@@ -25,7 +25,17 @@ export class OllamaProvider implements LLMProvider {
     });
     if (!res.ok) throw new Error(`Ollama error: ${res.status} ${await res.text()}`);
     const data = (await res.json()) as any;
-    return data.message.content;
+    return {
+      content: data.message.content,
+      usage:
+        data.prompt_eval_count != null
+          ? {
+              promptTokens: data.prompt_eval_count || 0,
+              completionTokens: data.eval_count || 0,
+              totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
+            }
+          : undefined,
+    };
   }
 
   async test(model?: string) {

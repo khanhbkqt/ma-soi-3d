@@ -6,6 +6,7 @@ import ChatLog from './ChatLog';
 import PlayerRoster from './PlayerRoster';
 import GameControls from './GameControls';
 import PlayerViewPanel from './PlayerViewPanel';
+import TokenUsagePanel from './TokenUsagePanel';
 
 export default function HUD() {
   const [showRoster, setShowRoster] = useState(true);
@@ -81,6 +82,7 @@ export default function HUD() {
                   <PlayerRoster />
                 </div>
               </div>
+              <TokenUsagePanel />
             </>
           ) : (
             <>
@@ -96,6 +98,7 @@ export default function HUD() {
               >
                 <PlayerRoster />
               </div>
+              <TokenUsagePanel />
             </>
           )}
         </div>

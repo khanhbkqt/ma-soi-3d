@@ -1,4 +1,12 @@
-import { Player, GameState, Role, AgentMemory, DayMessage, isWolfRole } from '@ma-soi/shared';
+import {
+  Player,
+  GameState,
+  Role,
+  AgentMemory,
+  DayMessage,
+  isWolfRole,
+  TokenUsage,
+} from '@ma-soi/shared';
 import { LLMProvider, LLMMessage } from '../providers/index.js';
 import { getPromptBuilder, parseActionResponse } from './prompt-builders/index.js';
 import { WolfPromptBuilder, AlphaWolfPromptBuilder } from './prompt-builders/index.js';
@@ -13,6 +21,8 @@ export class AgentBrain {
   memory: AgentMemory = { observations: [], reflections: [], knownRoles: {}, suspicions: {} };
   readonly deduction = new RoleDeductionTracker();
   lastReasoning: string | undefined;
+  tokenUsage: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+  callCount = 0;
 
   constructor(
     public player: Player,
@@ -32,6 +42,33 @@ export class AgentBrain {
     return this.deduction.buildPrompt(this.player.role, this.player.name);
   }
 
+  /** Names that Seer confirmed NOT_WOLF */
+  private get seerClearNames(): string[] {
+    return [...this.deduction.seerResults].filter(([, r]) => r === 'clear').map(([name]) => name);
+  }
+
+  /** Names confirmed as village-side (seer clear + dead village roles) */
+  private get confirmedVillageNames(): string[] {
+    const villageRoles = new Set([
+      'Dân',
+      'Tiên Tri',
+      'Tiên Tri Tập Sự',
+      'Phù Thủy',
+      'Thợ Săn',
+      'Bảo Vệ',
+      'Thần Tình Yêu',
+      'Kẻ Ngốc',
+    ]);
+    const fromDeaths = [...this.deduction.confirmed]
+      .filter(([, r]) => villageRoles.has(r.role))
+      .map(([name]) => name);
+    return [...new Set([...this.seerClearNames, ...fromDeaths])];
+  }
+
+  private isSeerRole(): boolean {
+    return this.player.role === Role.Seer || this.player.role === Role.ApprenticeSeer;
+  }
+
   private async ask(prompt: string, state: GameState, jsonMode = true): Promise<string> {
     // Inject deduction analysis into user prompt
     const deduc = this.deductionBlock;
@@ -47,13 +84,20 @@ export class AgentBrain {
         jsonMode,
         model: this.player.modelName,
       });
+      const content = res.content;
+      if (res.usage) {
+        this.tokenUsage.promptTokens += res.usage.promptTokens;
+        this.tokenUsage.completionTokens += res.usage.completionTokens;
+        this.tokenUsage.totalTokens += res.usage.totalTokens;
+      }
+      this.callCount++;
       try {
-        const json = JSON.parse(res.match(/\{[\s\S]*\}/)?.[0] || '{}');
+        const json = JSON.parse(content.match(/\{[\s\S]*\}/)?.[0] || '{}');
         this.lastReasoning = json.reasoning || undefined;
       } catch {
         this.lastReasoning = undefined;
       }
-      return res;
+      return content;
     } catch (e) {
       console.error(`[AgentBrain] ${this.player.name} LLM error:`, e);
       this.lastReasoning = undefined;
@@ -181,9 +225,13 @@ export class AgentBrain {
   async vote(state: GameState, messages: DayMessage[]): Promise<string> {
     const prompt = this.builder.vote(this.player, state, this.memory.observations, messages);
     const res = await this.ask(prompt, state);
-    const valid = state.players
-      .filter((p) => p.alive && p.id !== this.player.id)
-      .map((p) => p.name);
+    let valid = state.players.filter((p) => p.alive && p.id !== this.player.id).map((p) => p.name);
+    // Safety net: Seer/ApprenticeSeer cannot vote seer-cleared players
+    if (this.isSeerRole()) {
+      const clear = this.seerClearNames;
+      const filtered = valid.filter((n) => !clear.includes(n));
+      if (filtered.length) valid = filtered;
+    }
     return parseActionResponse(res, [...valid, 'skip']).target || valid[0];
   }
 
@@ -199,6 +247,10 @@ export class AgentBrain {
     defenseSpeech: string,
     messages: DayMessage[],
   ): Promise<'kill' | 'spare'> {
+    // Safety net: Seer/ApprenticeSeer auto-spares seer-cleared players
+    if (this.isSeerRole() && this.seerClearNames.includes(accusedName)) {
+      return 'spare';
+    }
     const prompt = this.builder.judgement(
       this.player,
       state,
@@ -220,9 +272,11 @@ export class AgentBrain {
     const b = this.builder as HunterPromptBuilder;
     const prompt = b.hunterShot(this.player, state, this.memory.observations);
     const res = await this.ask(prompt, state);
-    const valid = state.players
-      .filter((p) => p.alive && p.id !== this.player.id)
-      .map((p) => p.name);
+    let valid = state.players.filter((p) => p.alive && p.id !== this.player.id).map((p) => p.name);
+    // Safety net: filter out confirmed village-side players
+    const village = this.confirmedVillageNames;
+    const filtered = valid.filter((n) => !village.includes(n));
+    if (filtered.length) valid = filtered;
     return parseActionResponse(res, valid).target || valid[0];
   }
 }

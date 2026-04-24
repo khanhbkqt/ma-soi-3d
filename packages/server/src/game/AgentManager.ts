@@ -11,6 +11,7 @@ import {
   PlayerViewState,
   RoleContext,
   VIETNAMESE_NAMES,
+  GameTokenUsage,
 } from '@ma-soi/shared';
 import { AgentBrain } from '../agents/brain.js';
 import { getRandomPersonalities, PERSONALITIES } from '../agents/personalities.js';
@@ -453,5 +454,21 @@ export class AgentManager implements ActionResolver {
     const result = await brain.hunterShot(state);
     this.storeReasoning(hunter, brain);
     return result;
+  }
+
+  getTokenUsage(): GameTokenUsage {
+    const total = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+    const perPlayer = [...this.brains.entries()].map(([, brain]) => {
+      total.promptTokens += brain.tokenUsage.promptTokens;
+      total.completionTokens += brain.tokenUsage.completionTokens;
+      total.totalTokens += brain.tokenUsage.totalTokens;
+      return {
+        playerId: brain.player.id,
+        playerName: brain.player.name,
+        usage: { ...brain.tokenUsage },
+        callCount: brain.callCount,
+      };
+    });
+    return { total, perPlayer };
   }
 }

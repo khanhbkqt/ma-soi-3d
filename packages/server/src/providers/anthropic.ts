@@ -1,4 +1,4 @@
-import { LLMProvider, LLMMessage, LLMOptions } from './types.js';
+import { LLMProvider, LLMMessage, LLMOptions, LLMResponse } from './types.js';
 
 export class AnthropicProvider implements LLMProvider {
   constructor(
@@ -6,7 +6,7 @@ export class AnthropicProvider implements LLMProvider {
     private model: string,
   ) {}
 
-  async chat(messages: LLMMessage[], options?: LLMOptions): Promise<string> {
+  async chat(messages: LLMMessage[], options?: LLMOptions): Promise<LLMResponse> {
     const system = messages.find((m) => m.role === 'system')?.content || '';
     const msgs = messages
       .filter((m) => m.role !== 'system')
@@ -29,7 +29,16 @@ export class AnthropicProvider implements LLMProvider {
     });
     if (!res.ok) throw new Error(`Anthropic error: ${res.status} ${await res.text()}`);
     const data = (await res.json()) as any;
-    return data.content[0].text;
+    return {
+      content: data.content[0].text,
+      usage: data.usage
+        ? {
+            promptTokens: data.usage.input_tokens || 0,
+            completionTokens: data.usage.output_tokens || 0,
+            totalTokens: (data.usage.input_tokens || 0) + (data.usage.output_tokens || 0),
+          }
+        : undefined,
+    };
   }
 
   async test(model?: string) {

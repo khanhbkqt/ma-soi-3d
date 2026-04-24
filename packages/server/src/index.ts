@@ -148,6 +148,8 @@ io.on('connection', (socket) => {
             }
             s.emit(SocketEvents.GAME_STATE, state);
           }
+          // Emit token usage on phase transitions
+          io.emit(SocketEvents.TOKEN_USAGE, manager.getTokenUsage());
         }
       });
 
