@@ -12,7 +12,7 @@ export type ActionResolver = {
   discuss(player: Player, state: GameState, messages: DayMessage[], round: number): Promise<string>;
   vote(player: Player, state: GameState, messages: DayMessage[]): Promise<string>;
   defend(player: Player, state: GameState, messages: DayMessage[]): Promise<string>;
-  judgeVote(player: Player, state: GameState, accusedName: string, defenseSpeech: string): Promise<'kill' | 'spare'>;
+  judgeVote(player: Player, state: GameState, accusedName: string, defenseSpeech: string, messages: DayMessage[]): Promise<'kill' | 'spare'>;
   hunterShot(hunter: Player, state: GameState): Promise<string>;
 };
 
@@ -492,7 +492,7 @@ export class GameMaster extends EventEmitter {
 
     for (const voter of voteOrder) {
       if (!voter.alive) continue;
-      const verdict = await this.resolver.judgeVote(voter, this.state, accused.name, defenseText);
+      const verdict = await this.resolver.judgeVote(voter, this.state, accused.name, defenseText, this.state.discussionMessages);
       const jv: JudgementVote = { voterId: voter.id, verdict };
       this.state.judgementVotes.push(jv);
       this.emitEvent(GameEventType.JudgementVoteCast, { voterName: voter.name, verdict }, true);

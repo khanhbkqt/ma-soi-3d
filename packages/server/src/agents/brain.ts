@@ -1,6 +1,12 @@
 import { Player, GameState, Role, AgentMemory, DayMessage, isWolfRole } from '@ma-soi/shared';
 import { LLMProvider, LLMMessage } from '../providers/index.js';
-import * as prompts from './prompts.js';
+import { getPromptBuilder, parseActionResponse } from './prompt-builders/index.js';
+import { WolfPromptBuilder, AlphaWolfPromptBuilder } from './prompt-builders/index.js';
+import { SeerPromptBuilder } from './prompt-builders/index.js';
+import { WitchPromptBuilder } from './prompt-builders/index.js';
+import { GuardPromptBuilder } from './prompt-builders/index.js';
+import { HunterPromptBuilder } from './prompt-builders/index.js';
+import { CupidPromptBuilder } from './prompt-builders/index.js';
 
 export class AgentBrain {
   memory: AgentMemory = { observations: [], reflections: [], knownRoles: {}, suspicions: {} };
@@ -9,9 +15,11 @@ export class AgentBrain {
 
   addObservation(obs: string) { this.memory.observations.push(obs); }
 
-  private async ask(prompt: string, jsonMode = true): Promise<string> {
+  private get builder() { return getPromptBuilder(this.player.role); }
+
+  private async ask(prompt: string, state: GameState, jsonMode = true): Promise<string> {
     const messages: LLMMessage[] = [
-      { role: 'system', content: 'Mày đang chơi Ma Sói với bạn bè. Nói tiếng Việt tự nhiên, kiểu đời thường — được chọc ghẹo, mỉa mai, nói tục nhẹ. KHÔNG ĐƯỢC nói kiểu AI, lịch sự giả tạo, hay dài dòng. Trả lời bằng JSON đúng format được yêu cầu.' },
+      { role: 'system', content: this.builder.systemPrompt(this.player, state) },
       { role: 'user', content: prompt },
     ];
     try {
@@ -22,91 +30,96 @@ export class AgentBrain {
     }
   }
 
+  // ── Night actions ──
+
   async decideWolfKill(state: GameState): Promise<string> {
-    const prompt = prompts.wolfKillPrompt(this.player, state, this.memory.observations);
-    const res = await this.ask(prompt);
+    const b = this.builder as WolfPromptBuilder;
+    const prompt = b.wolfKill(this.player, state, this.memory.observations);
+    const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive && !isWolfRole(p.role)).map(p => p.name);
-    const parsed = prompts.parseActionResponse(res, valid);
-    return parsed.target || valid[0];
+    return parseActionResponse(res, valid).target || valid[0];
   }
 
   async decideWolfDoubleKill(state: GameState): Promise<[string, string]> {
-    const prompt = prompts.wolfDoubleKillPrompt(this.player, state, this.memory.observations);
-    const res = await this.ask(prompt);
+    const b = this.builder as WolfPromptBuilder;
+    const prompt = b.wolfDoubleKill(this.player, state, this.memory.observations);
+    const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive && !isWolfRole(p.role)).map(p => p.name);
-    const parsed = prompts.parseActionResponse(res, valid);
+    const parsed = parseActionResponse(res, valid);
     const t1 = parsed.target1 || parsed.target || valid[0];
     const t2 = parsed.target2 || valid.find(n => n !== t1) || valid[0];
     return [t1, t2];
   }
 
   async decideAlphaInfect(state: GameState): Promise<{ target: string; infect: boolean }> {
-    const prompt = prompts.alphaInfectPrompt(this.player, state, this.memory.observations);
-    const res = await this.ask(prompt);
+    const b = this.builder as AlphaWolfPromptBuilder;
+    const prompt = b.alphaInfect(this.player, state, this.memory.observations);
+    const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive && !isWolfRole(p.role)).map(p => p.name);
-    const parsed = prompts.parseActionResponse(res, valid);
+    const parsed = parseActionResponse(res, valid);
     return { target: parsed.target || valid[0], infect: !!parsed.infect };
   }
 
   async decideSeerInvestigate(state: GameState): Promise<string> {
-    const prompt = prompts.seerInvestigatePrompt(this.player, state, this.memory.observations);
-    const res = await this.ask(prompt);
+    const b = this.builder as SeerPromptBuilder;
+    const prompt = b.seerInvestigate(this.player, state, this.memory.observations);
+    const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive && p.id !== this.player.id).map(p => p.name);
-    const parsed = prompts.parseActionResponse(res, valid);
-    return parsed.target || valid[0];
+    return parseActionResponse(res, valid).target || valid[0];
   }
 
   async decideWitchAction(state: GameState, killedName: string | null, potions: { healUsed: boolean; killUsed: boolean }): Promise<{ heal: boolean; killTarget: string | null }> {
-    const prompt = prompts.witchActionPrompt(this.player, state, this.memory.observations, killedName, potions);
-    const res = await this.ask(prompt);
+    const b = this.builder as WitchPromptBuilder;
+    const prompt = b.witchAction(this.player, state, this.memory.observations, killedName, potions);
+    const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive && p.id !== this.player.id).map(p => p.name);
-    const parsed = prompts.parseActionResponse(res, valid);
+    const parsed = parseActionResponse(res, valid);
     return { heal: !!parsed.heal, killTarget: parsed.killTarget || null };
   }
 
   async decideGuardProtect(state: GameState, lastGuardedId: string | null): Promise<string> {
-    const prompt = prompts.guardProtectPrompt(this.player, state, this.memory.observations, lastGuardedId);
-    const res = await this.ask(prompt);
+    const b = this.builder as GuardPromptBuilder;
+    const prompt = b.guardProtect(this.player, state, this.memory.observations, lastGuardedId);
+    const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive && p.id !== lastGuardedId).map(p => p.name);
-    const parsed = prompts.parseActionResponse(res, valid);
-    return parsed.target || valid[0];
+    return parseActionResponse(res, valid).target || valid[0];
   }
 
   async decideCupidPair(state: GameState): Promise<[string, string]> {
-    const prompt = prompts.cupidPairPrompt(this.player, state, this.memory.observations);
-    const res = await this.ask(prompt);
+    const b = this.builder as CupidPromptBuilder;
+    const prompt = b.cupidPair(this.player, state, this.memory.observations);
+    const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive).map(p => p.name);
-    const parsed = prompts.parseActionResponse(res, valid);
+    const parsed = parseActionResponse(res, valid);
     const p1 = parsed.player1 || valid[0];
     const p2 = parsed.player2 || valid.find(n => n !== p1) || valid[1];
     return [p1, p2];
   }
 
+  // ── Day actions ──
+
   async discuss(state: GameState, messages: DayMessage[], round: number): Promise<string> {
-    const prompt = prompts.discussionPrompt(this.player, state, this.memory.observations, messages, round);
-    const res = await this.ask(prompt);
-    const parsed = prompts.parseActionResponse(res, []);
-    return parsed.message || "...";
+    const prompt = this.builder.discuss(this.player, state, this.memory.observations, messages, round);
+    const res = await this.ask(prompt, state);
+    return parseActionResponse(res, []).message || "...";
   }
 
   async vote(state: GameState, messages: DayMessage[]): Promise<string> {
-    const prompt = prompts.votePrompt(this.player, state, this.memory.observations, messages);
-    const res = await this.ask(prompt);
+    const prompt = this.builder.vote(this.player, state, this.memory.observations, messages);
+    const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive && p.id !== this.player.id).map(p => p.name);
-    const parsed = prompts.parseActionResponse(res, [...valid, 'skip']);
-    return parsed.target || valid[0];
+    return parseActionResponse(res, [...valid, 'skip']).target || valid[0];
   }
 
   async defend(state: GameState, messages: DayMessage[]): Promise<string> {
-    const prompt = prompts.defensePrompt(this.player, state, this.memory.observations, messages);
-    const res = await this.ask(prompt);
-    const parsed = prompts.parseActionResponse(res, []);
-    return parsed.message || "Tao vô tội!";
+    const prompt = this.builder.defense(this.player, state, this.memory.observations, messages);
+    const res = await this.ask(prompt, state);
+    return parseActionResponse(res, []).message || "Tao vô tội!";
   }
 
-  async judgeVote(state: GameState, accusedName: string, defenseSpeech: string): Promise<'kill' | 'spare'> {
-    const prompt = prompts.judgementVotePrompt(this.player, state, this.memory.observations, accusedName, defenseSpeech);
-    const res = await this.ask(prompt);
+  async judgeVote(state: GameState, accusedName: string, defenseSpeech: string, messages: DayMessage[]): Promise<'kill' | 'spare'> {
+    const prompt = this.builder.judgement(this.player, state, this.memory.observations, accusedName, defenseSpeech, messages);
+    const res = await this.ask(prompt, state);
     try {
       const json = JSON.parse(res.match(/\{[\s\S]*\}/)?.[0] || '{}');
       return json.verdict === 'spare' ? 'spare' : 'kill';
@@ -114,10 +127,10 @@ export class AgentBrain {
   }
 
   async hunterShot(state: GameState): Promise<string> {
-    const prompt = prompts.hunterShotPrompt(this.player, state, this.memory.observations);
-    const res = await this.ask(prompt);
+    const b = this.builder as HunterPromptBuilder;
+    const prompt = b.hunterShot(this.player, state, this.memory.observations);
+    const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive && p.id !== this.player.id).map(p => p.name);
-    const parsed = prompts.parseActionResponse(res, valid);
-    return parsed.target || valid[0];
+    return parseActionResponse(res, valid).target || valid[0];
   }
 }

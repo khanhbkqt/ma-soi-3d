@@ -51,61 +51,71 @@ export class AgentManager implements ActionResolver {
 
   private eventToObservation(event: any, viewer: Player): string | null {
     const d = event.data;
+    const causeVi: Record<string, string> = {
+      wolf_kill: 'bị sói cắn', witch_kill: 'bị đầu độc', judged: 'bị treo cổ',
+      hunter_shot: 'bị Thợ Săn bắn', lover_death: 'chết theo người yêu',
+    };
     switch (event.type) {
-      case GameEventType.PhaseChanged:
-        return `Phase changed to ${d.phase}, round ${d.round}.`;
+      case GameEventType.PhaseChanged: {
+        const phaseVi: Record<string, string> = {
+          Night: 'Ban đêm', Dawn: 'Rạng sáng', Day: 'Ban ngày',
+          Dusk: 'Hoàng hôn', Judgement: 'Phán xét',
+        };
+        return `--- Vòng ${d.round}, ${phaseVi[d.phase] || d.phase} ---`;
+      }
       case GameEventType.PlayerDied:
-        return `${d.playerName} died (${d.cause}). They were ${d.role}.`;
+        return `${d.playerName} đã chết (${causeVi[d.cause] || d.cause}). Vai: ${d.role}.`;
       case GameEventType.DayMessage:
-        return `${d.playerName} said: "${d.message}"`;
+        return `${d.playerName} nói: "${d.message}"`;
       case GameEventType.VoteCast:
-        return `${d.voterName} voted for ${d.targetName}.`;
+        return `${d.voterName} vote ${d.targetName}.`;
       case GameEventType.VoteResult:
-        return d.exiled ? `${d.exiled.name} was exiled by vote.` : 'No one was exiled (tie or no majority).';
+        return d.exiled ? `${d.exiled.name} bị đuổi bởi vote.` : 'Không ai bị đuổi (hòa phiếu).';
       case GameEventType.DuskNomination:
-        return `${d.accusedName} was nominated for judgement.`;
+        return `${d.accusedName} bị đưa lên giàn để phán xét.`;
       case GameEventType.DefenseSpeech:
-        return `${d.playerName} defended: "${d.message}"`;
+        return `${d.playerName} biện hộ: "${d.message}"`;
       case GameEventType.JudgementVoteCast:
-        return `${d.voterName} voted to ${d.verdict} the accused.`;
+        return `${d.voterName} vote ${d.verdict === 'kill' ? 'GIẾT' : 'THA'}.`;
       case GameEventType.JudgementResult:
-        return d.executed ? `${d.accusedName} was executed after judgement.` : `${d.accusedName} was spared after judgement.`;
+        return d.executed ? `${d.accusedName} bị treo cổ sau phán xét.` : `${d.accusedName} được tha sau phán xét.`;
       case GameEventType.HunterShot:
-        return `Hunter shot ${d.targetName}!`;
+        return `Thợ Săn bắn ${d.targetName}!`;
       case GameEventType.SeerResult:
-        if (viewer.id === d.seerId) return `You investigated ${d.targetName}: they are ${d.isWolf ? 'a WEREWOLF' : 'NOT a werewolf'}.`;
+        if (viewer.id === d.seerId) return `Mày soi ${d.targetName}: ${d.isWolf ? 'LÀ SÓI!' : 'Không phải sói.'}`;
         return null;
       case GameEventType.DawnAnnouncement:
-        if (d.peaceful) return 'No one died during the night.';
-        return `Night deaths: ${d.deaths.map((x: any) => x.name).join(', ')}.`;
+        if (d.peaceful) return 'Đêm qua không ai chết.';
+        return `Chết đêm qua: ${d.deaths.map((x: any) => x.name).join(', ')}.`;
       case GameEventType.NightResolved:
-        if (d.deaths?.length === 0) return 'No one died during the night.';
-        return d.deaths ? `Night deaths: ${d.deaths.map((x: any) => x.name).join(', ')}.` : null;
+        if (d.deaths?.length === 0) return 'Đêm qua không ai chết.';
+        return d.deaths ? `Chết đêm qua: ${d.deaths.map((x: any) => x.name).join(', ')}.` : null;
       case GameEventType.GuardProtect:
-        if (viewer.role === Role.Guard) return `You protected ${d.targetName} tonight.`;
+        if (viewer.role === Role.Guard) return `Mày đã bảo vệ ${d.targetName} đêm nay.`;
         return null;
       case GameEventType.WitchAction:
-        if (viewer.role === Role.Witch) return `You used ${d.action} potion on ${d.targetName}.`;
+        if (viewer.role === Role.Witch) return `Mày đã dùng thuốc ${d.action === 'heal' ? 'cứu' : 'độc'} cho ${d.targetName}.`;
         return null;
       case GameEventType.NightActionPerformed:
-        if (isWolfRole(viewer.role)) return `Werewolves targeted ${d.targetName || d.targetNames?.join(', ')} tonight.`;
+        if (isWolfRole(viewer.role)) return `Sói cắn ${d.targetName || d.targetNames?.join(', ')} đêm nay.`;
         return null;
       case GameEventType.AlphaInfect:
-        if (isWolfRole(viewer.role)) return `Alpha Wolf infected ${d.targetName}! They are now a werewolf.`;
+        if (viewer.id === d.targetId) return `MÀY ĐÃ BỊ SÓI ĐẦU ĐÀN LÂY NHIỄM! Mày giờ là Sói!`;
+        if (isWolfRole(viewer.role)) return `Sói Đầu Đàn lây nhiễm ${d.targetName}! Hắn giờ là sói.`;
         return null;
       case GameEventType.WolfCubRevenge:
-        if (isWolfRole(viewer.role)) return `Wolf Cub died! Wolves will kill 2 people next night.`;
+        if (isWolfRole(viewer.role)) return `Sói Con đã chết! Đêm sau sói cắn 2 người trả thù.`;
         return null;
       case GameEventType.CupidPair:
-        if (viewer.role === Role.Cupid) return `You paired ${d.player1Name} and ${d.player2Name}.`;
+        if (viewer.role === Role.Cupid) return `Mày đã ghép đôi ${d.player1Name} và ${d.player2Name}.`;
         return null;
       case GameEventType.LoverDeath:
-        return `${d.loverName} died of heartbreak after ${d.deadName}'s death.`;
+        return `${d.loverName} chết theo ${d.deadName} vì tình yêu.`;
       case GameEventType.ApprenticeSeerActivated:
-        if (viewer.id === d.apprenticeId) return `The Seer has died. You are now the new Seer!`;
+        if (viewer.id === d.apprenticeId) return `Tiên Tri đã chết. Mày kế thừa — giờ mày là Tiên Tri mới!`;
         return null;
       case GameEventType.FoolVictory:
-        return `${d.foolName} was the Fool and wins the game!`;
+        return `${d.foolName} là Kẻ Ngốc và thắng game!`;
       default: return null;
     }
   }
@@ -156,8 +166,8 @@ export class AgentManager implements ActionResolver {
     return this.getBrain(player).defend(state, messages);
   }
 
-  async judgeVote(player: Player, state: GameState, accusedName: string, defenseSpeech: string): Promise<'kill' | 'spare'> {
-    return this.getBrain(player).judgeVote(state, accusedName, defenseSpeech);
+  async judgeVote(player: Player, state: GameState, accusedName: string, defenseSpeech: string, messages: DayMessage[]): Promise<'kill' | 'spare'> {
+    return this.getBrain(player).judgeVote(state, accusedName, defenseSpeech, messages);
   }
 
   async hunterShot(hunter: Player, state: GameState): Promise<string> {
