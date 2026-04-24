@@ -18,4 +18,13 @@ export class OpenAIProvider implements LLMProvider {
   }
 
   async test(model?: string) { await this.chat([{ role: 'user', content: 'Say "ok"' }], { maxTokens: 5, model }); return true; }
+
+  async getModels(): Promise<string[]> {
+    const headers: Record<string, string> = {};
+    if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`;
+    const res = await fetch(`${this.baseUrl}/models`, { headers, signal: AbortSignal.timeout(10000) });
+    if (!res.ok) throw new Error(`Failed to fetch models: ${res.status}`);
+    const data = await res.json() as any;
+    return data.data.map((m: any) => m.id);
+  }
 }

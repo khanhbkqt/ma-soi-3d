@@ -4,4 +4,5 @@ export interface LLMOptions { temperature?: number; maxTokens?: number; jsonMode
 export interface LLMProvider {
   chat(messages: LLMMessage[], options?: LLMOptions): Promise<string>;
   test(model?: string): Promise<boolean>;
+  getModels?(): Promise<string[]>;
 }

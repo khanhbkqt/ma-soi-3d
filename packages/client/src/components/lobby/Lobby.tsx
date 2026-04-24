@@ -119,6 +119,28 @@ export default function Lobby() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [enabledRoles, setEnabledRoles] = useState<Role[]>(() => getDefaultEnabledRoles(8));
+  const [providerModels, setProviderModels] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    providers.forEach(p => {
+      if (!providerModels[p.id]) {
+        // Mark as fetching to avoid duplicate calls
+        setProviderModels(prev => ({ ...prev, [p.id]: [] }));
+        fetch('/api/providers/models', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(p)
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.models?.length > 0) {
+            setProviderModels(prev => ({ ...prev, [p.id]: data.models }));
+          }
+        })
+        .catch(err => console.error('Failed to fetch models for', p.name, err));
+      }
+    });
+  }, [providers]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Update enabled roles when player count changes (add newly available roles)
   useEffect(() => {
@@ -362,14 +384,11 @@ export default function Lobby() {
         <section className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
           <h2 className="text-xl font-semibold text-amber-400 mb-4">👥 Người Chơi</h2>
           <div className="grid grid-cols-2 gap-2">
-            {Object.keys(MODEL_SUGGESTIONS).map(type => (
-              <datalist id={`player-models-${type}`} key={type}>
-                {(MODEL_SUGGESTIONS[type] || []).map(m => <option key={m} value={m} />)}
-              </datalist>
-            ))}
             {players.map((p, i) => {
-              const selectedProvider = providers.find(pr => pr.id === (p.providerId || providers[0]?.id));
+              const providerId = p.providerId || providers[0]?.id;
+              const selectedProvider = providers.find(pr => pr.id === providerId);
               const providerType = selectedProvider?.type || 'openai';
+              const models = providerModels[providerId] || MODEL_SUGGESTIONS[providerType] || [];
               return (
                 <div key={i} className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2 border border-gray-600">
                   <span className="text-gray-500 text-sm w-6">#{i + 1}</span>
@@ -385,15 +404,18 @@ export default function Lobby() {
                     {!providers.length && <option value="">Chưa có</option>}
                     {providers.map(pr => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
                   </select>
-                  <input
+                  <select
                     value={p.modelName || ''}
                     onChange={e => { const np = [...players]; np[i] = { ...np[i], modelName: e.target.value }; setPlayers(np); }}
-                    placeholder={selectedProvider?.model || 'Model mặc định'}
-                    list={`player-models-${providerType}`}
                     className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs text-gray-300 w-28 outline-none"
                     disabled={!providers.length}
                     title="Tên model (để trống sẽ dùng mặc định của Provider)"
-                  />
+                  >
+                    <option value="">{selectedProvider?.model || 'Mặc định'}</option>
+                    {models.map(m => (
+                      <option key={m} value={m} title={m}>{m.length > 15 ? m.substring(0, 13) + '...' : m}</option>
+                    ))}
+                  </select>
                 </div>
               );
             })}

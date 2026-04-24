@@ -16,4 +16,11 @@ export class OllamaProvider implements LLMProvider {
   }
 
   async test(model?: string) { await this.chat([{ role: 'user', content: 'Say "ok"' }], { maxTokens: 5, model }); return true; }
+
+  async getModels(): Promise<string[]> {
+    const res = await fetch(`${this.baseUrl}/api/tags`, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) throw new Error(`Failed to fetch ollama models: ${res.status}`);
+    const data = await res.json() as any;
+    return data.models.map((m: any) => m.name);
+  }
 }

@@ -18,4 +18,16 @@ export class AnthropicProvider implements LLMProvider {
   }
 
   async test(model?: string) { await this.chat([{ role: 'user', content: 'Say "ok"' }], { maxTokens: 5, model }); return true; }
+
+  async getModels(): Promise<string[]> {
+    return [
+      'claude-3-7-sonnet-latest',
+      'claude-3-5-sonnet-latest',
+      'claude-3-5-haiku-latest',
+      'claude-3-opus-latest',
+      'claude-3-7-sonnet-20250219',
+      'claude-3-5-sonnet-20241022',
+      'claude-3-5-haiku-20241022'
+    ];
+  }
 }

@@ -52,6 +52,20 @@ app.post('/api/providers/test', async (req, res) => {
   } catch (e: any) { res.json({ success: false, error: e.message }); }
 });
 
+app.post('/api/providers/models', async (req, res) => {
+  try {
+    const provider = createProvider(req.body);
+    if (provider.getModels) {
+      const models = await provider.getModels();
+      res.json({ success: true, models });
+    } else {
+      res.json({ success: true, models: [] });
+    }
+  } catch (e: any) {
+    res.json({ success: false, error: e.message });
+  }
+});
+
 // Socket.IO
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
