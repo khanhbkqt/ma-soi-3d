@@ -356,11 +356,10 @@ function VoteArrow({ from, to }: { from: [number, number, number]; to: [number, 
     if (progress < 1) setProgress(p => Math.min(1, p + dt * 2));
     // Trail particles
     if (trailRef.current) {
-      const headPt = curve.getPoint(progress);
       trailRef.current.children.forEach((c, i) => {
         const t = Math.max(0, progress - i * 0.08);
         const pt = curve.getPoint(Math.max(0, t));
-        c.position.copy(pt).sub(new THREE.Vector3(...from));
+        c.position.copy(pt);
         (c as THREE.Mesh).scale.setScalar(0.03 * (1 - i * 0.15));
       });
     }
@@ -382,7 +381,7 @@ function VoteArrow({ from, to }: { from: [number, number, number]; to: [number, 
       </mesh>
       {/* Arrowhead */}
       {progress > 0.1 && (
-        <mesh position={[headPt.x - from[0], headPt.y - from[1], headPt.z - from[2]]} rotation={arrowRot}>
+        <mesh position={[headPt.x, headPt.y, headPt.z]} rotation={arrowRot}>
           <coneGeometry args={[0.08, 0.2, 6]} />
           <meshBasicMaterial color="#ff6600" />
         </mesh>
@@ -835,7 +834,11 @@ export default function Character({ player, index, total, gameState }: { player:
         const ta = (voteTargetIndex / total) * Math.PI * 2 - Math.PI / 2;
         const tx = Math.cos(ta) * radius;
         const tz = Math.sin(ta) * radius;
-        return <VoteArrow from={[0, 1.5, 0]} to={[tx - x, 1.5, tz - z]} />;
+        return (
+          <group rotation={[0, -(lookAngle + Math.PI), 0]}>
+            <VoteArrow from={[0, 1.5, 0]} to={[tx - x, 1.5, tz - z]} />
+          </group>
+        );
       })()}
     </group>
   );
