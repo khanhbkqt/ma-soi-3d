@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { Role, Phase } from '@ma-soi/shared';
 import { getPromptBuilder } from '../agents/prompt-builders/index.js';
-import { playerContext, roleNameVi } from '../agents/prompt-builders/base.js';
+import {
+  playerContext,
+  roleNameVi,
+  gameRules,
+  roleDescriptions,
+} from '../agents/prompt-builders/base.js';
 import { WolfPromptBuilder, AlphaWolfPromptBuilder } from '../agents/prompt-builders/wolf.js';
 import { SeerPromptBuilder } from '../agents/prompt-builders/seer.js';
 import { VillagerPromptBuilder } from '../agents/prompt-builders/villager.js';
@@ -110,5 +115,21 @@ describe('roleNameVi', () => {
     expect(roleNameVi(Role.Hunter)).toBe('Thợ Săn');
     expect(roleNameVi(Role.Guard)).toBe('Bảo Vệ');
     expect(roleNameVi(Role.Fool)).toBe('Kẻ Ngốc');
+  });
+});
+
+describe('gameRules — role descriptions', () => {
+  const rules = gameRules();
+
+  it('includes all roles from roleDescriptions registry', () => {
+    for (const desc of Object.values(roleDescriptions)) {
+      expect(rules).toContain(desc);
+    }
+  });
+
+  it('covers every Role enum value', () => {
+    for (const role of Object.values(Role)) {
+      expect(roleDescriptions).toHaveProperty(role);
+    }
   });
 });

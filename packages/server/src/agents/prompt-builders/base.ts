@@ -32,7 +32,29 @@ export function phaseNameVi(phase: Phase | string): string {
   return map[phase] || String(phase);
 }
 
+/** Role description registry — extensible: add new roles here, gameRules() picks them up automatically. */
+export const roleDescriptions: Record<Role, string> = {
+  [Role.Werewolf]: 'Sói — mỗi đêm cùng bầy sói vote chọn 1 người để cắn chết.',
+  [Role.AlphaWolf]: 'Sói Đầu Đàn — có thể lây nhiễm 1 người (biến thành sói), dùng 1 lần cả game.',
+  [Role.WolfCub]: 'Sói Con — nếu chết, đêm sau bầy sói được cắn 2 người thay vì 1.',
+  [Role.Villager]: 'Dân — không có kỹ năng đặc biệt, dùng logic và suy luận để tìm sói.',
+  [Role.Seer]: 'Tiên Tri — mỗi đêm soi 1 người, biết người đó LÀ SÓI hay KHÔNG PHẢI SÓI.',
+  [Role.ApprenticeSeer]: 'Tiên Tri Tập Sự — kế thừa khả năng soi khi Tiên Tri chính chết.',
+  [Role.Witch]:
+    'Phù Thủy — có 1 bình cứu (cứu người bị sói cắn) và 1 bình độc (giết 1 người). Mỗi bình dùng 1 lần cả game.',
+  [Role.Hunter]: 'Thợ Săn — khi chết (trừ bị Phù Thủy đầu độc), được bắn chết 1 người bất kỳ.',
+  [Role.Guard]:
+    'Bảo Vệ — mỗi đêm chọn 1 người để bảo vệ khỏi sói cắn. Không được bảo vệ cùng 1 người 2 đêm liên tiếp.',
+  [Role.Cupid]:
+    'Thần Tình Yêu — đêm đầu ghép đôi 2 người, nếu 1 người chết thì người kia chết theo.',
+  [Role.Fool]:
+    'Kẻ Ngốc — thắng ngay lập tức nếu bị dân vote treo cổ. Bị sói cắn thì chết bình thường.',
+};
+
 export function gameRules(): string {
+  const roleLines = Object.values(roleDescriptions)
+    .map((d) => `- ${d}`)
+    .join('\n');
   return `BẠN ĐANG CHƠI MA SÓI — game lừa nhau, cắn nhau, vote nhau chết.
 Luật:
 - Đêm: Bảo vệ đỡ → Sói cắn → Phù thủy cứu/giết → Tiên tri soi.
@@ -42,12 +64,8 @@ Luật:
 - Phán xét: Người bị chỉ định biện hộ → mọi người vote giết/tha (>50% giết mới chết).
 - Sói thắng khi sói >= dân. Dân thắng khi giết hết sói.
 
-VAI TRÒ ĐẶC BIỆT:
-- Sói Đầu Đàn: lây nhiễm 1 người (biến thành sói, dùng 1 lần)
-- Sói Con: nếu chết, đêm sau sói cắn 2 người
-- Tiên Tri Tập Sự: kế thừa khi Tiên Tri chết
-- Thần Tình Yêu: ghép đôi 2 người, 1 chết thì kia chết theo
-- Kẻ Ngốc: thắng khi bị dân vote treo cổ`;
+CÁC VAI TRÒ TRONG GAME:
+${roleLines}`;
 }
 
 export function speechRules(): string {
