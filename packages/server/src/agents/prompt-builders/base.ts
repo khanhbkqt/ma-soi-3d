@@ -107,8 +107,17 @@ export function playerContext(player: Player, state: GameState): string {
     }
   }
 
+  // Role distribution summary (counts only, no player-role mapping)
+  const roleCounts = new Map<string, number>();
+  for (const p of state.players) {
+    const name = roleNameVi(p.role);
+    roleCounts.set(name, (roleCounts.get(name) || 0) + 1);
+  }
+  const distStr = [...roleCounts.entries()].map(([r, c]) => `${c} ${r}`).join(', ');
+
   const teamVi = isWolfRole(player.role) ? 'Sói' : 'Dân';
   return `Mày là "${player.name}" — ${roleNameVi(player.role)} (phe ${teamVi}).
+Game có ${state.players.length} người chơi. Phân bố role: ${distStr}.
 ${roundContext}
 Còn sống (${alive.length}): ${alive.map((p) => p.name).join(', ')}.
 ${dead.length ? `Đã chết: ${dead.map((p) => `${p.name}(${roleNameVi(p.role)})`).join(', ')}.` : 'Chưa ai chết.'}${coupleInfo}`;
