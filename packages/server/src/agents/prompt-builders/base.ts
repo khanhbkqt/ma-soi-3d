@@ -47,7 +47,16 @@ export function speechRules(): string {
 - Cấm lịch sự giả tạo. Cấm nói dài dòng. Cấm triết lý.
 - Nói ngắn, bốc, có cảm xúc. Như người thật đang chơi game.
 - Xưng hô tự nhiên: tao/mày, tui/bạn, anh/chị, ông/bà — tùy personality.
-- Luôn trả lời bằng JSON đúng format được yêu cầu.`;
+- PHẢI react lại lời người khác — đồng ý, phản bác, chọc, hỏi lại. KHÔNG nói như đang độc thoại.
+- CẤM nói chung chung kiểu "tao thấy thằng X đáng nghi" mà không có lý do cụ thể. Phải nêu BẰNG CHỨNG: vote gì, nói gì, im lúc nào, bảo vệ ai.
+- Luôn trả lời bằng JSON đúng format được yêu cầu.
+
+CÁCH SUY LUẬN — suy nghĩ kỹ trước khi nói/hành động:
+- PHÂN TÍCH CÁI CHẾT: Ai chết đêm qua? Sói nhắm người đó vì sao? Ai hưởng lợi khi người đó chết? Ai đã bảo vệ/tố người đó hôm trước?
+- PHÂN TÍCH VOTE: Ai vote giống nhau liên tục? (có thể cùng phe). Ai đổi vote phút cuối? Ai vote người vô hại thay vì nghi phạm chính?
+- PHÂN TÍCH HÀNH VI: Ai im lặng khi đồng minh bị tố? Ai nói nhiều nhưng không có nội dung? Ai đổi ý đột ngột? Ai luôn hùa theo đám đông?
+- PHÂN TÍCH TIMING: Ai come out role lúc nào? (sớm quá = đáng ngờ, muộn quá = đáng ngờ). Ai tố người khác ngay sau khi bị tố? (redirect).
+- PHÂN TÍCH LIÊN MINH: Ai luôn bênh ai? Ai không bao giờ tố ai? Cặp đôi ngầm = có thể cùng phe sói.`;
 }
 
 export function playerContext(player: Player, state: GameState): string {
@@ -128,20 +137,28 @@ export abstract class BasePromptBuilder implements PromptBuilder {
 
   /** Override for role-specific vote strategy */
   voteHint(_player: Player, _state: GameState): string {
-    return 'Vote thằng mày nghĩ là sói nhất dựa trên thảo luận. Tin bản năng.';
+    return `Suy nghĩ kỹ trước khi vote:
+- Ai có hành vi đáng ngờ nhất? (lấp liếm, đổi ý, bảo vệ sói, im lặng bất thường)
+- Vote pattern: ai vote giống sói đã bị lộ? ai luôn vote dân?
+- Đừng vote theo đám đông mù quáng — sói hay dẫn dắt vote giết dân.`;
   }
 
   /** Override for role-specific defense strategy */
   defenseHint(_player: Player, _state: GameState): string {
-    return `Mày bị oan! Biện hộ mạnh mẽ:
-- Chứng minh mình vô tội bằng logic
-- Chỉ ra ai mới thật sự đáng nghi
-- Nếu có info quan trọng thì come out luôn (Tiên Tri, Bảo Vệ...)`;
+    return `Mày bị đưa lên giàn! Biện hộ thuyết phục:
+- Dùng bằng chứng cụ thể: vote pattern của mày nhất quán, mày đã tố đúng sói trước đó
+- Chỉ ra ai đáng nghi hơn mày — đích danh + lý do
+- Phân tích: ai tố mày? Động cơ của họ? Có phải sói đang frame mày?
+- Come out role nếu cần (chỉ khi role quan trọng VÀ tình huống nguy cấp)`;
   }
 
   /** Override for role-specific judgement strategy */
   judgementHint(_player: Player, _state: GameState): string {
-    return 'Dựa trên lời biện hộ và tất cả những gì mày biết, quyết định GIẾT hay THA.';
+    return `Đánh giá lời biện hộ:
+- Logic có chặt không? Có mâu thuẫn với lời nói/hành động trước đó không?
+- Come out role có hợp lý không? Có ai khác đã claim role đó?
+- Giết nhầm dân = sói lợi. Tha sói = dân thiệt. Cân nhắc kỹ bằng chứng.
+- Cẩn thận Kẻ Ngốc — nó thắng khi bị treo cổ!`;
   }
 
   // ── System prompt: full context ──
@@ -154,14 +171,22 @@ export abstract class BasePromptBuilder implements PromptBuilder {
 
   discuss(player: Player, state: GameState, observations: string[], messages: DayMessage[], round: number): string {
     const lastRound = round === state.config.discussionRounds;
-    const r1Hint = state.round === 1 && round === 1 ? '\nVÒNG 1: Mới bắt đầu, chưa có info gì nhiều. Chào hỏi, phá không khí, ném nghi ngờ nhẹ.' : '';
-    const lastHint = lastRound ? '\nĐÂY LÀ LƯỢT CUỐI trước khi vote. Kết luận, chỉ đích danh ai đáng nghi nhất.' : '';
+    const dead = state.players.filter(p => !p.alive);
+    const hasDeath = dead.length > 0;
+    const r1Hint = state.round === 1 && round === 1 ? '\nVÒNG 1: Chưa có info. Phá không khí, đọc phản ứng mọi người, ném nghi ngờ nhẹ dựa trên cảm giác.' : '';
+    const deathHint = hasDeath && round === 1 ? `\nCÓ NGƯỜI CHẾT — suy luận trước khi nói: Ai chết? Tại sao sói chọn người đó? Ai hưởng lợi? Ai hôm qua bảo vệ/tố người chết? Dùng info này để tố hoặc bênh ai đó.` : '';
+    const midHint = !lastRound && round > 1 ? '\nGIỮA GAME: React lại lời người khác — đồng ý, phản bác, hoặc hỏi dồn. Chỉ ra mâu thuẫn nếu thấy. Đừng lặp lại ý cũ.' : '';
+    const lastHint = lastRound ? '\nLƯỢT CUỐI: Kết luận dứt khoát. Chỉ đích danh 1 người đáng nghi nhất + lý do cụ thể. Kêu gọi mọi người vote cùng nếu tự tin.' : '';
     return `${taskContext(observations)}
-${this.discussionHint(player, state)}${r1Hint}${lastHint}
+${this.discussionHint(player, state)}${r1Hint}${deathHint}${midHint}${lastHint}
 Lượt thảo luận ${round}/${state.config.discussionRounds}.${conversationBlock(messages)}
-NÓI 1-2 CÂU NGẮN, tự nhiên, bằng tiếng Việt. KHÔNG nói dài, không triết lý.
-Nếu không có gì muốn nói (đã nói rồi, hoặc chưa có info mới) → wantToSpeak: false.
-JSON: {"wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)","reasoning":"suy nghĩ riêng"}`;
+TRƯỚC KHI NÓI, suy nghĩ trong "reasoning":
+- Ai đáng nghi nhất hiện tại? Bằng chứng gì?
+- Người vừa nói có điểm gì đáng chú ý? Mâu thuẫn? Lấp liếm?
+- Mày nên tố, bênh, hỏi, hay im?
+NÓI 1-2 CÂU NGẮN, tự nhiên. PHẢI react lại lời người khác nếu có. KHÔNG nói chung chung.
+Nếu không có gì mới → wantToSpeak: false.
+JSON: {"wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)","reasoning":"phân tích chi tiết tình huống hiện tại"}`;
   }
 
   vote(player: Player, state: GameState, observations: string[], messages: DayMessage[]): string {
@@ -171,8 +196,14 @@ JSON: {"wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)",
 ${this.voteHint(player, state)}
 ${convo}
 HOÀNG HÔN — vote chỉ định 1 người lên giàn (chưa giết, chỉ đưa lên để biện hộ).
+TRƯỚC KHI VOTE, suy luận trong "reasoning":
+- Ai bị tố nhiều nhất trong thảo luận? Lý do có thuyết phục không?
+- Vote pattern các vòng trước: ai vote giống nhau? ai vote lạ?
+- Ai hưởng lợi nếu người bị tố chết? Có ai đang dẫn dắt vote để giết dân không?
+- Ai im lặng bất thường? Ai nói nhiều nhưng không có nội dung?
+- Mày có nên vote theo đám đông hay tách ra vote người khác?
 Vote 1 người, hoặc "skip". Danh sách: ${targets.map(t => t.name).join(', ')}
-JSON: {"target":"Tên"|"skip","reasoning":"lý do ngắn"}`;
+JSON: {"target":"Tên"|"skip","reasoning":"phân tích chi tiết trước khi vote"}`;
   }
 
   defense(player: Player, state: GameState, observations: string[], messages: DayMessage[]): string {
@@ -180,8 +211,13 @@ JSON: {"target":"Tên"|"skip","reasoning":"lý do ngắn"}`;
     return `${taskContext(observations)}
 ${this.defenseHint(player, state)}${convo}
 MÀY ĐANG BỊ ĐƯA LÊN GIÀN! Mọi người sẽ vote giết hoặc tha mày sau khi nghe biện hộ.
-NÓI 2-3 CÂU THUYẾT PHỤC. Mạnh mẽ, có logic, có cảm xúc. Đây là cơ hội sống còn.
-JSON: {"message":"lời biện hộ","reasoning":"suy nghĩ thật"}`;
+TRƯỚC KHI BIỆN HỘ, suy luận trong "reasoning":
+- Ai tố mày? Động cơ của họ là gì? Có phải sói đang frame mày không?
+- Mày có bằng chứng cụ thể nào chứng minh vô tội? (vote pattern, hành vi nhất quán)
+- Ai đáng nghi hơn mày? Chỉ đích danh + lý do.
+- Nên come out role không? (chỉ khi role quan trọng VÀ tình huống nguy cấp)
+NÓI 2-3 CÂU THUYẾT PHỤC. Dùng bằng chứng cụ thể, chỉ ra ai đáng nghi hơn, appeal to cả logic lẫn cảm xúc.
+JSON: {"message":"lời biện hộ","reasoning":"phân tích tình huống + chiến thuật biện hộ"}`;
   }
 
   judgement(player: Player, state: GameState, observations: string[], accusedName: string, defenseSpeech: string, messages: DayMessage[]): string {
@@ -189,7 +225,13 @@ JSON: {"message":"lời biện hộ","reasoning":"suy nghĩ thật"}`;
     return `${taskContext(observations)}
 ${this.judgementHint(player, state)}${convo}
 PHÁN XÉT: ${accusedName} vừa biện hộ: "${defenseSpeech}"
+TRƯỚC KHI VOTE, đánh giá trong "reasoning":
+- Lời biện hộ có logic không? Có mâu thuẫn với những gì ${accusedName} nói/làm trước đó không?
+- ${accusedName} có come out role không? Nếu có — role đó có hợp lý không? Có ai khác đã claim role đó chưa?
+- Nếu ${accusedName} chết, phe nào hưởng lợi? Giết nhầm dân = sói thắng gần hơn.
+- ${accusedName} có phải là Kẻ Ngốc không? (Kẻ Ngốc thắng khi bị treo cổ — cẩn thận!)
+- Bằng chứng tố ${accusedName} có đủ mạnh không? Hay chỉ là đám đông hùa nhau?
 Vote "kill" (giết) hoặc "spare" (tha). Cần >50% vote giết để treo cổ.
-JSON: {"verdict":"kill"|"spare","reasoning":"lý do ngắn"}`;
+JSON: {"verdict":"kill"|"spare","reasoning":"phân tích chi tiết lời biện hộ + bằng chứng"}`;
   }
 }
