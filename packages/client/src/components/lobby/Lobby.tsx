@@ -202,7 +202,7 @@ export default function Lobby() {
   const [gameName, setGameName] = useState('Ma Sói Night');
   const [autoPlay, setAutoPlay] = useState(true);
   const [phaseDelay, setPhaseDelay] = useState(3000);
-  const [discussionRounds, setDiscussionRounds] = useState(2);
+  const [discussionRounds, setDiscussionRounds] = useState(4);
   const [discussionTimeLimitMs, setDiscussionTimeLimitMs] = useState(90000);
   const [providers, setProviders] = useState<ProviderConfig[]>(() => {
     try {

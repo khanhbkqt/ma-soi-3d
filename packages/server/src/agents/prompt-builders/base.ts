@@ -270,6 +270,7 @@ export abstract class BasePromptBuilder implements PromptBuilder {
     const dead = state.players.filter((p) => !p.alive);
     const hasDeath = dead.length > 0;
     const isFirstRound = state.round === 1;
+    const hasSpoken = messages.some((m) => m.playerId === player.id);
     const r1Hint = isFirstRound ? this.firstRoundHint(player, state, messages, round) : '';
     const deathHint =
       hasDeath && round === 1 && !isFirstRound
@@ -286,6 +287,9 @@ export abstract class BasePromptBuilder implements PromptBuilder {
       isFirstRound && round <= 1
         ? 'NÓI 1-2 CÂU, thoải mái tự nhiên. Vòng đầu không cần phải tố ai.'
         : 'NÓI 1-2 CÂU NGẮN, tự nhiên. PHẢI react lại lời người khác nếu có. KHÔNG nói chung chung.';
+    const skipRule = hasSpoken
+      ? 'Nếu không có gì mới → wantToSpeak: false.'
+      : 'MÀY CHƯA NÓI GÌ VÒNG NÀY. Phải wantToSpeak: true — nêu ý kiến, tố ai đó, hoặc bình luận.';
     return `${taskContext(observations)}
 ${this.discussionHint(player, state)}${r1Hint}${deathHint}${midHint}${lastHint}
 Lượt thảo luận ${round}/${state.config.discussionRounds}.${conversationBlock(messages)}
@@ -294,7 +298,7 @@ TRƯỚC KHI NÓI, suy nghĩ trong "reasoning":
 - Người vừa nói có điểm gì đáng chú ý? Mâu thuẫn? Lấp liếm?
 - Mày nên tố, bênh, hỏi, hay im?
 ${speakInstruction}
-Nếu không có gì mới → wantToSpeak: false.
+${skipRule}
 JSON: {"wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)","reasoning":"phân tích chi tiết tình huống hiện tại"}`;
   }
 

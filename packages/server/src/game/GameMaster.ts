@@ -700,7 +700,7 @@ export class GameMaster extends EventEmitter {
     const alivePlayers = this.alive();
     const timeLimitMs = this.state.config.discussionTimeLimitMs || 90_000;
     const maxRounds = this.state.config.discussionRounds;
-    const batchSize = Math.min(3, Math.max(2, Math.ceil(alivePlayers.length / 3)));
+    const batchSize = Math.min(5, Math.max(3, Math.ceil(alivePlayers.length / 2)));
     const spokenCount = new Map<string, number>();
     const startTime = Date.now();
     let silentTicks = 0;
@@ -708,11 +708,26 @@ export class GameMaster extends EventEmitter {
     for (let round = 1; round <= maxRounds; round++) {
       if (Date.now() - startTime >= timeLimitMs) break;
 
-      // Pick candidates: sort by least spoken, random pick from top half
+      // Pick candidates: prioritize those who haven't spoken yet, then least-spoken
       const pool = alivePlayers.filter((p) => p.alive);
-      pool.sort((a, b) => (spokenCount.get(a.id) || 0) - (spokenCount.get(b.id) || 0));
-      const topHalf = pool.slice(0, Math.max(batchSize, Math.ceil(pool.length / 2)));
-      const candidates = topHalf.sort(() => Math.random() - 0.5).slice(0, batchSize);
+      const neverSpoken = pool.filter((p) => !spokenCount.has(p.id));
+      // In early rounds, force unheard players in; later rounds use normal selection
+      let candidates: Player[];
+      if (neverSpoken.length > 0 && round <= Math.ceil(maxRounds / 2)) {
+        // Fill batch with unheard players first, then least-spoken
+        const shuffled = neverSpoken.sort(() => Math.random() - 0.5);
+        candidates = shuffled.slice(0, batchSize);
+        if (candidates.length < batchSize) {
+          const rest = pool
+            .filter((p) => spokenCount.has(p.id))
+            .sort((a, b) => (spokenCount.get(a.id) || 0) - (spokenCount.get(b.id) || 0));
+          candidates.push(...rest.slice(0, batchSize - candidates.length));
+        }
+      } else {
+        pool.sort((a, b) => (spokenCount.get(a.id) || 0) - (spokenCount.get(b.id) || 0));
+        const topHalf = pool.slice(0, Math.max(batchSize, Math.ceil(pool.length / 2)));
+        candidates = topHalf.sort(() => Math.random() - 0.5).slice(0, batchSize);
+      }
 
       // Ask candidates SEQUENTIALLY (not parallel) so each agent sees previous messages
       // from the current batch. Prevents hallucination where agents in the same batch
@@ -743,8 +758,10 @@ export class GameMaster extends EventEmitter {
       } else {
         silentTicks = 0;
       }
-      if (silentTicks >= 2) break;
+      if (silentTicks >= 3) break;
     }
+    // Pause before transitioning so the last message can be read
+    await this.delay(this.state.config.phaseDelay);
   }
 
   // ── DUSK PHASE ── (Nomination vote — pick who goes on trial)
