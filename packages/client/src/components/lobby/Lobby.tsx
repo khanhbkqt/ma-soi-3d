@@ -184,17 +184,21 @@ export default function Lobby() {
 
   useEffect(() => {
     setPlayers(prev => {
-      const next = DEFAULT_NAMES.slice(0, playerCount).map((name, i) => prev[i] || { name, providerId: providers[0]?.id || '', modelName: '' });
+      const next = DEFAULT_NAMES.slice(0, playerCount).map((name, i) => {
+        if (prev[i]) return prev[i];
+        const randomProvider = providers.length > 0 ? providers[Math.floor(Math.random() * providers.length)] : null;
+        return { name, providerId: randomProvider?.id || '', modelName: '' };
+      });
       return next.slice(0, playerCount);
     });
-  }, [playerCount]);
+  }, [playerCount]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // When providers change, ensure all players have a valid providerId
   useEffect(() => {
     if (!providers.length) return;
     setPlayers(prev => prev.map(p => ({
       ...p,
-      providerId: providers.find(pr => pr.id === p.providerId) ? p.providerId : providers[0].id,
+      providerId: providers.find(pr => pr.id === p.providerId) ? p.providerId : providers[Math.floor(Math.random() * providers.length)].id,
     })));
   }, [providers]);
 
@@ -389,7 +393,22 @@ export default function Lobby() {
 
         {/* Player Setup */}
         <section className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-          <h2 className="text-xl font-semibold text-amber-400 mb-4">👥 Người Chơi</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-amber-400">👥 Người Chơi</h2>
+            <button 
+              onClick={() => {
+                if (!providers.length) return;
+                setPlayers(prev => prev.map(p => {
+                  const pr = providers[Math.floor(Math.random() * providers.length)];
+                  return { ...p, providerId: pr.id, modelName: '' };
+                }));
+              }}
+              className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-2"
+              title="Phân chia ngẫu nhiên AI cho từng người chơi"
+            >
+              <span>🎲</span> Random Provider
+            </button>
+          </div>
           <div className="grid grid-cols-2 gap-2">
             {players.map((p, i) => {
               const providerId = p.providerId || providers[0]?.id;
