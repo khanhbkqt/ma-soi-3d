@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import { SocketEvents, GameState, GameEvent, GameConfig, Phase } from '@ma-soi/shared';
+import { SocketEvents, GameState, GameEvent, GameConfig, Phase, PlayerViewState } from '@ma-soi/shared';
 import { create } from 'zustand';
 
 interface GameStore {
@@ -7,7 +7,9 @@ interface GameStore {
   connected: boolean;
   gameState: GameState | null;
   events: GameEvent[];
-  spectatorMode: 'god' | 'fog';
+  spectatorMode: 'god' | 'fog' | 'player';
+  playerViewState: PlayerViewState | null;
+  playerViewId: string | null;
   view: 'lobby' | 'game';
 
   connect(): void;
@@ -17,6 +19,7 @@ interface GameStore {
   resumeGame(): void;
   stepGame(): void;
   setSpectatorMode(mode: 'god' | 'fog'): void;
+  setPlayerView(playerId: string | null): void;
   setView(view: 'lobby' | 'game'): void;
 }
 
@@ -26,6 +29,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   gameState: null,
   events: [],
   spectatorMode: 'god',
+  playerViewState: null,
+  playerViewId: null,
   view: 'lobby',
 
   connect() {
@@ -57,6 +62,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       });
     });
 
+    socket.on(SocketEvents.PLAYER_VIEW_STATE, (pvs: PlayerViewState) => {
+      set({ playerViewState: pvs });
+    });
+
     socket.on(SocketEvents.ERROR, (err: { message: string }) => {
       console.error('Server error:', err.message);
     });
@@ -69,6 +78,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
   pauseGame() { get().socket?.emit(SocketEvents.PAUSE_GAME); },
   resumeGame() { get().socket?.emit(SocketEvents.RESUME_GAME); },
   stepGame() { get().socket?.emit(SocketEvents.STEP_GAME); },
-  setSpectatorMode(mode) { get().socket?.emit(SocketEvents.SET_SPECTATOR_MODE, mode); set({ spectatorMode: mode }); },
+
+  setSpectatorMode(mode) {
+    get().socket?.emit(SocketEvents.SET_SPECTATOR_MODE, mode);
+    set({ spectatorMode: mode, playerViewId: null, playerViewState: null });
+  },
+
+  setPlayerView(playerId) {
+    const socket = get().socket;
+    if (!playerId) {
+      socket?.emit(SocketEvents.SET_PLAYER_VIEW, null);
+      set({ spectatorMode: 'god', playerViewId: null, playerViewState: null });
+      // Re-sync to god mode
+      socket?.emit(SocketEvents.SET_SPECTATOR_MODE, 'god');
+    } else {
+      socket?.emit(SocketEvents.SET_PLAYER_VIEW, playerId);
+      set({ spectatorMode: 'player', playerViewId: playerId, playerViewState: null });
+    }
+  },
+
   setView(view) { set({ view }); },
 }));

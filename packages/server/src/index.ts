@@ -59,6 +59,7 @@ io.on('connection', (socket) => {
 
   socket.on(SocketEvents.SET_SPECTATOR_MODE, (mode: 'god' | 'fog') => {
     socket.data.godView = mode === 'god';
+    socket.data.playerViewId = null;  // Clear player view when switching modes
     // Re-send current state filtered
     if (currentGM) {
       const state = { ...currentGM.state };
@@ -66,6 +67,18 @@ io.on('connection', (socket) => {
         state.events = state.events.filter(e => e.isPublic);
       }
       socket.emit(SocketEvents.GAME_STATE, state);
+    }
+  });
+
+  socket.on(SocketEvents.SET_PLAYER_VIEW, (playerId: string | null) => {
+    socket.data.playerViewId = playerId;
+    if (playerId && currentManager) {
+      const pvs = currentManager.getPlayerViewState(playerId);
+      if (pvs) socket.emit(SocketEvents.PLAYER_VIEW_STATE, pvs);
+    }
+    // Also send full game state (events will be filtered client-side)
+    if (currentGM) {
+      socket.emit(SocketEvents.GAME_STATE, currentGM.state);
     }
   });
 
@@ -84,7 +97,13 @@ io.on('connection', (socket) => {
       gm.on('gameEvent', (event: GameEvent) => {
         // Send to all sockets based on their view mode
         for (const [, s] of io.sockets.sockets) {
-          if (event.isPublic || s.data.godView) {
+          if (s.data.playerViewId) {
+            // Player view: send all events (client filters by visibility)
+            s.emit(SocketEvents.GAME_EVENT, event);
+            // Push updated player view state
+            const pvs = manager.getPlayerViewState(s.data.playerViewId);
+            if (pvs) s.emit(SocketEvents.PLAYER_VIEW_STATE, pvs);
+          } else if (event.isPublic || s.data.godView) {
             s.emit(SocketEvents.GAME_EVENT, event);
           }
         }
@@ -92,7 +111,7 @@ io.on('connection', (socket) => {
         if (event.type === GameEventType.PhaseChanged || event.type === GameEventType.GameOver || event.type === GameEventType.GameStarted) {
           for (const [, s] of io.sockets.sockets) {
             const state = { ...gm.state };
-            if (!s.data.godView) {
+            if (!s.data.godView && !s.data.playerViewId) {
               state.events = state.events.filter(e => e.isPublic);
             }
             s.emit(SocketEvents.GAME_STATE, state);

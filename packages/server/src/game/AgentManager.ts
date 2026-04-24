@@ -1,8 +1,10 @@
-import { GameState, GameConfig, Player, Role, DayMessage, WitchPotions, getRoleDistribution, GameEventType, isWolfRole } from '@ma-soi/shared';
+import { GameState, GameConfig, Player, Role, DayMessage, WitchPotions, getRoleDistribution, GameEventType, isWolfRole, PlayerViewState, RoleContext } from '@ma-soi/shared';
 import { AgentBrain } from '../agents/brain.js';
 import { getRandomPersonalities, PERSONALITIES } from '../agents/personalities.js';
 import { getProvider, registerAllProviders } from '../providers/index.js';
 import { GameMaster, ActionResolver } from './GameMaster.js';
+import { compressedMemoryPrompt } from '../agents/memory-compression.js';
+import { roleNameVi } from '../agents/prompt-builders/base.js';
 
 export class AgentManager implements ActionResolver {
   private brains = new Map<string, AgentBrain>();
@@ -123,6 +125,80 @@ export class AgentManager implements ActionResolver {
         return `${d.foolName} là Kẻ Ngốc và thắng game!`;
       default: return null;
     }
+  }
+
+  // ── Player View API ──
+
+  getPlayerViewState(playerId: string): PlayerViewState | null {
+    const brain = this.brains.get(playerId);
+    if (!brain) return null;
+
+    const player = brain.player;
+    const state = this.gm.state;
+
+    const deductionPrompt = brain.deduction.buildPrompt(player.role, player.name);
+    const deduction = {
+      confirmed: [...brain.deduction.confirmed] as [string, { role: string; source: string }][],
+      seerResults: [...brain.deduction.seerResults] as [string, 'wolf' | 'clear'][],
+      claims: [...brain.deduction.claims] as [string, { role: string; round: number }[]][],
+      accusations: [...brain.deduction.accusations] as [string, string[]][],
+      deductionPrompt,
+    };
+
+    return {
+      playerId,
+      playerName: player.name,
+      role: player.role,
+      alive: player.alive,
+      personality: player.personality,
+      observations: [...brain.memory.observations],
+      compressedMemory: compressedMemoryPrompt(brain.memory.observations, deductionPrompt),
+      deduction,
+      roleContext: this.buildRoleContext(player, state),
+    };
+  }
+
+  private buildRoleContext(player: Player, state: GameState): RoleContext {
+    const ctx: RoleContext = {};
+
+    if (isWolfRole(player.role)) {
+      ctx.wolfTeammates = state.players
+        .filter(p => isWolfRole(p.role) && p.id !== player.id)
+        .map(p => ({ name: p.name, role: roleNameVi(p.role), alive: p.alive }));
+      ctx.alphaInfectUsed = state.alphaInfectUsed;
+    }
+
+    if (player.role === Role.Seer ||
+        (player.role === Role.ApprenticeSeer && state.apprenticeSeerActivated)) {
+      ctx.isApprenticeSeerActivated = state.apprenticeSeerActivated;
+    }
+
+    if (player.role === Role.Witch) {
+      ctx.witchPotions = { ...state.witchPotions };
+    }
+
+    if (player.role === Role.Guard) {
+      const lastGuarded = state.players.find(p => p.id === state.lastGuardedId);
+      ctx.lastGuardedName = lastGuarded?.name || null;
+    }
+
+    if (player.role === Role.Cupid && state.couple) {
+      const p1 = state.players.find(p => p.id === state.couple!.player1Id);
+      const p2 = state.players.find(p => p.id === state.couple!.player2Id);
+      if (p1 && p2) ctx.coupleNames = [p1.name, p2.name];
+    }
+
+    // Couple member: knows their lover
+    if (state.couple) {
+      const { player1Id, player2Id } = state.couple;
+      if (player.id === player1Id || player.id === player2Id) {
+        const loverId = player.id === player1Id ? player2Id : player1Id;
+        const lover = state.players.find(p => p.id === loverId);
+        if (lover) ctx.loverName = lover.name;
+      }
+    }
+
+    return ctx;
   }
 
   private getBrain(player: Player): AgentBrain {

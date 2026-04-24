@@ -221,6 +221,38 @@ export interface GameState {
   apprenticeSeerActivated: boolean;
 }
 
+// ── Player View (Spectator) ──
+export interface RoleContext {
+  wolfTeammates?: { name: string; role: string; alive: boolean }[];
+  seerResults?: { targetName: string; isWolf: boolean }[];
+  witchPotions?: WitchPotions;
+  lastGuardedName?: string | null;
+  coupleNames?: [string, string] | null;
+  loverName?: string | null;
+  isApprenticeSeerActivated?: boolean;
+  alphaInfectUsed?: boolean;
+}
+
+export interface PlayerViewDeduction {
+  confirmed: [string, { role: string; source: string }][];
+  seerResults: [string, 'wolf' | 'clear'][];
+  claims: [string, { role: string; round: number }[]][];
+  accusations: [string, string[]][];
+  deductionPrompt: string;
+}
+
+export interface PlayerViewState {
+  playerId: string;
+  playerName: string;
+  role: Role;
+  alive: boolean;
+  personality: AgentPersonality;
+  observations: string[];
+  compressedMemory: string;
+  deduction: PlayerViewDeduction;
+  roleContext: RoleContext;
+}
+
 // ── Agent Memory ──
 export interface AgentMemory {
   observations: string[];
@@ -276,10 +308,12 @@ export const SocketEvents = {
   RESUME_GAME: 'resume_game',
   STEP_GAME: 'step_game',
   SET_SPECTATOR_MODE: 'set_spectator_mode',
+  SET_PLAYER_VIEW: 'set_player_view',
   TEST_PROVIDER: 'test_provider',
   // Server -> Client
   GAME_EVENT: 'game_event',
   GAME_STATE: 'game_state',
+  PLAYER_VIEW_STATE: 'player_view_state',
   PROVIDER_TEST_RESULT: 'provider_test_result',
   ERROR: 'error',
 } as const;
