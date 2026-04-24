@@ -105,55 +105,182 @@ function PotionBurst({ color }: { color: string }) {
   );
 }
 
-function JudgementSpotlight() {
-  const ref = useRef<THREE.Mesh>(null);
+function DefenseSpotlight({ isDefending }: { isDefending: boolean }) {
+  const coneRef = useRef<THREE.Mesh>(null);
+  const ringRef = useRef<THREE.Mesh>(null);
+  const fireRef = useRef<THREE.Group>(null);
   useFrame(() => {
-    if (!ref.current) return;
-    (ref.current.material as THREE.MeshBasicMaterial).opacity = 0.15 + Math.sin(Date.now() * 0.004) * 0.08;
+    const t = Date.now() * 0.004;
+    if (coneRef.current) (coneRef.current.material as THREE.MeshBasicMaterial).opacity = 0.06 + Math.sin(t) * 0.03;
+    if (ringRef.current) {
+      (ringRef.current.material as THREE.MeshBasicMaterial).opacity = 0.2 + Math.sin(t) * 0.1;
+      ringRef.current.rotation.z += 0.02;
+    }
+    if (fireRef.current) {
+      fireRef.current.children.forEach((c, i) => {
+        const ft = ((Date.now() * 0.003 + i * 0.8) % 2) / 2;
+        const a = (i / 8) * Math.PI * 2 + Date.now() * 0.001;
+        c.position.set(Math.cos(a) * 0.6, ft * 0.8, Math.sin(a) * 0.6);
+        (c as THREE.Mesh).scale.setScalar((1 - ft) * 0.06);
+      });
+    }
   });
   return (
-    <mesh ref={ref} position={[0, 0.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[0.4, 0.7, 32]} />
-      <meshBasicMaterial color="#ff2222" transparent opacity={0.2} side={THREE.DoubleSide} />
-    </mesh>
+    <group>
+      {/* Ground ring */}
+      <mesh ref={ringRef} position={[0, 0.05, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.5, 0.75, 32]} />
+        <meshBasicMaterial color="#ff2222" transparent opacity={0.25} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Volumetric cone light */}
+      <mesh ref={coneRef} position={[0, 2.5, 0]}>
+        <coneGeometry args={[0.8, 5, 16, 1, true]} />
+        <meshBasicMaterial color={isDefending ? '#ffaa44' : '#ff4444'} transparent opacity={0.08} side={THREE.DoubleSide} />
+      </mesh>
+      {/* Fire ring particles when defending */}
+      {isDefending && (
+        <group ref={fireRef} position={[0, 0.1, 0]}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <mesh key={i}><sphereGeometry args={[1, 4, 4]} /><meshBasicMaterial color="#ff6622" transparent opacity={0.5} /></mesh>
+          ))}
+        </group>
+      )}
+    </group>
+  );
+}
+
+// ── Execution Animation ──
+function ExecutionEffect({ progress, phase }: { progress: number; phase: 'rising' | 'hanging' | 'falling' | 'done' }) {
+  const ropeRef = useRef<THREE.Mesh>(null);
+  const burstRef = useRef<THREE.Group>(null);
+  useFrame(() => {
+    if (ropeRef.current) {
+      const ropeLen = phase === 'falling' ? 0 : Math.min(progress * 4, 3.5);
+      ropeRef.current.scale.set(1, Math.max(0.01, ropeLen), 1);
+      ropeRef.current.position.y = 1.4 + ropeLen / 2 + 1;
+    }
+    if (burstRef.current && phase === 'falling') {
+      burstRef.current.children.forEach((c, i) => {
+        const t = Math.min(1, progress * 2);
+        const a = (i / 6) * Math.PI * 2;
+        c.position.set(Math.cos(a) * t * 1.5, (1 - t) * 2, Math.sin(a) * t * 1.5);
+        (c as THREE.Mesh).scale.setScalar((1 - t) * 0.08);
+      });
+    }
+  });
+  if (phase === 'done') return null;
+  return (
+    <group>
+      {/* Rope */}
+      {(phase === 'rising' || phase === 'hanging') && (
+        <mesh ref={ropeRef} position={[0, 3, 0]}>
+          <cylinderGeometry args={[0.015, 0.015, 1, 4]} />
+          <meshBasicMaterial color="#8B7355" />
+        </mesh>
+      )}
+      {/* Death burst particles */}
+      {phase === 'falling' && (
+        <group ref={burstRef} position={[0, 1, 0]}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <mesh key={i}><sphereGeometry args={[1, 4, 4]} /><meshBasicMaterial color="#ff4444" transparent opacity={0.6} /></mesh>
+          ))}
+        </group>
+      )}
+    </group>
   );
 }
 
 // ── Vote Visual Effects ──
 
-function VoteLine({ from, to }: { from: [number, number, number]; to: [number, number, number] }) {
-  const points = useMemo(() => [new THREE.Vector3(...from), new THREE.Vector3(from[0], 2, from[2]), new THREE.Vector3(to[0], 2, to[2]), new THREE.Vector3(...to)], [from, to]);
+function VoteArrow({ from, to }: { from: [number, number, number]; to: [number, number, number] }) {
+  const points = useMemo(() => [new THREE.Vector3(...from), new THREE.Vector3(from[0], 2.2, from[2]), new THREE.Vector3(to[0], 2.2, to[2]), new THREE.Vector3(...to)], [from, to]);
   const curve = useMemo(() => new THREE.CatmullRomCurve3(points), [points]);
-  const geom = useMemo(() => new THREE.TubeGeometry(curve, 30, 0.025, 8, false), [curve]);
-  const matRef = useRef<THREE.MeshBasicMaterial>(null);
-  const [opacity, setOpacity] = useState(1);
+  const [progress, setProgress] = useState(0);
+  const trailRef = useRef<THREE.Group>(null);
+
+  const geom = useMemo(() => {
+    const partial = new THREE.CatmullRomCurve3(curve.getPoints(Math.max(2, Math.floor(30 * progress))).slice(0, Math.max(2, Math.floor(30 * progress))));
+    return new THREE.TubeGeometry(partial, 20, 0.04, 8, false);
+  }, [curve, Math.floor(progress * 10)]);
+
   useFrame((_, dt) => {
-    setOpacity(o => Math.max(0, o - dt * 0.3));
-    if (matRef.current) matRef.current.opacity = opacity;
+    if (progress < 1) setProgress(p => Math.min(1, p + dt * 2));
+    // Trail particles
+    if (trailRef.current) {
+      const headPt = curve.getPoint(progress);
+      trailRef.current.children.forEach((c, i) => {
+        const t = Math.max(0, progress - i * 0.08);
+        const pt = curve.getPoint(Math.max(0, t));
+        c.position.copy(pt).sub(new THREE.Vector3(...from));
+        (c as THREE.Mesh).scale.setScalar(0.03 * (1 - i * 0.15));
+      });
+    }
   });
-  if (opacity <= 0) return null;
+
+  // Arrowhead position
+  const headPt = curve.getPoint(progress);
+  const headDir = curve.getTangent(progress);
+  const arrowRot = useMemo(() => {
+    const q = new THREE.Quaternion();
+    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), headDir.normalize());
+    return new THREE.Euler().setFromQuaternion(q);
+  }, [headDir]);
+
   return (
-    <mesh geometry={geom}>
-      <meshBasicMaterial ref={matRef} color="#ffaa00" transparent opacity={opacity} />
+    <group>
+      <mesh geometry={geom}>
+        <meshBasicMaterial color="#ffaa00" transparent opacity={0.7} />
+      </mesh>
+      {/* Arrowhead */}
+      {progress > 0.1 && (
+        <mesh position={[headPt.x - from[0], headPt.y - from[1], headPt.z - from[2]]} rotation={arrowRot}>
+          <coneGeometry args={[0.08, 0.2, 6]} />
+          <meshBasicMaterial color="#ff6600" />
+        </mesh>
+      )}
+      {/* Trail particles */}
+      <group ref={trailRef}>
+        {[0, 1, 2, 3].map(i => (
+          <mesh key={i}><sphereGeometry args={[1, 4, 4]} /><meshBasicMaterial color="#ffcc44" transparent opacity={0.4} /></mesh>
+        ))}
+      </group>
+    </group>
+  );
+}
+
+function VoterGlow() {
+  const ref = useRef<THREE.Mesh>(null);
+  useFrame(() => {
+    if (ref.current) (ref.current.material as THREE.MeshBasicMaterial).opacity = 0.12 + Math.sin(Date.now() * 0.003) * 0.05;
+  });
+  return (
+    <mesh ref={ref} position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <circleGeometry args={[0.5, 16]} />
+      <meshBasicMaterial color="#ffaa00" transparent opacity={0.15} />
     </mesh>
   );
 }
 
 function VoteTargetRing({ voteCount }: { voteCount: number }) {
-  const ref = useRef<THREE.Mesh>(null);
+  const ref = useRef<THREE.Group>(null);
   useFrame(() => {
     if (!ref.current) return;
-    ref.current.rotation.x = Math.PI / 2;
-    ref.current.rotation.z += 0.03;
-    const s = 0.55 + Math.sin(Date.now() * 0.004) * 0.05;
+    ref.current.rotation.y += 0.02;
+    const s = 1 + Math.sin(Date.now() * 0.004) * 0.08;
     ref.current.scale.setScalar(s);
   });
   const ringColor = voteCount >= 3 ? '#ff3333' : voteCount >= 2 ? '#ff8800' : '#ffcc00';
   return (
-    <mesh ref={ref} position={[0, 0.05, 0]}>
-      <ringGeometry args={[0.5, 0.65, 32]} />
-      <meshBasicMaterial color={ringColor} transparent opacity={0.4} side={THREE.DoubleSide} />
-    </mesh>
+    <group ref={ref} position={[0, 0.05, 0]}>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.55, 0.75, 32]} />
+        <meshBasicMaterial color={ringColor} transparent opacity={0.5} side={THREE.DoubleSide} />
+      </mesh>
+      <mesh rotation={[Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.8, 0.85, 32]} />
+        <meshBasicMaterial color={ringColor} transparent opacity={0.2} side={THREE.DoubleSide} />
+      </mesh>
+    </group>
   );
 }
 
@@ -229,30 +356,80 @@ export default function Character({ player, index, total, gameState }: { player:
   const [deathProgress, setDeathProgress] = useState(player.alive ? 0 : 1);
   useEffect(() => { if (!player.alive) setDeathProgress(0); }, [player.alive]);
 
+  // Execution (treo cổ) animation
+  const [execPhase, setExecPhase] = useState<'none' | 'rising' | 'hanging' | 'falling' | 'done'>('none');
+  const [execProgress, setExecProgress] = useState(0);
+  const wasExecuted = recentEvents.some(e => e.type === GameEventType.JudgementResult && e.data.accusedId === player.id && e.data.executed && Date.now() - e.timestamp < 8000);
+  useEffect(() => {
+    if (wasExecuted && execPhase === 'none') {
+      setExecPhase('rising');
+      setExecProgress(0);
+    }
+  }, [wasExecuted]);
+
+  // Dim other players when someone is defending
+  const someoneDefending = isJudgement && recentEvents.some(e => e.type === GameEventType.DefenseSpeech && Date.now() - e.timestamp < 5000);
+  const isDimmed = someoneDefending && !isAccused && player.alive;
+
   useFrame((_, dt) => {
     if (!groupRef.current || !bodyRef.current) return;
 
-    // Speaking/defending bob
-    if (isSpeaking || isDefending) {
-      bodyRef.current.position.y = Math.sin(Date.now() * 0.008) * 0.06;
-      bodyRef.current.scale.setScalar(1 + Math.sin(Date.now() * 0.006) * 0.03);
+    // Execution animation phases
+    if (execPhase === 'rising') {
+      setExecProgress(p => {
+        const next = p + dt * 1.2;
+        if (next >= 1) { setExecPhase('hanging'); return 0; }
+        return next;
+      });
+      bodyRef.current.position.y = execProgress * 2.5;
+    } else if (execPhase === 'hanging') {
+      setExecProgress(p => {
+        const next = p + dt * 2;
+        if (next >= 1) { setExecPhase('falling'); return 0; }
+        return next;
+      });
+      bodyRef.current.position.y = 2.5 + Math.sin(Date.now() * 0.01) * 0.05;
+    } else if (execPhase === 'falling') {
+      setExecProgress(p => {
+        const next = p + dt * 3;
+        if (next >= 1) { setExecPhase('done'); return 1; }
+        return next;
+      });
+      bodyRef.current.position.y = 2.5 * (1 - execProgress);
+      bodyRef.current.rotation.z = execProgress * (Math.PI / 2);
+    } else if (execPhase !== 'none') {
+      // done — stay dead
     } else {
-      bodyRef.current.position.y *= 0.9;
-      bodyRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
-    }
+      // Normal animations (only when not executing)
 
-    // Death fall
-    if (!player.alive && deathProgress < 1) {
-      setDeathProgress(p => Math.min(1, p + dt * 1.5));
-      bodyRef.current.rotation.z = deathProgress * (Math.PI / 3);
-      bodyRef.current.position.y = -deathProgress * 0.3;
-    }
+      // Speaking/defending bob
+      if (isDefending) {
+        bodyRef.current.position.y = Math.sin(Date.now() * 0.008) * 0.08;
+        bodyRef.current.scale.setScalar(1.08 + Math.sin(Date.now() * 0.006) * 0.04);
+      } else if (isSpeaking) {
+        bodyRef.current.position.y = Math.sin(Date.now() * 0.008) * 0.06;
+        bodyRef.current.scale.setScalar(1 + Math.sin(Date.now() * 0.006) * 0.03);
+      } else if (isDimmed) {
+        bodyRef.current.scale.lerp(new THREE.Vector3(0.9, 0.9, 0.9), 0.05);
+        bodyRef.current.position.y *= 0.9;
+      } else {
+        bodyRef.current.position.y *= 0.9;
+        bodyRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+      }
 
-    // Night head droop
-    if (isNight && player.alive) {
-      bodyRef.current.rotation.x = Math.sin(Date.now() * 0.001) * 0.05 + 0.1;
-    } else if (player.alive) {
-      bodyRef.current.rotation.x *= 0.95;
+      // Death fall
+      if (!player.alive && deathProgress < 1) {
+        setDeathProgress(p => Math.min(1, p + dt * 1.5));
+        bodyRef.current.rotation.z = deathProgress * (Math.PI / 3);
+        bodyRef.current.position.y = -deathProgress * 0.3;
+      }
+
+      // Night head droop
+      if (isNight && player.alive) {
+        bodyRef.current.rotation.x = Math.sin(Date.now() * 0.001) * 0.05 + 0.1;
+      } else if (player.alive) {
+        bodyRef.current.rotation.x *= 0.95;
+      }
     }
   });
 
@@ -264,12 +441,18 @@ export default function Character({ player, index, total, gameState }: { player:
         <meshStandardMaterial color="#5c3a1e" roughness={0.9} />
       </mesh>
 
-      {/* Judgement spotlight */}
-      {isAccused && <JudgementSpotlight />}
+      {/* Defense spotlight */}
+      {isAccused && <DefenseSpotlight isDefending={isDefending} />}
+
+      {/* Execution effect */}
+      {execPhase !== 'none' && <ExecutionEffect progress={execProgress} phase={execPhase} />}
 
       {/* Vote target ring */}
       {votesReceived > 0 && player.alive && <VoteTargetRing voteCount={votesReceived} />}
       {votesReceived > 0 && player.alive && <VoteParticles />}
+
+      {/* Voter ground glow */}
+      {hasVoted && player.alive && <VoterGlow />}
 
       <group ref={bodyRef} position={[0, 0.9, 0]}>
         {/* Torso */}
@@ -277,7 +460,7 @@ export default function Character({ player, index, total, gameState }: { player:
           <capsuleGeometry args={[0.22, 0.4, 8, 16]} />
           <meshStandardMaterial
             color={player.alive ? (showRole ? roleColor : '#666666') : '#333333'}
-            roughness={0.7} transparent opacity={player.alive ? 1 : Math.max(0.2, 1 - deathProgress * 0.6)}
+            roughness={0.7} transparent opacity={player.alive ? (isDimmed ? 0.4 : 1) : Math.max(0.2, 1 - deathProgress * 0.6)}
           />
         </mesh>
 
@@ -379,12 +562,12 @@ export default function Character({ player, index, total, gameState }: { player:
         </Html>
       )}
 
-      {/* Vote line */}
+      {/* Vote arrow */}
       {voteTarget && voteTargetIndex >= 0 && (() => {
         const ta = (voteTargetIndex / total) * Math.PI * 2 - Math.PI / 2;
         const tx = Math.cos(ta) * radius;
         const tz = Math.sin(ta) * radius;
-        return <VoteLine from={[0, 1.5, 0]} to={[tx - x, 1.5, tz - z]} />;
+        return <VoteArrow from={[0, 1.5, 0]} to={[tx - x, 1.5, tz - z]} />;
       })()}
     </group>
   );

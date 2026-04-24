@@ -422,13 +422,20 @@ export class GameMaster extends EventEmitter {
     const alivePlayers = this.alive();
     const voteOrder = [...alivePlayers].sort(() => Math.random() - 0.5);
 
-    for (const player of voteOrder) {
-      if (!player.alive) continue;
-      const targetName = await this.resolver.vote(player, this.state, this.state.discussionMessages);
+    // Run all votes in parallel
+    const voteResults = await Promise.all(
+      voteOrder.filter(p => p.alive).map(async (player) => ({
+        player,
+        targetName: await this.resolver.vote(player, this.state, this.state.discussionMessages),
+      }))
+    );
+
+    // Emit results sequentially with delay for visual effect
+    for (const { player, targetName } of voteResults) {
       const target = this.findByName(targetName);
       const vote: Vote = { voterId: player.id, targetId: target?.id || 'skip' };
       this.state.votes.push(vote);
-      this.emitEvent(GameEventType.VoteCast, { voterName: player.name, targetName: targetName }, true);
+      this.emitEvent(GameEventType.VoteCast, { voterName: player.name, targetName }, true);
       await this.delay(this.state.config.phaseDelay / 4);
     }
 
@@ -490,9 +497,16 @@ export class GameMaster extends EventEmitter {
     const voters = this.alive().filter(p => p.id !== accused.id);
     const voteOrder = [...voters].sort(() => Math.random() - 0.5);
 
-    for (const voter of voteOrder) {
-      if (!voter.alive) continue;
-      const verdict = await this.resolver.judgeVote(voter, this.state, accused.name, defenseText, this.state.discussionMessages);
+    // Run all judgement votes in parallel
+    const judgeResults = await Promise.all(
+      voteOrder.filter(v => v.alive).map(async (voter) => ({
+        voter,
+        verdict: await this.resolver.judgeVote(voter, this.state, accused.name, defenseText, this.state.discussionMessages),
+      }))
+    );
+
+    // Emit results sequentially with delay for visual effect
+    for (const { voter, verdict } of judgeResults) {
       const jv: JudgementVote = { voterId: voter.id, verdict };
       this.state.judgementVotes.push(jv);
       this.emitEvent(GameEventType.JudgementVoteCast, { voterName: voter.name, verdict }, true);

@@ -47,6 +47,7 @@ export default function PlayerRoster() {
               isViewing ? 'text-cyan-200' :
               p.alive ? (accused ? 'text-red-300' : 'text-white') : 'text-gray-500 line-through'
             }`}>{p.name}</span>
+            <span className="text-[9px] text-gray-500 truncate max-w-[60px]" title={p.modelName}>{p.modelName}</span>
             {isViewing && <span className="text-cyan-400 text-[10px]">👁</span>}
             {accused && <span className="text-red-400 text-[10px] font-bold">⚖️</span>}
             {isVoteTarget && (

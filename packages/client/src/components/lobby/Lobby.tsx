@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GameConfig, ProviderConfig, PlayerSetup, getRoleDistribution, Role, TOGGLEABLE_ROLES, getDefaultEnabledRoles } from '@ma-soi/shared';
+import { GameConfig, ProviderConfig, PlayerSetup, getRoleDistribution, Role, TOGGLEABLE_ROLES, getDefaultEnabledRoles, VIETNAMESE_NAMES } from '@ma-soi/shared';
 import { useGameStore } from '../../store/gameStore';
 
 const ROLE_COLORS: Record<Role, string> = {
@@ -21,7 +21,7 @@ const ROLE_EMOJI: Record<Role, string> = {
   [Role.Cupid]: '💘', [Role.Fool]: '🃏',
 };
 
-const DEFAULT_NAMES = ['Luna', 'Blaze', 'Shadow', 'Sage', 'Storm', 'Ember', 'Frost', 'Raven', 'Thorn', 'Ivy', 'Ash', 'Coral', 'Dusk', 'Flint', 'Jade', 'Onyx'];
+const DEFAULT_NAMES = VIETNAMESE_NAMES;
 
 const PROVIDER_DEFAULTS: Record<string, Partial<ProviderConfig>> = {
   'openai-compatible': { name: 'My Provider', model: '', baseUrl: '', apiKey: '' },

@@ -52,7 +52,13 @@ export interface Player {
   alive: boolean;
   personality: AgentPersonality;
   providerId: string;
+  modelName: string;
 }
+
+export const VIETNAMESE_NAMES = [
+  'Minh', 'Lan', 'Hùng', 'Tú', 'Hoa', 'Đức', 'Linh', 'Phong',
+  'Mai', 'Khoa', 'Thảo', 'Bảo', 'Ngọc', 'Quân', 'Trang', 'Dũng',
+];
 
 // ── Agent Personality ──
 export interface AgentPersonality {

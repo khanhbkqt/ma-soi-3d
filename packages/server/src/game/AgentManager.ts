@@ -1,4 +1,4 @@
-import { GameState, GameConfig, Player, Role, DayMessage, WitchPotions, getRoleDistribution, GameEventType, isWolfRole, PlayerViewState, RoleContext } from '@ma-soi/shared';
+import { GameState, GameConfig, Player, Role, DayMessage, WitchPotions, getRoleDistribution, GameEventType, isWolfRole, PlayerViewState, RoleContext, VIETNAMESE_NAMES } from '@ma-soi/shared';
 import { AgentBrain } from '../agents/brain.js';
 import { getRandomPersonalities, PERSONALITIES } from '../agents/personalities.js';
 import { getProvider, registerAllProviders } from '../providers/index.js';
@@ -17,18 +17,21 @@ export class AgentManager implements ActionResolver {
     const roles = getRoleDistribution(config.playerCount, config.enabledSpecialRoles);
     const shuffledRoles = roles.sort(() => Math.random() - 0.5);
     const personalities = getRandomPersonalities(config.playerCount);
+    const shuffledNames = [...VIETNAMESE_NAMES].sort(() => Math.random() - 0.5);
 
     const players: Player[] = config.playerSetup.map((setup, i) => {
       const personality = setup.personalityId
         ? PERSONALITIES.find(p => p.id === setup.personalityId) || personalities[i]
         : personalities[i];
+      const randomProvider = config.providers[Math.floor(Math.random() * config.providers.length)];
       return {
         id: crypto.randomUUID(),
-        name: setup.name,
+        name: shuffledNames[i] || `Player${i + 1}`,
         role: shuffledRoles[i],
         alive: true,
         personality,
-        providerId: setup.providerId,
+        providerId: randomProvider.id,
+        modelName: randomProvider.model,
       };
     });
 
