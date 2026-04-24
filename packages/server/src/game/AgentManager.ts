@@ -40,6 +40,11 @@ export class AgentManager implements ActionResolver {
 
     // Listen to game events to update agent memories
     this.gm.on('gameEvent', (event) => {
+      // Update alive names for deduction trackers on phase changes
+      if (event.type === GameEventType.PhaseChanged) {
+        const alive = this.gm.state.players.filter(p => p.alive).map(p => p.name);
+        for (const [, brain] of this.brains) brain.deduction.setAliveNames(alive);
+      }
       for (const [id, brain] of this.brains) {
         const obs = this.eventToObservation(event, brain.player);
         if (obs) brain.addObservation(obs);

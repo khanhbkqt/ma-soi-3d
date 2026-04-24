@@ -7,20 +7,32 @@ import { WitchPromptBuilder } from './prompt-builders/index.js';
 import { GuardPromptBuilder } from './prompt-builders/index.js';
 import { HunterPromptBuilder } from './prompt-builders/index.js';
 import { CupidPromptBuilder } from './prompt-builders/index.js';
+import { RoleDeductionTracker } from './role-deduction.js';
 
 export class AgentBrain {
   memory: AgentMemory = { observations: [], reflections: [], knownRoles: {}, suspicions: {} };
+  readonly deduction = new RoleDeductionTracker();
 
   constructor(public player: Player, private provider: LLMProvider) {}
 
-  addObservation(obs: string) { this.memory.observations.push(obs); }
+  addObservation(obs: string) {
+    this.memory.observations.push(obs);
+    this.deduction.ingest(obs);
+  }
 
   private get builder() { return getPromptBuilder(this.player.role); }
 
+  private get deductionBlock(): string {
+    return this.deduction.buildPrompt(this.player.role, this.player.name);
+  }
+
   private async ask(prompt: string, state: GameState, jsonMode = true): Promise<string> {
+    // Inject deduction analysis into user prompt
+    const deduc = this.deductionBlock;
+    const userContent = deduc ? `${deduc}\n\n${prompt}` : prompt;
     const messages: LLMMessage[] = [
       { role: 'system', content: this.builder.systemPrompt(this.player, state) },
-      { role: 'user', content: prompt },
+      { role: 'user', content: userContent },
     ];
     try {
       return await this.provider.chat(messages, { temperature: 0.85, maxTokens: 300, jsonMode });

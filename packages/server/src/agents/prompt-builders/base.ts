@@ -1,4 +1,5 @@
 import { Role, Player, GameState, Phase, DayMessage, isWolfRole } from '@ma-soi/shared';
+import { compressedMemoryPrompt } from '../memory-compression.js';
 
 // ── Shared helpers ──
 
@@ -77,9 +78,8 @@ export function personalityPrompt(player: Player): string {
   return `TÍNH CÁCH CỦA MÀY: "${player.personality.trait}" — ${player.personality.speechStyle}. Giữ đúng tính cách này MỌI LÚC.`;
 }
 
-export function memoryPrompt(observations: string[]): string {
-  if (!observations.length) return '';
-  return `NHẬT KÝ (những gì mày biết/thấy/nghe):\n${observations.slice(-30).map(o => `- ${o}`).join('\n')}`;
+export function memoryPrompt(observations: string[], deductionBlock?: string): string {
+  return compressedMemoryPrompt(observations, deductionBlock);
 }
 
 export function conversationBlock(messages: DayMessage[]): string {
@@ -103,8 +103,8 @@ ${personalityPrompt(player)}`;
 
 // ── User prompt = task-specific (lightweight, changes per action) ──
 
-export function taskContext(observations: string[]): string {
-  return memoryPrompt(observations);
+export function taskContext(observations: string[], deductionBlock?: string): string {
+  return memoryPrompt(observations, deductionBlock);
 }
 
 // ── PromptBuilder interface ──
