@@ -40,7 +40,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       existing.disconnect();
     }
 
-    const socket = io(window.location.hostname === 'localhost' ? 'http://localhost:3001' : '/', { transports: ['websocket', 'polling'] });
+    const bePort = import.meta.env.VITE_BE_PORT || '3001';
+    const socket = io(window.location.hostname === 'localhost' ? `http://localhost:${bePort}` : '/', { transports: ['websocket', 'polling'] });
 
     socket.on('connect', () => set({ connected: true }));
     socket.on('disconnect', () => set({ connected: false }));

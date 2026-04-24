@@ -3,6 +3,9 @@
   "private": true,
   "workspaces": ["packages/*"],
   "scripts": {
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "start:server": "npm run start -w packages/server",
+    "start:client": "npm run start -w packages/client",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "npm run dev -w packages/server",
     "dev:client": "npm run dev -w packages/client",
