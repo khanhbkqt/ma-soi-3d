@@ -161,7 +161,7 @@ export default function Lobby() {
 
   useEffect(() => {
     setPlayers(prev => {
-      const next = DEFAULT_NAMES.slice(0, playerCount).map((name, i) => prev[i] || { name, providerId: providers[0]?.id || '' });
+      const next = DEFAULT_NAMES.slice(0, playerCount).map((name, i) => prev[i] || { name, providerId: providers[0]?.id || '', modelName: '' });
       return next.slice(0, playerCount);
     });
   }, [playerCount]);
@@ -362,22 +362,41 @@ export default function Lobby() {
         <section className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
           <h2 className="text-xl font-semibold text-amber-400 mb-4">👥 Người Chơi</h2>
           <div className="grid grid-cols-2 gap-2">
-            {players.map((p, i) => (
-              <div key={i} className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2 border border-gray-600">
-                <span className="text-gray-500 text-sm w-6">#{i + 1}</span>
-                <input value={p.name} onChange={e => { const np = [...players]; np[i] = { ...np[i], name: e.target.value }; setPlayers(np); }}
-                  className="flex-1 bg-transparent border-none text-white text-sm outline-none min-w-0" />
-                <select
-                  value={p.providerId || providers[0]?.id || ''}
-                  onChange={e => { const np = [...players]; np[i] = { ...np[i], providerId: e.target.value }; setPlayers(np); }}
-                  className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs text-gray-300 max-w-[140px]"
-                  disabled={!providers.length}
-                >
-                  {!providers.length && <option value="">Chưa có</option>}
-                  {providers.map(pr => <option key={pr.id} value={pr.id}>{pr.name} ({pr.model})</option>)}
-                </select>
-              </div>
+            {Object.keys(MODEL_SUGGESTIONS).map(type => (
+              <datalist id={`player-models-${type}`} key={type}>
+                {(MODEL_SUGGESTIONS[type] || []).map(m => <option key={m} value={m} />)}
+              </datalist>
             ))}
+            {players.map((p, i) => {
+              const selectedProvider = providers.find(pr => pr.id === (p.providerId || providers[0]?.id));
+              const providerType = selectedProvider?.type || 'openai';
+              return (
+                <div key={i} className="flex items-center gap-2 bg-gray-900 rounded-lg px-3 py-2 border border-gray-600">
+                  <span className="text-gray-500 text-sm w-6">#{i + 1}</span>
+                  <input value={p.name} onChange={e => { const np = [...players]; np[i] = { ...np[i], name: e.target.value }; setPlayers(np); }}
+                    className="flex-1 bg-transparent border-none text-white text-sm outline-none min-w-0" />
+                  <select
+                    value={p.providerId || providers[0]?.id || ''}
+                    onChange={e => { const np = [...players]; np[i] = { ...np[i], providerId: e.target.value, modelName: '' }; setPlayers(np); }}
+                    className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs text-gray-300 max-w-[120px]"
+                    disabled={!providers.length}
+                    title="Nhà cung cấp"
+                  >
+                    {!providers.length && <option value="">Chưa có</option>}
+                    {providers.map(pr => <option key={pr.id} value={pr.id}>{pr.name}</option>)}
+                  </select>
+                  <input
+                    value={p.modelName || ''}
+                    onChange={e => { const np = [...players]; np[i] = { ...np[i], modelName: e.target.value }; setPlayers(np); }}
+                    placeholder={selectedProvider?.model || 'Model mặc định'}
+                    list={`player-models-${providerType}`}
+                    className="bg-gray-800 border border-gray-600 rounded px-2 py-1 text-xs text-gray-300 w-28 outline-none"
+                    disabled={!providers.length}
+                    title="Tên model (để trống sẽ dùng mặc định của Provider)"
+                  />
+                </div>
+              );
+            })}
           </div>
         </section>
 

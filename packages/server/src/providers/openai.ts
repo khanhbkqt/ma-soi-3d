@@ -4,7 +4,7 @@ export class OpenAIProvider implements LLMProvider {
   constructor(private apiKey: string, private model: string, private baseUrl = 'https://api.openai.com/v1') {}
 
   async chat(messages: LLMMessage[], options?: LLMOptions): Promise<string> {
-    const body: any = { model: this.model, messages, temperature: options?.temperature ?? 0.8, max_tokens: options?.maxTokens ?? 1024 };
+    const body: any = { model: options?.model || this.model, messages, temperature: options?.temperature ?? 0.8, max_tokens: options?.maxTokens ?? 1024 };
     if (options?.jsonMode) body.response_format = { type: 'json_object' };
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (this.apiKey) headers['Authorization'] = `Bearer ${this.apiKey}`;
@@ -17,5 +17,5 @@ export class OpenAIProvider implements LLMProvider {
     return data.choices[0].message.content;
   }
 
-  async test() { await this.chat([{ role: 'user', content: 'Say "ok"' }], { maxTokens: 5 }); return true; }
+  async test(model?: string) { await this.chat([{ role: 'user', content: 'Say "ok"' }], { maxTokens: 5, model }); return true; }
 }

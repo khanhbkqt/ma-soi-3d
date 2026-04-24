@@ -9,7 +9,7 @@ export class AnthropicProvider implements LLMProvider {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-api-key': this.apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: this.model, max_tokens: options?.maxTokens ?? 1024, system, messages: msgs, temperature: options?.temperature ?? 0.8 }),
+      body: JSON.stringify({ model: options?.model || this.model, max_tokens: options?.maxTokens ?? 1024, system, messages: msgs, temperature: options?.temperature ?? 0.8 }),
       signal: AbortSignal.timeout(30000),
     });
     if (!res.ok) throw new Error(`Anthropic error: ${res.status} ${await res.text()}`);
@@ -17,5 +17,5 @@ export class AnthropicProvider implements LLMProvider {
     return data.content[0].text;
   }
 
-  async test() { await this.chat([{ role: 'user', content: 'Say "ok"' }], { maxTokens: 5 }); return true; }
+  async test(model?: string) { await this.chat([{ role: 'user', content: 'Say "ok"' }], { maxTokens: 5, model }); return true; }
 }

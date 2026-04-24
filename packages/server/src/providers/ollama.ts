@@ -4,7 +4,7 @@ export class OllamaProvider implements LLMProvider {
   constructor(private model: string, private baseUrl = 'http://localhost:11434') {}
 
   async chat(messages: LLMMessage[], options?: LLMOptions): Promise<string> {
-    const body: any = { model: this.model, messages, stream: false, options: { temperature: options?.temperature ?? 0.8, num_predict: options?.maxTokens ?? 1024 } };
+    const body: any = { model: options?.model || this.model, messages, stream: false, options: { temperature: options?.temperature ?? 0.8, num_predict: options?.maxTokens ?? 1024 } };
     if (options?.jsonMode) body.format = 'json';
     const res = await fetch(`${this.baseUrl}/api/chat`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -15,5 +15,5 @@ export class OllamaProvider implements LLMProvider {
     return data.message.content;
   }
 
-  async test() { await this.chat([{ role: 'user', content: 'Say "ok"' }], { maxTokens: 5 }); return true; }
+  async test(model?: string) { await this.chat([{ role: 'user', content: 'Say "ok"' }], { maxTokens: 5, model }); return true; }
 }

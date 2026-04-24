@@ -111,6 +111,7 @@ export interface GameConfig {
 export interface PlayerSetup {
   name: string;
   providerId: string;
+  modelName?: string;
   personalityId?: string;  // auto-assign if not set
 }
 

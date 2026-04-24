@@ -24,14 +24,19 @@ export class AgentManager implements ActionResolver {
         ? PERSONALITIES.find(p => p.id === setup.personalityId) || personalities[i]
         : personalities[i];
       const randomProvider = config.providers[Math.floor(Math.random() * config.providers.length)];
+      
+      const providerId = setup.providerId || randomProvider.id;
+      const providerConfig = config.providers.find(p => p.id === providerId);
+      const modelName = setup.modelName || providerConfig?.model || randomProvider.model;
+
       return {
         id: crypto.randomUUID(),
         name: shuffledNames[i] || `Player${i + 1}`,
         role: shuffledRoles[i],
         alive: true,
         personality,
-        providerId: randomProvider.id,
-        modelName: randomProvider.model,
+        providerId,
+        modelName,
       };
     });
 

@@ -35,7 +35,7 @@ export class AgentBrain {
       { role: 'user', content: userContent },
     ];
     try {
-      return await this.provider.chat(messages, { temperature: 0.85, maxTokens: 300, jsonMode });
+      return await this.provider.chat(messages, { temperature: 0.85, maxTokens: 300, jsonMode, model: this.player.modelName });
     } catch (e) {
       console.error(`[AgentBrain] ${this.player.name} LLM error:`, e);
       return '{}';
