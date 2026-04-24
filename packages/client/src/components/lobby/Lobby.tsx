@@ -111,6 +111,7 @@ export default function Lobby() {
   const [autoPlay, setAutoPlay] = useState(true);
   const [phaseDelay, setPhaseDelay] = useState(3000);
   const [discussionRounds, setDiscussionRounds] = useState(2);
+  const [discussionTimeLimitMs, setDiscussionTimeLimitMs] = useState(90000);
   const [providers, setProviders] = useState<ProviderConfig[]>(() => {
     try { return JSON.parse(localStorage.getItem('masoi-providers') || '[]'); } catch { return []; }
   });
@@ -231,7 +232,7 @@ export default function Lobby() {
   const handleStart = () => {
     if (!providers.length) return alert('Hãy thêm ít nhất một nhà cung cấp AI!');
     const config: GameConfig = {
-      gameName, playerCount, discussionRounds, autoPlay, phaseDelay,
+      gameName, playerCount, discussionRounds, discussionTimeLimitMs, autoPlay, phaseDelay,
       providers,
       playerSetup: players.map(p => ({ ...p, providerId: p.providerId || providers[0].id })),
       enabledSpecialRoles: enabledRoles,
@@ -273,6 +274,10 @@ export default function Lobby() {
             <div>
               <label className="block text-sm text-gray-400 mb-1">Số Vòng Thảo Luận: {discussionRounds}</label>
               <input type="range" min={1} max={3} value={discussionRounds} onChange={e => setDiscussionRounds(+e.target.value)} className="w-full accent-amber-400" />
+            </div>
+            <div>
+              <label className="block text-sm text-gray-400 mb-1">Giới Hạn Thảo Luận: {discussionTimeLimitMs / 1000}s</label>
+              <input type="range" min={30000} max={180000} step={15000} value={discussionTimeLimitMs} onChange={e => setDiscussionTimeLimitMs(+e.target.value)} className="w-full accent-amber-400" />
             </div>
             <div>
               <label className="block text-sm text-gray-400 mb-1">Độ Trễ Giai Đoạn: {(phaseDelay / 1000).toFixed(1)}s</label>

@@ -117,10 +117,13 @@ export class AgentBrain {
 
   // ── Day actions ──
 
-  async discuss(state: GameState, messages: DayMessage[], round: number): Promise<string> {
+  async discuss(state: GameState, messages: DayMessage[], round: number): Promise<{ message: string; wantToSpeak: boolean }> {
     const prompt = this.builder.discuss(this.player, state, this.memory.observations, messages, round);
     const res = await this.ask(prompt, state);
-    return parseActionResponse(res, []).message || "...";
+    try {
+      const json = JSON.parse(res.match(/\{[\s\S]*\}/)?.[0] || '{}');
+      return { message: json.message || '...', wantToSpeak: json.wantToSpeak !== false };
+    } catch { return { message: '...', wantToSpeak: true }; }
   }
 
   async vote(state: GameState, messages: DayMessage[]): Promise<string> {

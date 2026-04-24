@@ -250,7 +250,7 @@ export class AgentManager implements ActionResolver {
     return this.getBrain(cupid).decideCupidPair(state);
   }
 
-  async discuss(player: Player, state: GameState, messages: DayMessage[], round: number): Promise<string> {
+  async discuss(player: Player, state: GameState, messages: DayMessage[], round: number): Promise<{ message: string; wantToSpeak: boolean }> {
     return this.getBrain(player).discuss(state, messages, round);
   }
 

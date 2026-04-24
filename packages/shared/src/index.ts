@@ -100,7 +100,8 @@ export function getDefaultEnabledRoles(playerCount: number): Role[] {
 export interface GameConfig {
   gameName: string;
   playerCount: number;
-  discussionRounds: number;  // 2-3
+  discussionRounds: number;  // max rounds (early exit if quiet)
+  discussionTimeLimitMs: number; // total time budget for day discussion
   autoPlay: boolean;
   phaseDelay: number;        // ms between phases
   providers: ProviderConfig[];

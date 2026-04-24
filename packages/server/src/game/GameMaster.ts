@@ -18,7 +18,7 @@ export type ActionResolver = {
   witchAction(witch: Player, state: GameState, killedName: string | null, potions: WitchPotions): Promise<{ heal: boolean; killTarget: string | null }>;
   guardProtect(guard: Player, state: GameState, lastGuardedId: string | null): Promise<string>;
   cupidPair(cupid: Player, state: GameState): Promise<[string, string]>;
-  discuss(player: Player, state: GameState, messages: DayMessage[], round: number): Promise<string>;
+  discuss(player: Player, state: GameState, messages: DayMessage[], round: number): Promise<{ message: string; wantToSpeak: boolean }>;
   vote(player: Player, state: GameState, messages: DayMessage[]): Promise<string>;
   defend(player: Player, state: GameState, messages: DayMessage[]): Promise<string>;
   judgeVote(player: Player, state: GameState, accusedName: string, defenseSpeech: string, messages: DayMessage[]): Promise<'kill' | 'spare'>;
@@ -419,18 +419,44 @@ export class GameMaster extends EventEmitter {
     await this.delay(this.state.config.phaseDelay);
 
     const alivePlayers = this.alive();
+    const timeLimitMs = this.state.config.discussionTimeLimitMs || 90_000;
+    const maxRounds = this.state.config.discussionRounds;
+    const batchSize = Math.min(3, Math.max(2, Math.ceil(alivePlayers.length / 3)));
+    const spokenCount = new Map<string, number>();
+    const startTime = Date.now();
+    let silentTicks = 0;
 
-    for (let round = 1; round <= this.state.config.discussionRounds; round++) {
-      // Randomize speaking order each round
-      const order = [...alivePlayers].sort(() => Math.random() - 0.5);
-      for (const player of order) {
-        if (!player.alive) continue;
-        const message = await this.resolver.discuss(player, this.state, this.state.discussionMessages, round);
+    for (let round = 1; round <= maxRounds; round++) {
+      if (Date.now() - startTime >= timeLimitMs) break;
+
+      // Pick candidates: sort by least spoken, random pick from top half
+      const pool = alivePlayers.filter(p => p.alive);
+      pool.sort((a, b) => (spokenCount.get(a.id) || 0) - (spokenCount.get(b.id) || 0));
+      const topHalf = pool.slice(0, Math.max(batchSize, Math.ceil(pool.length / 2)));
+      const candidates = topHalf.sort(() => Math.random() - 0.5).slice(0, batchSize);
+
+      // Ask candidates in parallel
+      const results = await Promise.all(
+        candidates.map(async player => ({
+          player,
+          ...(await this.resolver.discuss(player, this.state, this.state.discussionMessages, round)),
+        }))
+      );
+
+      // Emit messages from those who wanted to speak
+      let anyoneSpoke = false;
+      for (const { player, message, wantToSpeak } of results) {
+        if (!wantToSpeak) continue;
         const dayMsg: DayMessage = { playerId: player.id, playerName: player.name, message, round, timestamp: Date.now() };
         this.state.discussionMessages.push(dayMsg);
         this.emitEvent(GameEventType.DayMessage, dayMsg, true);
+        spokenCount.set(player.id, (spokenCount.get(player.id) || 0) + 1);
+        anyoneSpoke = true;
         await this.delay(this.state.config.phaseDelay / 3);
       }
+
+      if (!anyoneSpoke) { silentTicks++; } else { silentTicks = 0; }
+      if (silentTicks >= 2) break;
     }
   }
 

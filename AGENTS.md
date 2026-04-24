@@ -73,7 +73,7 @@ GameMaster is the core engine. It owns `GameState` and runs the main loop:
 startGame()
   ├── cupidPhase()          # First game only: Cupid pairs two players
   └── while (!winner):
-        ├── dayPhase()       # Discussion (N rounds, randomized order)
+        ├── dayPhase()       # Reactive discussion (time-limited, subset speakers)
         ├── duskPhase()      # Nomination vote (pick 1 for trial)
         ├── judgementPhase() # Defense speech → kill/spare vote (>50% to execute)
         ├── nightPhase()     # Guard→Wolves→Witch→Seer (sequential)
@@ -84,7 +84,7 @@ startGame()
 
 | Phase | What Happens | Resolver Methods Called |
 |-------|-------------|----------------------|
-| **Day** | Each alive player speaks 1-2 sentences per round. `config.discussionRounds` rounds total. Speaking order randomized each round. | `discuss(player, state, messages, round)` |
+| **Day** | Hybrid reactive discussion: each tick picks 2-3 candidates (prioritizing least-spoken), asks in parallel. Agents return `wantToSpeak: true/false`. Stops on time limit, max rounds, or 2 consecutive silent ticks. | `discuss(player, state, messages, round)` → `{message, wantToSpeak}` |
 | **Dusk** | Each alive player votes to nominate someone for trial. Most votes = accused (ties = no one). | `vote(player, state, messages)` |
 | **Judgement** | Accused gives defense speech. Others vote kill/spare. >50% kill = executed. Fool wins if executed here. | `defend(accused, state, messages)` then `judgeVote(voter, state, accusedName, defenseSpeech, messages)` |
 | **Night** | Sequential: Guard protects → Wolves attack → Witch heals/poisons → Seer investigates. Actions stored as `NightAction[]`. | `guardProtect`, `wolfKill`/`wolfDoubleKill`/`alphaInfect`, `witchAction`, `seerInvestigate` |
@@ -175,7 +175,7 @@ One per player. Core loop for every decision:
 2. Build system prompt: gameRules + speechRules + playerContext + roleIdentity + personality
 3. Build user prompt: memory/observations + task-specific action prompt
 4. Call LLMProvider.chat(system, user) with temperature=0.85, maxTokens=300, jsonMode=true
-5. Parse JSON response with parseActionResponse() — fuzzy-matches player names, falls back to random valid target
+5. Parse JSON response — discuss() returns {message, wantToSpeak}; other actions use parseActionResponse() with fuzzy name matching + random fallback
 ```
 
 ### AgentMemory
@@ -410,7 +410,7 @@ Express + Socket.IO server. Communication flow:
 ```typescript
 interface GameState {
   id: string;
-  config: GameConfig;
+  config: GameConfig;                // includes discussionRounds, discussionTimeLimitMs, phaseDelay
   phase: Phase;                    // Lobby|Night|Dawn|Day|Dusk|Judgement|GameOver
   round: number;
   players: Player[];               // All players with role, alive status, personality
@@ -443,7 +443,7 @@ interface GameState {
 
 React + Zustand store + Three.js (React Three Fiber) for 3D rendering.
 
-- **Lobby** (`components/lobby/Lobby.tsx`): Configure game — player count, names, providers, personalities, enabled roles.
+- **Lobby** (`components/lobby/Lobby.tsx`): Configure game — player count, names, providers, personalities, enabled roles, discussion time limit.
 - **GameView** (`components/game/GameView.tsx`): Main game screen wrapper.
 - **VillageScene** (`components/scene/VillageScene.tsx`): 3D village with characters, campfire, trees, ground.
 - **Character** (`components/scene/Character.tsx`): 3D player model with visual effects — vote lines, seer glow, shield bubble, wolf slash, potion burst, death particles, Zzz sleep.

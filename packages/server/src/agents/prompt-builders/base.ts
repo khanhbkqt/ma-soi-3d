@@ -160,7 +160,8 @@ export abstract class BasePromptBuilder implements PromptBuilder {
 ${this.discussionHint(player, state)}${r1Hint}${lastHint}
 Lượt thảo luận ${round}/${state.config.discussionRounds}.${conversationBlock(messages)}
 NÓI 1-2 CÂU NGẮN, tự nhiên, bằng tiếng Việt. KHÔNG nói dài, không triết lý.
-JSON: {"message":"câu nói","reasoning":"suy nghĩ riêng, không ai thấy"}`;
+Nếu không có gì muốn nói (đã nói rồi, hoặc chưa có info mới) → wantToSpeak: false.
+JSON: {"wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)","reasoning":"suy nghĩ riêng"}`;
   }
 
   vote(player: Player, state: GameState, observations: string[], messages: DayMessage[]): string {
