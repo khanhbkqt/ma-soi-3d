@@ -61,6 +61,7 @@ BREAK THE PATTERN (Chống rập khuôn): Thỉnh thoảng hãy vote một cách
     return `MÀY LÀ SÓI ĐANG LÊN GIÀN TREO CỔ! Thao túng tâm lý làng:
 - Dùng alibi: "Tao đã vote thằng sói X hôm qua mà tụi mày còn nghi tao?"
 - Fake Role cực gắt: Tự nhận Tiên Tri (báo fake 1 đứa khác là sói), hoặc Bảo Vệ ("treo tao đêm nay tụi mày chết hết"), hoặc Thợ Săn ("thằng nào vote tao tao bắn vỡ sọ").
+- FAKE CLAIM THÔNG MINH: Nếu fake Tiên Tri → phải chuẩn bị fake kết quả soi (đêm 1 soi ai, đêm 2 soi ai) khớp với timeline game. Nếu fake Bảo Vệ → ít rủi ro hơn vì Bảo Vệ khó verify. Nếu fake Thợ Săn → doạ hiệu quả nhưng dễ bị lật nếu Thợ Săn thật còn sống.
 - Redirect: Kéo sự chú ý sang một đứa khác, gieo nghi ngờ: "Giết tao là sai lầm, bọn sói đang hả hê núp bóng thằng Y kìa!".
 - Bình tĩnh, dõng dạc, không hoảng loạn. Bọn dân rất dễ bị dắt mũi bởi một thái độ tự tin.`;
   }
@@ -113,7 +114,11 @@ ${chat ? `Đồng bọn đã nói:\n${chat}\n` : ''}Chiến thuật chọn mồi
 - Tránh cắn đứa vừa được cứu đêm trước, hoặc đứa đang nổi nhất làng (rất dễ bị Bảo Vệ kê khiên).
 - Cắt đứt "đầu tàu" (đứa hay lead làng) để tụi dân như rắn mất đầu cắn xé nhau.
 - KHÔNG cắn mấy con "cừu ngu ngốc" (những đứa hay phân tích sai, vote bậy). Giữ chúng lại làm bia đỡ đạn.
-- Đứa nào come out Tiên Tri/Bảo Vệ mà mỏng manh thì diệt ngay.
+KHAI THÁC ROLE ĐÃ LỘ:
+- Tiên Tri đã come out → CẮN NGAY (trừ khi chắc Bảo Vệ đang đỡ → cắn chéo hoặc cắn Bảo Vệ trước).
+- Bảo Vệ đã come out → CẮN BẢO VỆ TRƯỚC! Neutralize khiên → đêm sau cắn thoải mái.
+- Phù Thủy đã come out + còn thuốc → Cắn Phù Thủy (để triệt thuốc).
+- Thợ Săn đã come out → KHÔNG CẮN! Cắn Thợ Săn = nó bắn 1 sói. Nếu có Phù Thủy (phe sói) → nhờ độc Thợ Săn thay vì cắn (bị độc = không bắn được).
 Nói 1-2 câu ngắn gọn: đề xuất target + lý do.
 JSON: {"message":"lời nói"}`;
   }
@@ -129,11 +134,16 @@ JSON: {"message":"lời nói"}`;
 ${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 Chọn 1 người để cắn đêm nay.
 ƯU TIÊN CẮN (suy nghĩ trong reasoning):
-1. Tiên Tri đã come out (nếu nghĩ Bảo Vệ không đỡ).
-2. Kẻ "trung bình" không ai ngờ tới (để lừa lọt qua khiên của Bảo Vệ).
-3. Đứa vừa được cứu hôm qua (Bảo Vệ không được cứu 2 lần liên tiếp cùng 1 người).
-4. "Đầu tàu" dẫn dắt làng (để làng như rắn mất đầu).
-TRÁNH CẮN: Mấy con "cừu ngu" đang vote bậy (giữ lại làm bia đỡ đạn vòng sau), đứa nổi nhất làng (dễ bị kê khiên).
+1. Tiên Tri đã come out (nếu nghĩ Bảo Vệ không đỡ). Nếu nghĩ Bảo Vệ đang đỡ Tiên Tri → cắn chéo hoặc cắn Bảo Vệ trước.
+2. Bảo Vệ đã come out → CẮN NGAY! Neutralize khiên = đêm sau cắn thoải mái.
+3. Phù Thủy đã come out + còn thuốc → Cắn Phù Thủy để triệt thuốc.
+4. Kẻ "trung bình" không ai ngờ tới (để lừa lọt qua khiên của Bảo Vệ).
+5. Đứa vừa được cứu hôm qua (Bảo Vệ không được cứu 2 lần liên tiếp cùng 1 người).
+6. "Đầu tàu" dẫn dắt làng (để làng như rắn mất đầu).
+TRÁNH CẮN:
+- Thợ Săn đã come out → Cắn = nó bắn 1 sói! Nếu có Phù Thủy (phe sói) thì nhờ độc Thợ Săn (bị độc = không bắn được). Nếu không có Phù Thủy → bỏ qua Thợ Săn, cắn mục tiêu khác.
+- Mấy con "cừu ngu" đang vote bậy (giữ lại làm bia đỡ đạn vòng sau).
+- Đứa nổi nhất làng (dễ bị kê khiên).
 Danh sách con mồi: ${targets.map((t) => t.name).join(', ')}
 JSON: {"target":"Tên","reasoning":"phân tích target priority"}`;
   }

@@ -79,6 +79,7 @@ export function speechRules(): string {
 - PHẢI react lại lời người khác — đồng ý, phản bác, chọc, hỏi lại. KHÔNG nói như đang độc thoại.
 - CẤM nói chung chung kiểu "tao thấy thằng X đáng nghi" mà không có lý do cụ thể. Phải nêu BẰNG CHỨNG: vote gì, nói gì, im lúc nào, bảo vệ ai.
 - TUYỆT ĐỐI KHÔNG được bịa thông tin mà mày không có trong nhật ký. Không được tự sáng tác kết quả soi, role người khác, hay sự kiện chưa xảy ra.
+- KHÔNG TỰ NHẬN ROLE (come out) trừ khi chủ ý chiến thuật. Tránh vô tình hint role bằng từ ngữ chuyên biệt (VD: đừng nói "tao soi" nếu chưa come out Tiên Tri, đừng nói "tao đỡ" nếu chưa come out Bảo Vệ). Come out sai thời điểm = sói biết mày là ai → cắn đêm sau.
 - Luôn trả lời bằng JSON đúng format được yêu cầu.
 
 CÁCH SUY LUẬN — suy nghĩ kỹ trước khi nói/hành động:
@@ -216,7 +217,11 @@ export abstract class BasePromptBuilder implements PromptBuilder {
 - Dùng bằng chứng cụ thể: vote pattern của mày nhất quán, mày đã tố đúng sói trước đó
 - Chỉ ra ai đáng nghi hơn mày — đích danh + lý do
 - Phân tích: ai tố mày? Động cơ của họ? Có phải sói đang frame mày?
-- Come out role nếu cần (chỉ khi role quan trọng VÀ tình huống nguy cấp)`;
+COME OUT ROLE? CÂN NHẮC KỸ:
+- Come out role quan trọng (Tiên Tri, Bảo Vệ, Phù Thủy) = SÓI BIẾT MÀY LÀ AI → cắn đêm sau → mất role.
+- MẶC ĐỊNH: biện hộ bằng logic như Dân thường. KHÔNG come out.
+- CHỈ come out khi: (1) role đã hết skill/giá trị, (2) info đủ quan trọng để sacrifice sống sót, (3) có kẻ khác claim cùng role phải phản bác.
+- Nếu quyết định KHÔNG come out → biện hộ bằng vote pattern, hành vi nhất quán, chỉ ra kẻ đáng nghi hơn.`;
   }
 
   /** Override for role-specific judgement strategy */

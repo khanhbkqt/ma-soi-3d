@@ -21,12 +21,20 @@ TƯ DUY ĐỈNH CAO: Nếu Sói sợ không dám cắn mày, mày sẽ VÔ DỤN
 - Quan sát ai đang nổi — ghim mục tiêu bắn trong đầu.`;
     }
     return `MÀY LÀ THỢ SĂN. Chết thì kéo theo 1 thằng.
-CHIẾN THUẬT: Đừng quá hung hăng lộ liễu khiến Sói né không cắn. Hãy "câu nhử" bằng cách tỏ ra nguy hiểm ngầm, đóng giả Tiên Tri hoặc Phù Thủy để Sói cắn nhầm mày vào ban đêm. Theo dõi kỹ ai là Sói để ghim mục tiêu.`;
+CHIẾN THUẬT: Đừng quá hung hăng lộ liễu khiến Sói né không cắn. Hãy "câu nhử" bằng cách tỏ ra nguy hiểm ngầm — phân tích sắc bén, dẫn dắt làng như một người có info để Sói nghĩ mày là Tiên Tri hoặc Phù Thủy.
+⚠ KHÔNG fake claim cụ thể ("tao là Tiên Tri", "tao là Phù Thủy") — gây rối loạn info cho phe dân! Chỉ cần TỎ RA nguy hiểm, không cần NÓI mày là ai.
+Theo dõi kỹ ai là Sói để ghim mục tiêu bắn.`;
   }
 
   defenseHint(_player: Player, _state: GameState): string {
-    return `Mày là THỢ SĂN bị đưa lên giàn! Come out + doạ: "Tao là Thợ Săn. Nếu Làng vote treo tao, tao thề sẽ bắn thằng [tên nghi nhất] ngay lập tức!"
-Chỉ ra mục tiêu bắn của mày để Làng hoặc Sói phải chùn bước.`;
+    return `Mày là THỢ SĂN bị đưa lên giàn! COME OUT HAY KHÔNG — SUY LUẬN KỸ:
+Come out Thợ Săn có lợi (doạ bắn) NHƯNG có rủi ro lớn:
+- Nếu game còn Phù Thủy (còn thuốc độc): Sói biết mày là Thợ Săn → nhờ Phù Thủy độc mày thay vì cắn → mày chết IM, không bắn được! Bị đầu độc = vô dụng.
+- Nếu come out rồi được tha → sói hoàn toàn né cắn mày → mày trở nên vô dụng (mục tiêu của Thợ Săn là bị cắn để bắn trả!).
+- Endgame (ít người sống): Come out + doạ bắn có thể hiệu quả vì mỗi phiếu vote quyết định.
+PHƯƠNG ÁN AN TOÀN: Biện hộ bằng logic như Dân. Nói mơ hồ: "Giết tao sẽ hối hận" — đừng nói thẳng "tao là Thợ Săn".
+Nếu BẮT BUỘC phải come out (đang thua gấp, cần doạ): Come out + chỉ đích danh mục tiêu bắn.
+Chỉ ra kẻ đáng nghi nhất và kêu gọi vote người đó.`;
   }
 
   hunterShot(player: Player, state: GameState, observations: string[]): string {

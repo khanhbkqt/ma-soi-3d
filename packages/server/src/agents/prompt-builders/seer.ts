@@ -24,6 +24,7 @@ CHIẾN THUẬT & TÂM LÝ (KHÔNG CHƠI CỨNG NHẮC):
 CHIẾN THUẬT BAN NGÀY (MIND GAME):
 - Dùng kết quả soi (xem PHÂN TÍCH ROLE) để định hướng: bênh người sạch một cách khéo léo, tố người bẩn bằng logic.
 - Nếu chưa lộ diện: Dẫn dắt bằng hint nhưng phải TỰ NHIÊN. Bênh người tốt một cách khéo léo ("Tao thấy cách nói chuyện của thằng này thật thà"). Tố Sói bằng cách bới móc sơ hở logic của nó, tuyệt đối không nói "tao soi nó".
+- THẬN TRỌNG: Đừng phân tích quá sắc bén hay trôi chảy! Sói sẽ đánh hơi ra mày là Tiên Tri nếu mày luôn đúng, luôn biết ai sạch ai bẩn. Hãy "sai" một chút, hỏi ngây thơ một chút, để giả vờ mày đang đoán chứ không phải "biết".
 - Thêm "Gia vị": Thỉnh thoảng giả vờ hỏi ngu, tung hỏa mù, hoặc gây lộn nhẹ nhàng để Sói không nhận ra mày là Tiên Tri nấp lùm.
 - Nếu đã lộ diện: Khẳng định uy quyền. Chỉ đích danh Sói, đọc rõ lịch sử soi. Ai nhận Tiên Tri → tố fake lập tức.`;
   }
@@ -43,10 +44,17 @@ CHIẾN THUẬT BAN NGÀY (MIND GAME):
   }
 
   defenseHint(_player: Player, _state: GameState): string {
-    return `Mày là TIÊN TRI bị đưa lên giàn phán xét!
-LẬT BÀI NGỬA NGAY! Khẳng định chắc nịch mày là Tiên Tri.
-Đọc thuộc lòng toàn bộ lịch sử soi (đêm 1 soi ai, đêm 2 soi ai).
-Chỉ ra đứa đáng nghi nhất và hét lên: "Giết tao là làng mù mắt, Sói sẽ thắng! Quay xe vote chết thằng X cho tao!".`;
+    return `Mày là TIÊN TRI bị đưa lên giàn phán xét! COME OUT HAY KHÔNG — SUY LUẬN KỸ:
+⚠ Come out = sói biết mày là Tiên Tri → cắn mày đêm sau → mất Tiên Tri.
+ĐỪNG come out khi:
+- Đầu game (vòng 1-2), chưa soi ra sói nào → come out quá sớm = hy sinh vô nghĩa. Biện hộ như Dân thường, chết thì chết — sói không biết mày là TT, Tiên Tri Tập Sự kế thừa.
+- Chưa có info đủ giá trị để sacrifice sống sót.
+NÊN come out khi:
+- Đã soi ra ≥1 sói → info quá quan trọng, phải dump toàn bộ lịch sử soi cho Làng trước khi chết.
+- Có kẻ khác FAKE Tiên Tri → BẮT BUỘC come out để counter-claim, nếu không Làng tin fake.
+- Game đã muộn (ít người sống, mỗi phiếu vote đều quyết định) → info của mày cực kỳ giá trị.
+Nếu KHÔNG come out: Biện hộ bằng vote pattern, chỉ ra kẻ đáng nghi hơn, phân tích động cơ người tố mày. Nói như Dân.
+Nếu COME OUT: Đọc thuộc lòng toàn bộ lịch sử soi. Chỉ đích danh sói. Dập nát fake TT.`;
   }
 
   seerInvestigate(player: Player, state: GameState, observations: string[]): string {

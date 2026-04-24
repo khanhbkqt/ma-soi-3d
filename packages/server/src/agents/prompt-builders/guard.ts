@@ -10,7 +10,8 @@ THẾ KHÓ VÀ TƯ DUY ĐỈNH CAO (MIND GAME):
 - Lỗi đếm nhịp (Rhythm Trap): Đa số Bảo Vệ có thói quen tự đỡ bản thân Đêm 1. Nghĩa là Đêm 2 không thể tự đỡ. Sói khôn sẽ đoán được điều này và nhắm cắn mày Đêm 2. Tốt nhất Đêm 1 hãy đỡ người khác, để dành quyền tự đỡ cho đêm nguy hiểm hơn.
 - Tiên Tri come out: Sói biết mày sẽ đỡ Tiên Tri. Chúng có thể cắn Tiên Tri, hoặc cắn người khác. Đôi khi mày có thể "bỏ rơi" Tiên Tri 1 đêm nếu đoán Sói sẽ cắn chéo.
 - Bảo vệ ngầm: Nhìn xem ban ngày ai đang ép Sói mạnh nhất, hoặc ai có vẻ là vai trò quan trọng đang giấu mình, kẻ đó dễ bị cắn đêm nay.
-BAN NGÀY: Giấu thân, chơi như dân. Come out khi bị đưa lên giàn.`;
+BAN NGÀY: Giấu thân TUYỆT ĐỐI, chơi như dân.
+⚠ COME OUT = TỰ SÁT: Nếu mày lộ role Bảo Vệ, sói cắn mày ngay đêm sau → không ai đỡ nữa → phe dân thua. ĐỪNG BAO GIỜ come out trừ khi game chỉ còn 4-5 người.`;
   }
 
   discussionHint(_player: Player, state: GameState): string {
@@ -25,8 +26,14 @@ BAN NGÀY: Giấu thân, chơi như dân. Come out khi bị đưa lên giàn.`;
   }
 
   defenseHint(_player: Player, _state: GameState): string {
-    return `Mày là BẢO VỆ bị đưa lên giàn! Come out — giết mày thì đêm không ai đỡ, sói cắn thoải mái.
-Nếu đã đỡ thành công trước đó → nói ra làm bằng chứng.`;
+    return `Mày là BẢO VỆ bị đưa lên giàn! COME OUT HAY KHÔNG — SUY LUẬN KỸ:
+⚠ Come out Bảo Vệ = TỰ SÁT. Sói biết mày → cắn đêm sau → mất khiên VĨNH VIỄN → phe dân thua dần.
+MẶC ĐỊNH: KHÔNG COME OUT. Biện hộ như Dân thường:
+- Dùng vote pattern, chỉ ra kẻ đáng nghi hơn mày, phân tích ai hưởng lợi khi mày chết.
+- Nếu cần doạ, nói mơ hồ: "Giết tao là sai lầm, tao có giá trị cho làng" — ĐỪNG nói cụ thể role.
+- Thà chết trên giàn như Dân còn hơn come out rồi sói cắn đêm sau.
+- Nếu đã đỡ thành công trước đó, có thể hint nhẹ: "Hôm qua có đứa sống sót là nhờ tao đấy" — nhưng ĐỪNG nói "tao là Bảo Vệ".
+NGOẠI LỆ DUY NHẤT: Game đã endgame (chỉ còn rất ít người sống), come out có thể chấp nhận được vì info quan trọng hơn survival.`;
   }
 
   guardProtect(

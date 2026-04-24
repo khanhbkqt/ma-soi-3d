@@ -12,7 +12,8 @@ CHIẾN THUẬT ĐỈNH CAO (TƯ DUY):
 - Thuốc Cứu: Đừng quá tham giữ thuốc. Đa số trường hợp CỨU NGAY ĐÊM 1 HOẶC 2 LÀ TỐI ƯU vì nó giữ lại mạng (vote cho dân) và tạo ra 1 đồng minh "sạch". Giữ thuốc muộn dễ khiến người quan trọng chết oan. (Lưu ý: Bảo Vệ cũng có thể đỡ, nhưng cứu vẫn an toàn nhất).
 - Thuốc Độc: Vũ khí nguy hiểm nhất. Độc nhầm dân = thảm họa (độc Thợ Săn → Thợ Săn mất quyền bắn). Chỉ ném độc khi có LOGIC CHẮC CHẮN (VD: bắt được Tiên Tri giả, kẻ vote bầy đàn cứu Sói ban ngày).
 - Có thể dùng cả 2 thuốc cùng 1 đêm.
-BAN NGÀY: Giấu thân, chơi như dân. Come out khi bị dồn lên giàn, hoặc khi đã dùng hết 2 bình (lúc đó nhận Phù Thủy để dùng thông tin dẫn dắt Làng).`;
+BAN NGÀY: Giấu thân, chơi như dân.
+⚠ COME OUT KHI CÒN THUỐC = TỰ SÁT: Sói biết mày là Phù Thủy → cắn mày đêm sau → mất cả cứu lẫn độc. Chỉ come out khi ĐÃ DÙNG HẾT cả 2 bình thuốc (lúc đó nhận Phù Thủy để dùng thông tin dẫn dắt Làng).`;
   }
 
   discussionHint(_player: Player, state: GameState): string {
@@ -33,12 +34,16 @@ CHIẾN THUẬT BAN NGÀY:
 3. Không claim Phù Thủy trừ khi bị đưa lên bàn phán xét, hoặc khi mày đã hết sạch cả 2 bình thuốc và muốn đứng ra làm Leader dẫn dắt Làng bằng thông tin của mình.`;
   }
 
-  defenseHint(_player: Player, state: GameState): string {
-    const potionsLeft = !state.witchPotions.healUsed || !state.witchPotions.killUsed;
-    return `Mày là PHÙ THỦY bị đưa lên giàn phán xét!
-- Nếu CÒN THUỐC: COME OUT ngay lập tức! Báo cho Làng biết mày còn thuốc để họ thấy giá trị. Có thể đe dọa "ai vote treo tao, đêm nay tao ném độc".
-- Nếu HẾT THUỐC: Vẫn COME OUT và khai báo toàn bộ thông tin (đêm nào cứu ai, độc ai) để Làng biết mày là người tốt đã cống hiến xong và để lại "di sản thông tin".
-Chỉ ra kẻ đáng nghi nhất và kêu gọi vote người đó.`;
+  defenseHint(_player: Player, _state: GameState): string {
+    return `Mày là PHÙ THỦY bị đưa lên giàn! COME OUT HAY KHÔNG — SUY LUẬN KỸ:
+⚠ Come out khi CÒN THUỐC = TỰ SÁT. Sói biết mày → cắn đêm sau → mất thuốc còn lại = thảm họa.
+ĐỪNG come out khi:
+- Còn thuốc (cứu hoặc độc hoặc cả hai) VÀ game chưa endgame → biện hộ như Dân thường. Thà chết trên giàn không lộ role còn hơn come out rồi sói cắn đêm sau.
+NÊN come out khi:
+- ĐÃ DÙNG HẾT cả 2 bình thuốc → come out an toàn, mày không còn skill, sói cắn mày cũng chẳng mất gì. Khai báo toàn bộ thông tin (đêm nào cứu ai, độc ai, ai bị sói cắn) để lại "di sản thông tin" cho Làng.
+- Game đã endgame (rất ít người sống) VÀ còn thuốc → come out để Làng biết giá trị, doạ: "Ai vote treo tao, đêm nay tao ném độc."
+Nếu KHÔNG come out: Biện hộ bằng logic, vote pattern, chỉ ra kẻ đáng nghi hơn. Nói mơ hồ: "Giết tao là sai lầm" — đừng nói cụ thể role.
+Nếu COME OUT: Dump toàn bộ info. Chỉ ra kẻ đáng nghi nhất.`;
   }
 
   witchAction(
