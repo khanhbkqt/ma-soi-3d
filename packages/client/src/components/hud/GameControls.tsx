@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useGameStore } from '../../store/gameStore';
 import { Phase } from '@ma-soi/shared';
+import { buildGameTimeline } from './buildGameTimeline';
 
 export default function GameControls() {
   const { gameState, pauseGame, resumeGame, stepGame, setSpectatorMode, spectatorMode, setView, setPlayerView } = useGameStore();
   const [showPlayerList, setShowPlayerList] = useState(false);
+  const [copied, setCopied] = useState(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, right: 0 });
 
@@ -93,6 +95,18 @@ export default function GameControls() {
           🔄 Ván Mới
         </button>
       )}
+
+      <button
+        onClick={() => {
+          const data = buildGameTimeline(gameState);
+          navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        }}
+        className={`px-3 py-1.5 rounded text-xs font-medium transition ${copied ? 'bg-green-600 text-white' : 'bg-gray-700 hover:bg-gray-600 text-gray-300'}`}
+      >
+        {copied ? '✅ Đã copy!' : '📋 Copy Game Data'}
+      </button>
     </div>
   );
 }
