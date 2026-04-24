@@ -271,6 +271,15 @@ export default function VillageScene() {
     [target.moonPos[0], target.moonPos[1], target.moonPos[2]],
   );
   const sunColTarget = useMemo(() => new THREE.Color(target.sunCol), [target.sunCol]);
+  const targetColors = useMemo(
+    () => ({
+      ambientCol: new THREE.Color(target.ambientCol),
+      dirCol: new THREE.Color(target.dirCol),
+      bg: new THREE.Color(target.bg),
+      campfireCol: new THREE.Color(target.campfireCol),
+    }),
+    [target.ambientCol, target.dirCol, target.bg, target.campfireCol],
+  );
 
   useFrame((state, dt) => {
     const spd = 2 * dt;
@@ -279,10 +288,10 @@ export default function VillageScene() {
     c.dir = THREE.MathUtils.lerp(c.dir, target.dir, spd);
     c.campfire = THREE.MathUtils.lerp(c.campfire, target.campfire, spd);
     c.starsOpacity = THREE.MathUtils.lerp(c.starsOpacity, target.starsOpacity, spd);
-    c.ambientCol.lerp(new THREE.Color(target.ambientCol), spd);
-    c.dirCol.lerp(new THREE.Color(target.dirCol), spd);
-    c.bg.lerp(new THREE.Color(target.bg), spd);
-    c.campfireCol.lerp(new THREE.Color(target.campfireCol), spd);
+    c.ambientCol.lerp(targetColors.ambientCol, spd);
+    c.dirCol.lerp(targetColors.dirCol, spd);
+    c.bg.lerp(targetColors.bg, spd);
+    c.campfireCol.lerp(targetColors.campfireCol, spd);
 
     if (ambientRef.current) {
       ambientRef.current.intensity = c.ambient;

@@ -269,6 +269,7 @@ export enum GameEventType {
   FoolVictory = 'FoolVictory',
   WolfDiscussMessage = 'WolfDiscussMessage',
   InfectResolved = 'InfectResolved',
+  PlayerThinking = 'PlayerThinking',
 }
 
 export interface GameEvent {

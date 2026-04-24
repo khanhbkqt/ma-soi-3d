@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import * as THREE from 'three';
 
 function makeGrassTexture(size = 512, dark = false): THREE.CanvasTexture {
@@ -52,10 +52,12 @@ function makeDirtTexture(size = 256): THREE.CanvasTexture {
 }
 
 function PathStones() {
+  const ref = useRef<THREE.InstancedMesh>(null);
+  const COUNT = 24;
   const stones = useMemo(
     () =>
-      Array.from({ length: 24 }, (_, i) => {
-        const a = (i / 24) * Math.PI * 2 + Math.random() * 0.2;
+      Array.from({ length: COUNT }, (_, i) => {
+        const a = (i / COUNT) * Math.PI * 2 + Math.random() * 0.2;
         const r = 2.5 + Math.random() * 2;
         return {
           pos: [Math.cos(a) * r, 0.02 + Math.random() * 0.03, Math.sin(a) * r] as [
@@ -64,26 +66,36 @@ function PathStones() {
             number,
           ],
           s: 0.04 + Math.random() * 0.06,
+          rx: Math.random() * 0.3,
           ry: Math.random() * Math.PI,
         };
       }),
     [],
   );
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const m = new THREE.Matrix4();
+    const q = new THREE.Quaternion();
+    const euler = new THREE.Euler();
+    stones.forEach((s, i) => {
+      euler.set(s.rx, s.ry, 0);
+      q.setFromEuler(euler);
+      m.compose(
+        new THREE.Vector3(...s.pos),
+        q,
+        new THREE.Vector3(s.s / 0.06, s.s / 0.06, s.s / 0.06),
+      );
+      ref.current!.setMatrixAt(i, m);
+    });
+    ref.current.instanceMatrix.needsUpdate = true;
+  }, [stones]);
+
   return (
-    <>
-      {stones.map((s, i) => (
-        <mesh
-          key={i}
-          position={s.pos}
-          rotation={[Math.random() * 0.3, s.ry, 0]}
-          castShadow
-          receiveShadow
-        >
-          <dodecahedronGeometry args={[s.s, 0]} />
-          <meshStandardMaterial color="#7a7060" roughness={0.95} />
-        </mesh>
-      ))}
-    </>
+    <instancedMesh ref={ref} args={[undefined, undefined, COUNT]} receiveShadow>
+      <dodecahedronGeometry args={[0.06, 0]} />
+      <meshStandardMaterial color="#7a7060" roughness={0.95} />
+    </instancedMesh>
   );
 }
 

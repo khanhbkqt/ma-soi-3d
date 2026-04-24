@@ -31,6 +31,10 @@ const ROLE_NAMES_VI: Record<Role, string> = {
   [Role.Cupid]: 'Cupid',
   [Role.Fool]: 'Kẻ Ngốc',
 };
+// Cached vectors to avoid allocations in useFrame
+const VEC_ONE = new THREE.Vector3(1, 1, 1);
+const VEC_DIMMED = new THREE.Vector3(0.9, 0.9, 0.9);
+
 const SKIN_COLORS = [
   '#e8b89d',
   '#d4956b',
@@ -208,6 +212,28 @@ function WolfEyes() {
 
 // ── VFX Components ──
 
+function ThinkingDots() {
+  const ref = useRef<THREE.Group>(null);
+  useFrame(() => {
+    if (!ref.current) return;
+    const t = Date.now() * 0.003;
+    ref.current.children.forEach((c, i) => {
+      (c as THREE.Mesh).position.y = Math.sin(t + i * 1.2) * 0.06;
+      (c as THREE.Mesh).scale.setScalar(0.04 + Math.sin(t + i * 1.2) * 0.015);
+    });
+  });
+  return (
+    <group ref={ref} position={[0, 0.85, 0.2]}>
+      {[0, 1, 2].map((i) => (
+        <mesh key={i} position={[(i - 1) * 0.08, 0, 0]}>
+          <sphereGeometry args={[1, 8, 8]} />
+          <meshBasicMaterial color="#66bbff" transparent opacity={0.8} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function ZzzParticles() {
   const ref = useRef<THREE.Group>(null);
   useFrame(() => {
@@ -232,18 +258,36 @@ function ZzzParticles() {
 }
 
 function WolfSlash({ active }: { active: boolean }) {
-  const [opacity, setOpacity] = useState(0);
+  const matRef = useRef<THREE.MeshBasicMaterial>(null);
+  const opacityRef = useRef(0);
+  const visibleRef = useRef(false);
+  const groupRef = useRef<THREE.Mesh>(null);
   useEffect(() => {
-    if (active) setOpacity(1);
+    if (active) {
+      opacityRef.current = 1;
+      visibleRef.current = true;
+      if (groupRef.current) groupRef.current.visible = true;
+    }
   }, [active]);
   useFrame((_, dt) => {
-    if (opacity > 0) setOpacity((o) => Math.max(0, o - dt * 2));
+    if (!visibleRef.current) return;
+    opacityRef.current = Math.max(0, opacityRef.current - dt * 2);
+    if (matRef.current) matRef.current.opacity = opacityRef.current;
+    if (opacityRef.current <= 0) {
+      visibleRef.current = false;
+      if (groupRef.current) groupRef.current.visible = false;
+    }
   });
-  if (opacity <= 0) return null;
   return (
-    <mesh position={[0, 1, 0.3]} rotation={[0, 0, -0.5]}>
+    <mesh ref={groupRef} position={[0, 1, 0.3]} rotation={[0, 0, -0.5]} visible={false}>
       <planeGeometry args={[0.8, 0.15]} />
-      <meshBasicMaterial color="#ff0000" transparent opacity={opacity} side={THREE.DoubleSide} />
+      <meshBasicMaterial
+        ref={matRef}
+        color="#ff0000"
+        transparent
+        opacity={0}
+        side={THREE.DoubleSide}
+      />
     </mesh>
   );
 }
@@ -280,47 +324,61 @@ function SeerGlow() {
 }
 
 function PotionBurst({ color }: { color: string }) {
-  const [life, setLife] = useState(1);
+  const groupRef = useRef<THREE.Group>(null);
+  const lifeRef = useRef(1);
   useFrame((_, dt) => {
-    setLife((l) => Math.max(0, l - dt * 0.8));
+    lifeRef.current = Math.max(0, lifeRef.current - dt * 0.8);
+    const life = lifeRef.current;
+    if (!groupRef.current) return;
+    if (life <= 0) {
+      groupRef.current.visible = false;
+      return;
+    }
+    groupRef.current.children.forEach((c, i) => {
+      const a = (i / 5) * Math.PI * 2;
+      const r = (1 - life) * 0.8;
+      c.position.set(Math.cos(a) * r, Math.sin(a) * r * 0.5, 0);
+      c.scale.setScalar(life * 0.1);
+      (c as THREE.Mesh & { material: THREE.MeshBasicMaterial }).material.opacity = life * 0.7;
+    });
   });
-  if (life <= 0) return null;
   return (
-    <group position={[0, 1, 0]}>
-      {[0, 1, 2, 3, 4].map((i) => {
-        const a = (i / 5) * Math.PI * 2;
-        const r = (1 - life) * 0.8;
-        return (
-          <mesh key={i} position={[Math.cos(a) * r, Math.sin(a) * r * 0.5, 0]} scale={life * 0.1}>
-            <sphereGeometry args={[1, 6, 6]} />
-            <meshBasicMaterial color={color} transparent opacity={life * 0.7} />
-          </mesh>
-        );
-      })}
+    <group ref={groupRef} position={[0, 1, 0]}>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <mesh key={i}>
+          <sphereGeometry args={[1, 6, 6]} />
+          <meshBasicMaterial color={color} transparent opacity={0.7} />
+        </mesh>
+      ))}
     </group>
   );
 }
 
 function LoveParticles() {
   const ref = useRef<THREE.Group>(null);
-  const [life, setLife] = useState(1);
+  const lifeRef = useRef(1);
   useFrame((_, dt) => {
-    setLife((l) => Math.max(0, l - dt * 0.2));
+    lifeRef.current = Math.max(0, lifeRef.current - dt * 0.2);
     if (!ref.current) return;
+    const life = lifeRef.current;
+    if (life <= 0) {
+      ref.current.visible = false;
+      return;
+    }
     ref.current.children.forEach((c, i) => {
       const t = ((Date.now() * 0.001 + i * 0.3) % 2) / 2;
       c.position.y = t * 3;
       c.position.x = Math.sin(t * 8 + i) * 0.5;
       (c as THREE.Mesh).scale.setScalar((1 - t) * 0.25 * life);
+      (c as THREE.Mesh & { material: THREE.MeshBasicMaterial }).material.opacity = 0.6 * life;
     });
   });
-  if (life <= 0) return null;
   return (
     <group ref={ref} position={[0, 1.5, 0]}>
       {Array.from({ length: 8 }).map((_, i) => (
         <mesh key={i}>
           <sphereGeometry args={[1, 6, 6]} />
-          <meshBasicMaterial color="#ff66b2" transparent opacity={0.6 * life} />
+          <meshBasicMaterial color="#ff66b2" transparent opacity={0.6} />
         </mesh>
       ))}
     </group>
@@ -415,50 +473,54 @@ function DefenseSpotlight({ isDefending }: { isDefending: boolean }) {
 
 // ── Execution Animation ──
 function ExecutionEffect({
-  progress,
-  phase,
+  progressRef,
+  phaseRef,
 }: {
-  progress: number;
-  phase: 'rising' | 'hanging' | 'falling' | 'done';
+  progressRef: React.RefObject<number>;
+  phaseRef: React.RefObject<'none' | 'rising' | 'hanging' | 'falling' | 'done'>;
 }) {
   const ropeRef = useRef<THREE.Mesh>(null);
   const burstRef = useRef<THREE.Group>(null);
+  const groupRef = useRef<THREE.Group>(null);
   useFrame(() => {
+    const phase = phaseRef.current;
+    const progress = progressRef.current;
+    if (!groupRef.current) return;
+    groupRef.current.visible = phase !== 'none' && phase !== 'done';
     if (ropeRef.current) {
-      const ropeLen = phase === 'falling' ? 0 : Math.min(progress * 4, 3.5);
-      ropeRef.current.scale.set(1, Math.max(0.01, ropeLen), 1);
-      ropeRef.current.position.y = 1.4 + ropeLen / 2 + 1;
+      ropeRef.current.visible = phase === 'rising' || phase === 'hanging';
+      if (ropeRef.current.visible) {
+        const ropeLen = Math.min(progress * 4, 3.5);
+        ropeRef.current.scale.set(1, Math.max(0.01, ropeLen), 1);
+        ropeRef.current.position.y = 1.4 + ropeLen / 2 + 1;
+      }
     }
-    if (burstRef.current && phase === 'falling') {
-      burstRef.current.children.forEach((c, i) => {
-        const t = Math.min(1, progress * 2);
-        const a = (i / 6) * Math.PI * 2;
-        c.position.set(Math.cos(a) * t * 1.5, (1 - t) * 2, Math.sin(a) * t * 1.5);
-        (c as THREE.Mesh).scale.setScalar((1 - t) * 0.08);
-      });
+    if (burstRef.current) {
+      burstRef.current.visible = phase === 'falling';
+      if (phase === 'falling') {
+        burstRef.current.children.forEach((c, i) => {
+          const t = Math.min(1, progress * 2);
+          const a = (i / 6) * Math.PI * 2;
+          c.position.set(Math.cos(a) * t * 1.5, (1 - t) * 2, Math.sin(a) * t * 1.5);
+          (c as THREE.Mesh).scale.setScalar((1 - t) * 0.08);
+        });
+      }
     }
   });
-  if (phase === 'done') return null;
   return (
-    <group>
-      {/* Rope */}
-      {(phase === 'rising' || phase === 'hanging') && (
-        <mesh ref={ropeRef} position={[0, 3, 0]}>
-          <cylinderGeometry args={[0.015, 0.015, 1, 4]} />
-          <meshBasicMaterial color="#8B7355" />
-        </mesh>
-      )}
-      {/* Death burst particles */}
-      {phase === 'falling' && (
-        <group ref={burstRef} position={[0, 1, 0]}>
-          {Array.from({ length: 6 }).map((_, i) => (
-            <mesh key={i}>
-              <sphereGeometry args={[1, 4, 4]} />
-              <meshBasicMaterial color="#ff4444" transparent opacity={0.6} />
-            </mesh>
-          ))}
-        </group>
-      )}
+    <group ref={groupRef} visible={false}>
+      <mesh ref={ropeRef} position={[0, 3, 0]}>
+        <cylinderGeometry args={[0.015, 0.015, 1, 4]} />
+        <meshBasicMaterial color="#8B7355" />
+      </mesh>
+      <group ref={burstRef} position={[0, 1, 0]}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <mesh key={i}>
+            <sphereGeometry args={[1, 4, 4]} />
+            <meshBasicMaterial color="#ff4444" transparent opacity={0.6} />
+          </mesh>
+        ))}
+      </group>
     </group>
   );
 }
@@ -476,20 +538,45 @@ function VoteArrow({ from, to }: { from: [number, number, number]; to: [number, 
     [from, to],
   );
   const curve = useMemo(() => new THREE.CatmullRomCurve3(points), [points]);
-  const [progress, setProgress] = useState(0);
+  const progressRef = useRef(0);
   const trailRef = useRef<THREE.Group>(null);
-
-  const geom = useMemo(() => {
-    const partial = new THREE.CatmullRomCurve3(
-      curve
-        .getPoints(Math.max(2, Math.floor(30 * progress)))
-        .slice(0, Math.max(2, Math.floor(30 * progress))),
-    );
-    return new THREE.TubeGeometry(partial, 20, 0.04, 8, false);
-  }, [curve, Math.floor(progress * 10)]);
+  const tubeRef = useRef<THREE.Mesh>(null);
+  const headRef = useRef<THREE.Mesh>(null);
+  const prevGeom = useRef<THREE.TubeGeometry | null>(null);
+  const UP = useMemo(() => new THREE.Vector3(0, 1, 0), []);
 
   useFrame((_, dt) => {
-    if (progress < 1) setProgress((p) => Math.min(1, p + dt * 2));
+    if (progressRef.current < 1) progressRef.current = Math.min(1, progressRef.current + dt * 2);
+    const progress = progressRef.current;
+
+    // Update tube geometry at discrete steps
+    if (tubeRef.current) {
+      const step = Math.floor(progress * 10);
+      const prevStep = prevGeom.current ? (prevGeom.current as any)._step : -1;
+      if (step !== prevStep) {
+        const n = Math.max(2, Math.floor(30 * progress));
+        const partial = new THREE.CatmullRomCurve3(curve.getPoints(n).slice(0, n));
+        const newGeom = new THREE.TubeGeometry(partial, 20, 0.04, 8, false);
+        (newGeom as any)._step = step;
+        if (prevGeom.current) prevGeom.current.dispose();
+        tubeRef.current.geometry = newGeom;
+        prevGeom.current = newGeom;
+      }
+    }
+
+    // Arrowhead
+    if (headRef.current) {
+      headRef.current.visible = progress > 0.1;
+      if (progress > 0.1) {
+        const pt = curve.getPoint(progress);
+        const dir = curve.getTangent(progress).normalize();
+        headRef.current.position.copy(pt);
+        const q = new THREE.Quaternion();
+        q.setFromUnitVectors(UP, dir);
+        headRef.current.quaternion.copy(q);
+      }
+    }
+
     // Trail particles
     if (trailRef.current) {
       trailRef.current.children.forEach((c, i) => {
@@ -501,28 +588,15 @@ function VoteArrow({ from, to }: { from: [number, number, number]; to: [number, 
     }
   });
 
-  // Arrowhead position
-  const headPt = curve.getPoint(progress);
-  const headDir = curve.getTangent(progress);
-  const arrowRot = useMemo(() => {
-    const q = new THREE.Quaternion();
-    q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), headDir.normalize());
-    return new THREE.Euler().setFromQuaternion(q);
-  }, [headDir]);
-
   return (
     <group>
-      <mesh geometry={geom}>
+      <mesh ref={tubeRef}>
         <meshBasicMaterial color="#ffaa00" transparent opacity={0.7} />
       </mesh>
-      {/* Arrowhead */}
-      {progress > 0.1 && (
-        <mesh position={[headPt.x, headPt.y, headPt.z]} rotation={arrowRot}>
-          <coneGeometry args={[0.08, 0.2, 6]} />
-          <meshBasicMaterial color="#ff6600" />
-        </mesh>
-      )}
-      {/* Trail particles */}
+      <mesh ref={headRef} visible={false}>
+        <coneGeometry args={[0.08, 0.2, 6]} />
+        <meshBasicMaterial color="#ff6600" />
+      </mesh>
       <group ref={trailRef}>
         {[0, 1, 2, 3].map((i) => (
           <mesh key={i}>
@@ -682,176 +756,203 @@ export default function Character({
     return null;
   }, [isNight, player.alive, player.id, player.role, spectatorMode, events.length]);
 
-  // Active effects from recent events
-  const recentEvents = events.slice(-20);
-  const isSpeaking =
-    recentEvents.some(
-      (e) =>
-        e.type === GameEventType.DayMessage &&
-        e.data.playerId === player.id &&
-        Date.now() - e.timestamp < 3000,
-    ) && gameState.phase === Phase.Day;
-  const isDefending = recentEvents.some(
-    (e) =>
-      e.type === GameEventType.DefenseSpeech &&
-      e.data.playerId === player.id &&
-      Date.now() - e.timestamp < 5000,
-  );
-  const lastSpeech = [...events]
-    .reverse()
-    .find(
-      (e) =>
-        (e.type === GameEventType.DayMessage || e.type === GameEventType.DefenseSpeech) &&
-        e.data.playerId === player.id,
-    );
-  const wasAttacked = recentEvents.some(
-    (e) =>
-      e.type === GameEventType.NightActionPerformed &&
-      e.data.action === 'wolf_kill' &&
-      e.data.targetName === player.name &&
-      Date.now() - e.timestamp < 4000,
-  );
-  const isGuarded = recentEvents.some(
-    (e) =>
-      e.type === GameEventType.GuardProtect &&
-      e.data.targetName === player.name &&
-      Date.now() - e.timestamp < 5000,
-  );
-  const isSeerTarget = recentEvents.some(
-    (e) =>
-      e.type === GameEventType.SeerResult &&
-      e.data.targetName === player.name &&
-      Date.now() - e.timestamp < 4000,
-  );
-  const isSeer =
-    (player.role === Role.Seer ||
-      (player.role === Role.ApprenticeSeer && gameState.apprenticeSeerActivated)) &&
-    recentEvents.some(
-      (e) =>
-        e.type === GameEventType.SeerResult &&
-        e.data.seerId === player.id &&
-        Date.now() - e.timestamp < 4000,
-    );
-  const witchHeal = recentEvents.some(
-    (e) =>
-      e.type === GameEventType.WitchAction &&
-      e.data.action === 'heal' &&
-      e.data.targetName === player.name &&
-      Date.now() - e.timestamp < 4000,
-  );
-  const witchKill = recentEvents.some(
-    (e) =>
-      e.type === GameEventType.WitchAction &&
-      e.data.action === 'kill' &&
-      e.data.targetName === player.name &&
-      Date.now() - e.timestamp < 4000,
-  );
-  const isCupidPair = recentEvents.some(
-    (e) =>
-      e.type === GameEventType.CupidPair &&
-      (e.data.player1Name === player.name || e.data.player2Name === player.name) &&
-      Date.now() - e.timestamp < 6000,
-  );
+  // Active effects from recent events — memoized to avoid recomputing on every render
+  const eventState = useMemo(() => {
+    const recentEvents = events.slice(-20);
+    const now = Date.now();
+    return {
+      isSpeaking:
+        recentEvents.some(
+          (e) =>
+            e.type === GameEventType.DayMessage &&
+            e.data.playerId === player.id &&
+            now - e.timestamp < 3000,
+        ) && gameState.phase === Phase.Day,
+      isDefending: recentEvents.some(
+        (e) =>
+          e.type === GameEventType.DefenseSpeech &&
+          e.data.playerId === player.id &&
+          now - e.timestamp < 5000,
+      ),
+      lastSpeech: [...events]
+        .reverse()
+        .find(
+          (e) =>
+            (e.type === GameEventType.DayMessage || e.type === GameEventType.DefenseSpeech) &&
+            e.data.playerId === player.id,
+        ),
+      wasAttacked: recentEvents.some(
+        (e) =>
+          e.type === GameEventType.NightActionPerformed &&
+          e.data.action === 'wolf_kill' &&
+          e.data.targetName === player.name &&
+          now - e.timestamp < 4000,
+      ),
+      isGuarded: recentEvents.some(
+        (e) =>
+          e.type === GameEventType.GuardProtect &&
+          e.data.targetName === player.name &&
+          now - e.timestamp < 5000,
+      ),
+      isSeerTarget: recentEvents.some(
+        (e) =>
+          e.type === GameEventType.SeerResult &&
+          e.data.targetName === player.name &&
+          now - e.timestamp < 4000,
+      ),
+      isSeer:
+        (player.role === Role.Seer ||
+          (player.role === Role.ApprenticeSeer && gameState.apprenticeSeerActivated)) &&
+        recentEvents.some(
+          (e) =>
+            e.type === GameEventType.SeerResult &&
+            e.data.seerId === player.id &&
+            now - e.timestamp < 4000,
+        ),
+      witchHeal: recentEvents.some(
+        (e) =>
+          e.type === GameEventType.WitchAction &&
+          e.data.action === 'heal' &&
+          e.data.targetName === player.name &&
+          now - e.timestamp < 4000,
+      ),
+      witchKill: recentEvents.some(
+        (e) =>
+          e.type === GameEventType.WitchAction &&
+          e.data.action === 'kill' &&
+          e.data.targetName === player.name &&
+          now - e.timestamp < 4000,
+      ),
+      isCupidPair: recentEvents.some(
+        (e) =>
+          e.type === GameEventType.CupidPair &&
+          (e.data.player1Name === player.name || e.data.player2Name === player.name) &&
+          now - e.timestamp < 6000,
+      ),
+      wasExecuted: recentEvents.some(
+        (e) =>
+          e.type === GameEventType.JudgementResult &&
+          e.data.accusedId === player.id &&
+          e.data.executed &&
+          now - e.timestamp < 8000,
+      ),
+      someoneDefending:
+        isJudgement &&
+        recentEvents.some(
+          (e) => e.type === GameEventType.DefenseSpeech && now - e.timestamp < 5000,
+        ),
+      lastVote: [...events]
+        .reverse()
+        .find(
+          (e) =>
+            e.type === GameEventType.VoteCast &&
+            e.data.voterName === player.name &&
+            now - e.timestamp < 5000,
+        ),
+      votesReceived: isDusk
+        ? recentEvents.filter(
+            (e) =>
+              e.type === GameEventType.VoteCast &&
+              e.data.targetName === player.name &&
+              now - e.timestamp < 10000,
+          ).length
+        : 0,
+      hasVoted:
+        isDusk &&
+        recentEvents.some(
+          (e) =>
+            e.type === GameEventType.VoteCast &&
+            e.data.voterName === player.name &&
+            now - e.timestamp < 10000,
+        ),
+      isThinking: (() => {
+        const last = [...events]
+          .reverse()
+          .find((e) => e.type === GameEventType.PlayerThinking && e.data.playerId === player.id);
+        return !!last && last.data.thinking === true;
+      })(),
+    };
+  }, [
+    events.length,
+    player.id,
+    player.name,
+    player.role,
+    gameState.phase,
+    isJudgement,
+    isDusk,
+    gameState.apprenticeSeerActivated,
+  ]);
 
-  // Vote tracking
-  const lastVote = [...events]
-    .reverse()
-    .find(
-      (e) =>
-        e.type === GameEventType.VoteCast &&
-        e.data.voterName === player.name &&
-        Date.now() - e.timestamp < 5000,
-    );
+  const {
+    isSpeaking,
+    isDefending,
+    lastSpeech,
+    wasAttacked,
+    isGuarded,
+    isSeerTarget,
+    isSeer,
+    witchHeal,
+    witchKill,
+    isCupidPair,
+    wasExecuted,
+    someoneDefending,
+    lastVote,
+    votesReceived,
+    hasVoted,
+    isThinking,
+  } = eventState;
+
   const voteTarget = lastVote
     ? gameState.players.find((p) => p.name === lastVote.data.targetName)
     : null;
   const voteTargetIndex = voteTarget ? gameState.players.indexOf(voteTarget) : -1;
-
-  const votesReceived = isDusk
-    ? recentEvents.filter(
-        (e) =>
-          e.type === GameEventType.VoteCast &&
-          e.data.targetName === player.name &&
-          Date.now() - e.timestamp < 10000,
-      ).length
-    : 0;
-  const hasVoted =
-    isDusk &&
-    recentEvents.some(
-      (e) =>
-        e.type === GameEventType.VoteCast &&
-        e.data.voterName === player.name &&
-        Date.now() - e.timestamp < 10000,
-    );
+  const isDimmed = someoneDefending && !isAccused && player.alive;
 
   // Death animation
-  const [deathProgress, setDeathProgress] = useState(player.alive ? 0 : 1);
+  const deathProgressRef = useRef(player.alive ? 0 : 1);
   useEffect(() => {
-    if (!player.alive) setDeathProgress(0);
+    if (!player.alive) deathProgressRef.current = 0;
   }, [player.alive]);
 
   // Execution (treo cổ) animation
-  const [execPhase, setExecPhase] = useState<'none' | 'rising' | 'hanging' | 'falling' | 'done'>(
-    'none',
-  );
-  const [execProgress, setExecProgress] = useState(0);
-  const wasExecuted = recentEvents.some(
-    (e) =>
-      e.type === GameEventType.JudgementResult &&
-      e.data.accusedId === player.id &&
-      e.data.executed &&
-      Date.now() - e.timestamp < 8000,
-  );
+  const execPhaseRef = useRef<'none' | 'rising' | 'hanging' | 'falling' | 'done'>('none');
+  const execProgressRef = useRef(0);
   useEffect(() => {
-    if (wasExecuted && execPhase === 'none') {
-      setExecPhase('rising');
-      setExecProgress(0);
+    if (wasExecuted && execPhaseRef.current === 'none') {
+      execPhaseRef.current = 'rising';
+      execProgressRef.current = 0;
     }
   }, [wasExecuted]);
-
-  // Dim other players when someone is defending
-  const someoneDefending =
-    isJudgement &&
-    recentEvents.some(
-      (e) => e.type === GameEventType.DefenseSpeech && Date.now() - e.timestamp < 5000,
-    );
-  const isDimmed = someoneDefending && !isAccused && player.alive;
 
   useFrame((_, dt) => {
     if (!groupRef.current || !bodyRef.current) return;
 
+    const execPhase = execPhaseRef.current;
+    const execProgress = execProgressRef.current;
+
     // Execution animation phases
     if (execPhase === 'rising') {
-      setExecProgress((p) => {
-        const next = p + dt * 1.2;
-        if (next >= 1) {
-          setExecPhase('hanging');
-          return 0;
-        }
-        return next;
-      });
-      bodyRef.current.position.y = execProgress * 2.5;
+      execProgressRef.current = execProgress + dt * 1.2;
+      if (execProgressRef.current >= 1) {
+        execPhaseRef.current = 'hanging';
+        execProgressRef.current = 0;
+      }
+      bodyRef.current.position.y = execProgressRef.current * 2.5;
     } else if (execPhase === 'hanging') {
-      setExecProgress((p) => {
-        const next = p + dt * 2;
-        if (next >= 1) {
-          setExecPhase('falling');
-          return 0;
-        }
-        return next;
-      });
+      execProgressRef.current = execProgress + dt * 2;
+      if (execProgressRef.current >= 1) {
+        execPhaseRef.current = 'falling';
+        execProgressRef.current = 0;
+      }
       bodyRef.current.position.y = 2.5 + Math.sin(Date.now() * 0.01) * 0.05;
     } else if (execPhase === 'falling') {
-      setExecProgress((p) => {
-        const next = p + dt * 3;
-        if (next >= 1) {
-          setExecPhase('done');
-          return 1;
-        }
-        return next;
-      });
-      bodyRef.current.position.y = 2.5 * (1 - execProgress);
-      bodyRef.current.rotation.z = execProgress * (Math.PI / 2);
+      execProgressRef.current = execProgress + dt * 3;
+      if (execProgressRef.current >= 1) {
+        execPhaseRef.current = 'done';
+        execProgressRef.current = 1;
+      }
+      bodyRef.current.position.y = 2.5 * (1 - execProgressRef.current);
+      bodyRef.current.rotation.z = execProgressRef.current * (Math.PI / 2);
     } else if (execPhase !== 'none') {
       // done — stay dead
     } else {
@@ -865,18 +966,18 @@ export default function Character({
         bodyRef.current.position.y = Math.sin(Date.now() * 0.008) * 0.06;
         bodyRef.current.scale.setScalar(1 + Math.sin(Date.now() * 0.006) * 0.03);
       } else if (isDimmed) {
-        bodyRef.current.scale.lerp(new THREE.Vector3(0.9, 0.9, 0.9), 0.05);
+        bodyRef.current.scale.lerp(VEC_DIMMED, 0.05);
         bodyRef.current.position.y *= 0.9;
       } else {
         bodyRef.current.position.y *= 0.9;
-        bodyRef.current.scale.lerp(new THREE.Vector3(1, 1, 1), 0.1);
+        bodyRef.current.scale.lerp(VEC_ONE, 0.1);
       }
 
       // Death fall
-      if (!player.alive && deathProgress < 1) {
-        setDeathProgress((p) => Math.min(1, p + dt * 1.5));
-        bodyRef.current.rotation.z = deathProgress * (Math.PI / 3);
-        bodyRef.current.position.y = -deathProgress * 0.3;
+      if (!player.alive && deathProgressRef.current < 1) {
+        deathProgressRef.current = Math.min(1, deathProgressRef.current + dt * 1.5);
+        bodyRef.current.rotation.z = deathProgressRef.current * (Math.PI / 3);
+        bodyRef.current.position.y = -deathProgressRef.current * 0.3;
       }
 
       // Night head droop (sleeping) vs wake-up (active)
@@ -952,7 +1053,7 @@ export default function Character({
       {isAccused && <DefenseSpotlight isDefending={isDefending} />}
 
       {/* Execution effect */}
-      {execPhase !== 'none' && <ExecutionEffect progress={execProgress} phase={execPhase} />}
+      <ExecutionEffect progressRef={execProgressRef} phaseRef={execPhaseRef} />
 
       {/* Vote target ring */}
       {votesReceived > 0 && player.alive && <VoteTargetRing voteCount={votesReceived} />}
@@ -989,7 +1090,7 @@ export default function Character({
             color={player.alive ? (showRole ? roleColor : '#666666') : '#333333'}
             roughness={0.7}
             transparent
-            opacity={player.alive ? (isDimmed ? 0.4 : 1) : Math.max(0.2, 1 - deathProgress * 0.6)}
+            opacity={player.alive ? (isDimmed ? 0.4 : 1) : 0.4}
           />
         </mesh>
 
@@ -1077,6 +1178,7 @@ export default function Character({
         </mesh>
 
         {/* VFX */}
+        {isThinking && player.alive && <ThinkingDots />}
         {isNight && player.alive && !nightActive && <ZzzParticles />}
         {wasAttacked && spectatorMode === 'god' && <WolfSlash active />}
         {isGuarded && spectatorMode === 'god' && <ShieldBubble />}
@@ -1102,30 +1204,42 @@ export default function Character({
         </Html>
       )}
 
-      {/* Name label */}
-      <Html position={[0, 1.7, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
-        <div className="text-center whitespace-nowrap">
-          <div
-            className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-              isAccused
-                ? 'bg-red-900/90 text-red-200 border border-red-500/50'
-                : player.alive
-                  ? 'bg-black/70 text-white'
-                  : 'bg-black/40 text-gray-500 line-through'
-            }`}
-          >
-            {player.personality.emoji} {player.name}
+      {/* Thinking indicator */}
+      {isThinking && player.alive && (
+        <Html position={[0, 2.1, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+          <div className="text-lg animate-pulse" style={{ filter: 'drop-shadow(0 0 4px #66bbff)' }}>
+            💭
           </div>
-          {showRole && (
+        </Html>
+      )}
+
+      {/* Name label — only for alive players or hovered dead ones */}
+      {(player.alive || hovered) && (
+        <Html position={[0, 1.7, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
+          <div className="text-center whitespace-nowrap">
             <div
-              className="text-[10px] mt-0.5 px-2 py-0.5 rounded-full bg-black/60"
-              style={{ color: roleColor }}
+              className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                isAccused
+                  ? 'bg-red-900/90 text-red-200 border border-red-500/50'
+                  : player.alive
+                    ? 'bg-black/70 text-white'
+                    : 'bg-black/40 text-gray-500 line-through'
+              }`}
             >
-              {ROLE_NAMES_VI[player.role]}
+              {!player.alive && '💀 '}
+              {player.personality.emoji} {player.name}
             </div>
-          )}
-        </div>
-      </Html>
+            {showRole && (
+              <div
+                className="text-[10px] mt-0.5 px-2 py-0.5 rounded-full bg-black/60"
+                style={{ color: roleColor }}
+              >
+                {ROLE_NAMES_VI[player.role]}
+              </div>
+            )}
+          </div>
+        </Html>
+      )}
 
       {/* Vote count badge */}
       {isDusk && votesReceived > 0 && player.alive && (
@@ -1187,13 +1301,6 @@ export default function Character({
               className={`absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 ${isDefending ? 'bg-red-50/95' : 'bg-white/95'}`}
             />
           </div>
-        </Html>
-      )}
-
-      {/* Death marker */}
-      {!player.alive && (
-        <Html position={[0, 1.4, 0]} center distanceFactor={10} style={{ pointerEvents: 'none' }}>
-          <div className="text-3xl drop-shadow-lg">💀</div>
         </Html>
       )}
 

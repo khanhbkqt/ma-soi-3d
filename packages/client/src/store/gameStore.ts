@@ -72,7 +72,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (s.events.some((e) => e.timestamp === event.timestamp && e.type === event.type)) {
           return s;
         }
-        return { events: [...s.events, event] };
+        const next = [...s.events, event];
+        return { events: next.length > 200 ? next.slice(-200) : next };
       });
     });
 

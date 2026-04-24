@@ -119,6 +119,19 @@ export class GameMaster extends EventEmitter {
     this.emit('gameEvent', event);
   }
 
+  private async thinkWrap<T>(playerIds: string[], fn: () => Promise<T>): Promise<T> {
+    for (const id of playerIds) {
+      this.emitEvent(GameEventType.PlayerThinking, { playerId: id, thinking: true }, true);
+    }
+    try {
+      return await fn();
+    } finally {
+      for (const id of playerIds) {
+        this.emitEvent(GameEventType.PlayerThinking, { playerId: id, thinking: false }, true);
+      }
+    }
+  }
+
   private findByName(name: string): Player | undefined {
     return this.state.players.find((p) => p.name === name);
   }
@@ -190,7 +203,9 @@ export class GameMaster extends EventEmitter {
 
     // Hunter revenge — only if NOT poisoned by witch
     if (player.role === Role.Hunter && cause !== 'witch_kill') {
-      const targetName = await this.resolver.hunterShot(player, this.state);
+      const targetName = await this.thinkWrap([player.id], () =>
+        this.resolver.hunterShot(player, this.state),
+      );
       const target = this.findByName(targetName);
       if (target && target.alive) {
         this.emitEvent(
@@ -329,7 +344,9 @@ export class GameMaster extends EventEmitter {
     const cupid = this.state.players.find((p) => p.role === Role.Cupid && p.alive);
     if (!cupid) return;
 
-    const [name1, name2] = await this.resolver.cupidPair(cupid, this.state);
+    const [name1, name2] = await this.thinkWrap([cupid.id], () =>
+      this.resolver.cupidPair(cupid, this.state),
+    );
     const p1 = this.findByName(name1);
     const p2 = this.findByName(name2);
     if (p1 && p2 && p1.id !== p2.id) {
@@ -360,10 +377,8 @@ export class GameMaster extends EventEmitter {
     // ── 1. Guard protects (runs first) ──
     const guard = this.aliveWithRole(Role.Guard)[0];
     if (guard) {
-      const targetName = await this.resolver.guardProtect(
-        guard,
-        this.state,
-        this.state.lastGuardedId,
+      const targetName = await this.thinkWrap([guard.id], () =>
+        this.resolver.guardProtect(guard, this.state, this.state.lastGuardedId),
       );
       const target = this.findByName(targetName);
       if (target) {
@@ -390,7 +405,9 @@ export class GameMaster extends EventEmitter {
       for (let round = 1; round <= 1; round++) {
         const order = [...wolves].sort(() => Math.random() - 0.5);
         for (const wolf of order) {
-          const msg = await this.resolver.wolfDiscuss(wolf, this.state, wolfDiscussion, round);
+          const msg = await this.thinkWrap([wolf.id], () =>
+            this.resolver.wolfDiscuss(wolf, this.state, wolfDiscussion, round),
+          );
           const dm: WolfDiscussMessage = {
             playerId: wolf.id,
             playerName: wolf.name,
@@ -411,10 +428,9 @@ export class GameMaster extends EventEmitter {
       if (this.state.wolfCubRevengeActive) {
         // Wolf Cub revenge: kill 2 this night
         this.state.wolfCubRevengeActive = false;
-        const [name1, name2] = await this.resolver.wolfDoubleKill(
-          wolves,
-          this.state,
-          wolfDiscussion,
+        const [name1, name2] = await this.thinkWrap(
+          wolves.map((w) => w.id),
+          () => this.resolver.wolfDoubleKill(wolves, this.state, wolfDiscussion),
         );
         const t1 = this.findByName(name1);
         const t2 = this.findByName(name2);
@@ -441,7 +457,9 @@ export class GameMaster extends EventEmitter {
         );
       } else if (alpha && !this.state.alphaInfectUsed) {
         // Alpha can choose to infect instead of kill
-        const decision = await this.resolver.alphaInfect(alpha, this.state, wolfDiscussion);
+        const decision = await this.thinkWrap([alpha.id], () =>
+          this.resolver.alphaInfect(alpha, this.state, wolfDiscussion),
+        );
         const target = this.findByName(decision.target);
         if (target) {
           if (decision.infect && !isWolfRole(target.role)) {
@@ -479,7 +497,10 @@ export class GameMaster extends EventEmitter {
         }
       } else {
         // Normal wolf kill
-        const targetName = await this.resolver.wolfKill(wolves, this.state, wolfDiscussion);
+        const targetName = await this.thinkWrap(
+          wolves.map((w) => w.id),
+          () => this.resolver.wolfKill(wolves, this.state, wolfDiscussion),
+        );
         const target = this.findByName(targetName);
         if (target) {
           wolfTargets.push(target);
@@ -502,11 +523,8 @@ export class GameMaster extends EventEmitter {
     const witch = this.aliveWithRole(Role.Witch)[0];
     if (witch) {
       const primaryKilledName = wolfTargets[0]?.name || null;
-      const decision = await this.resolver.witchAction(
-        witch,
-        this.state,
-        primaryKilledName,
-        this.state.witchPotions,
+      const decision = await this.thinkWrap([witch.id], () =>
+        this.resolver.witchAction(witch, this.state, primaryKilledName, this.state.witchPotions),
       );
 
       if (decision.heal && wolfTargets[0] && !this.state.witchPotions.healUsed) {
@@ -552,7 +570,9 @@ export class GameMaster extends EventEmitter {
     }
 
     if (activeSeer) {
-      const targetName = await this.resolver.seerInvestigate(activeSeer, this.state);
+      const targetName = await this.thinkWrap([activeSeer.id], () =>
+        this.resolver.seerInvestigate(activeSeer, this.state),
+      );
       const target = this.findByName(targetName);
       if (target) {
         this.state.nightActions.push({
@@ -699,11 +719,8 @@ export class GameMaster extends EventEmitter {
       // appear to "reply" to each other despite speaking independently.
       let anyoneSpoke = false;
       for (const player of candidates) {
-        const { message, wantToSpeak } = await this.resolver.discuss(
-          player,
-          this.state,
-          this.state.discussionMessages,
-          round,
+        const { message, wantToSpeak } = await this.thinkWrap([player.id], () =>
+          this.resolver.discuss(player, this.state, this.state.discussionMessages, round),
         );
 
         if (!wantToSpeak) continue;
@@ -746,13 +763,16 @@ export class GameMaster extends EventEmitter {
     const voteOrder = [...alivePlayers].sort(() => Math.random() - 0.5);
 
     // Run all votes in parallel
-    const voteResults = await Promise.all(
-      voteOrder
-        .filter((p) => p.alive)
-        .map(async (player) => ({
-          player,
-          targetName: await this.resolver.vote(player, this.state, this.state.discussionMessages),
-        })),
+    const votersFiltered = voteOrder.filter((p) => p.alive);
+    const voteResults = await this.thinkWrap(
+      votersFiltered.map((p) => p.id),
+      () =>
+        Promise.all(
+          votersFiltered.map(async (player) => ({
+            player,
+            targetName: await this.resolver.vote(player, this.state, this.state.discussionMessages),
+          })),
+        ),
     );
 
     // Emit results sequentially with delay for visual effect
@@ -828,10 +848,8 @@ export class GameMaster extends EventEmitter {
     }
 
     // ── 1. Accused defends themselves ──
-    const defenseText = await this.resolver.defend(
-      accused,
-      this.state,
-      this.state.discussionMessages,
+    const defenseText = await this.thinkWrap([accused.id], () =>
+      this.resolver.defend(accused, this.state, this.state.discussionMessages),
     );
     const defense: DefenseMessage = {
       playerId: accused.id,
@@ -848,19 +866,22 @@ export class GameMaster extends EventEmitter {
     const voteOrder = [...voters].sort(() => Math.random() - 0.5);
 
     // Run all judgement votes in parallel
-    const judgeResults = await Promise.all(
-      voteOrder
-        .filter((v) => v.alive)
-        .map(async (voter) => ({
-          voter,
-          verdict: await this.resolver.judgeVote(
+    const judgeVotersFiltered = voteOrder.filter((v) => v.alive);
+    const judgeResults = await this.thinkWrap(
+      judgeVotersFiltered.map((v) => v.id),
+      () =>
+        Promise.all(
+          judgeVotersFiltered.map(async (voter) => ({
             voter,
-            this.state,
-            accused.name,
-            defenseText,
-            this.state.discussionMessages,
-          ),
-        })),
+            verdict: await this.resolver.judgeVote(
+              voter,
+              this.state,
+              accused.name,
+              defenseText,
+              this.state.discussionMessages,
+            ),
+          })),
+        ),
     );
 
     // Emit results sequentially with delay for visual effect

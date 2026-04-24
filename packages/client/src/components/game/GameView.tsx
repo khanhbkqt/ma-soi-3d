@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber';
-import { EffectComposer, Bloom, Vignette, N8AO } from '@react-three/postprocessing';
+import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing';
 import * as THREE from 'three';
 import VillageScene from '../scene/VillageScene';
 import NarratorOverlay from '../hud/NarratorOverlay';
@@ -15,12 +15,10 @@ function PostProcessing() {
   return (
     <EffectComposer>
       <Bloom
-        luminanceThreshold={isNight ? 0.3 : 0.6}
-        luminanceSmoothing={0.4}
-        intensity={isNight ? 1.2 : isJudgement ? 0.8 : 0.4}
-        mipmapBlur
+        luminanceThreshold={isNight ? 0.4 : 0.7}
+        luminanceSmoothing={0.3}
+        intensity={isNight ? 0.8 : isJudgement ? 0.5 : 0.25}
       />
-      <N8AO aoRadius={0.5} intensity={1} distanceFalloff={0.5} />
       <Vignette
         eskil={false}
         offset={isJudgement ? 0.2 : 0.3}
