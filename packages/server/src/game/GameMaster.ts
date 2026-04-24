@@ -1,11 +1,20 @@
 import { GameState, GameConfig, GameEvent, GameEventType, Phase, Role, Team, Player, NightAction, DayMessage, Vote, WitchPotions, getRoleDistribution, isWolfRole, JudgementVote, DefenseMessage, CoupleState } from '@ma-soi/shared';
+
+export interface WolfDiscussMessage {
+  playerId: string;
+  playerName: string;
+  message: string;
+  round: number;
+  timestamp: number;
+}
 import { EventEmitter } from 'events';
 
 export type ActionResolver = {
-  wolfKill(wolves: Player[], state: GameState): Promise<string>;       // returns target name
-  alphaInfect(alpha: Player, state: GameState): Promise<{ target: string; infect: boolean }>;
-  wolfDoubleKill(wolves: Player[], state: GameState): Promise<[string, string]>;
-  seerInvestigate(seer: Player, state: GameState): Promise<string>;    // returns target name
+  wolfKill(wolves: Player[], state: GameState, discussion: WolfDiscussMessage[]): Promise<string>;
+  alphaInfect(alpha: Player, state: GameState, discussion: WolfDiscussMessage[]): Promise<{ target: string; infect: boolean }>;
+  wolfDoubleKill(wolves: Player[], state: GameState, discussion: WolfDiscussMessage[]): Promise<[string, string]>;
+  wolfDiscuss(wolf: Player, state: GameState, messages: WolfDiscussMessage[], round: number): Promise<string>;
+  seerInvestigate(seer: Player, state: GameState): Promise<string>;
   witchAction(witch: Player, state: GameState, killedName: string | null, potions: WitchPotions): Promise<{ heal: boolean; killTarget: string | null }>;
   guardProtect(guard: Player, state: GameState, lastGuardedId: string | null): Promise<string>;
   cupidPair(cupid: Player, state: GameState): Promise<[string, string]>;
@@ -242,15 +251,29 @@ export class GameMaster extends EventEmitter {
       await this.delay(this.state.config.phaseDelay / 3);
     }
 
-    // ── 2. Wolves attack ──
+    // ── 2. Wolves discuss & attack ──
     const wolves = this.aliveWolves();
+    const wolfDiscussion: WolfDiscussMessage[] = [];
+    if (wolves.length > 1) {
+      for (let round = 1; round <= 1; round++) {
+        const order = [...wolves].sort(() => Math.random() - 0.5);
+        for (const wolf of order) {
+          const msg = await this.resolver.wolfDiscuss(wolf, this.state, wolfDiscussion, round);
+          const dm: WolfDiscussMessage = { playerId: wolf.id, playerName: wolf.name, message: msg, round, timestamp: Date.now() };
+          wolfDiscussion.push(dm);
+          this.emitEvent(GameEventType.WolfDiscussMessage, dm, false);
+          await this.delay(this.state.config.phaseDelay / 4);
+        }
+      }
+    }
+
     if (wolves.length > 0) {
       const alpha = wolves.find(w => w.role === Role.AlphaWolf);
 
       if (this.state.wolfCubRevengeActive) {
         // Wolf Cub revenge: kill 2 this night
         this.state.wolfCubRevengeActive = false;
-        const [name1, name2] = await this.resolver.wolfDoubleKill(wolves, this.state);
+        const [name1, name2] = await this.resolver.wolfDoubleKill(wolves, this.state, wolfDiscussion);
         const t1 = this.findByName(name1);
         const t2 = this.findByName(name2);
         if (t1) {
@@ -264,7 +287,7 @@ export class GameMaster extends EventEmitter {
         this.emitEvent(GameEventType.NightActionPerformed, { action: 'wolf_double_kill', targetNames: wolfTargets.map(t => t.name) }, false);
       } else if (alpha && !this.state.alphaInfectUsed) {
         // Alpha can choose to infect instead of kill
-        const decision = await this.resolver.alphaInfect(alpha, this.state);
+        const decision = await this.resolver.alphaInfect(alpha, this.state, wolfDiscussion);
         const target = this.findByName(decision.target);
         if (target) {
           if (decision.infect && !isWolfRole(target.role)) {
@@ -281,7 +304,7 @@ export class GameMaster extends EventEmitter {
         }
       } else {
         // Normal wolf kill
-        const targetName = await this.resolver.wolfKill(wolves, this.state);
+        const targetName = await this.resolver.wolfKill(wolves, this.state, wolfDiscussion);
         const target = this.findByName(targetName);
         if (target) {
           wolfTargets.push(target);

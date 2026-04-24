@@ -44,17 +44,24 @@ export class AgentBrain {
 
   // ── Night actions ──
 
-  async decideWolfKill(state: GameState): Promise<string> {
+  async decideWolfDiscuss(state: GameState, messages: { playerName: string; message: string }[], round: number): Promise<string> {
     const b = this.builder as WolfPromptBuilder;
-    const prompt = b.wolfKill(this.player, state, this.memory.observations);
+    const prompt = b.wolfDiscussionHint(this.player, state, this.memory.observations, messages);
+    const res = await this.ask(prompt, state);
+    return parseActionResponse(res, []).message || "Cắn thằng nào cũng được.";
+  }
+
+  async decideWolfKill(state: GameState, discussion: { playerName: string; message: string }[] = []): Promise<string> {
+    const b = this.builder as WolfPromptBuilder;
+    const prompt = b.wolfKill(this.player, state, this.memory.observations, discussion);
     const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive && !isWolfRole(p.role)).map(p => p.name);
     return parseActionResponse(res, valid).target || valid[0];
   }
 
-  async decideWolfDoubleKill(state: GameState): Promise<[string, string]> {
+  async decideWolfDoubleKill(state: GameState, discussion: { playerName: string; message: string }[] = []): Promise<[string, string]> {
     const b = this.builder as WolfPromptBuilder;
-    const prompt = b.wolfDoubleKill(this.player, state, this.memory.observations);
+    const prompt = b.wolfDoubleKill(this.player, state, this.memory.observations, discussion);
     const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive && !isWolfRole(p.role)).map(p => p.name);
     const parsed = parseActionResponse(res, valid);
@@ -63,9 +70,9 @@ export class AgentBrain {
     return [t1, t2];
   }
 
-  async decideAlphaInfect(state: GameState): Promise<{ target: string; infect: boolean }> {
+  async decideAlphaInfect(state: GameState, discussion: { playerName: string; message: string }[] = []): Promise<{ target: string; infect: boolean }> {
     const b = this.builder as AlphaWolfPromptBuilder;
-    const prompt = b.alphaInfect(this.player, state, this.memory.observations);
+    const prompt = b.alphaInfect(this.player, state, this.memory.observations, discussion);
     const res = await this.ask(prompt, state);
     const valid = state.players.filter(p => p.alive && !isWolfRole(p.role)).map(p => p.name);
     const parsed = parseActionResponse(res, valid);

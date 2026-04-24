@@ -2,7 +2,7 @@ import { GameState, GameConfig, Player, Role, DayMessage, WitchPotions, getRoleD
 import { AgentBrain } from '../agents/brain.js';
 import { getRandomPersonalities, PERSONALITIES } from '../agents/personalities.js';
 import { getProvider, registerAllProviders } from '../providers/index.js';
-import { GameMaster, ActionResolver } from './GameMaster.js';
+import { GameMaster, ActionResolver, WolfDiscussMessage } from './GameMaster.js';
 import { compressedMemoryPrompt } from '../agents/memory-compression.js';
 import { roleNameVi } from '../agents/prompt-builders/base.js';
 
@@ -121,6 +121,9 @@ export class AgentManager implements ActionResolver {
       case GameEventType.WolfCubRevenge:
         if (isWolfRole(viewer.role)) return `Sói Con đã chết! Đêm sau sói cắn 2 người trả thù.`;
         return null;
+      case GameEventType.WolfDiscussMessage:
+        if (isWolfRole(viewer.role)) return `[Họp sói] ${d.playerName}: "${d.message}"`;
+        return null;
       case GameEventType.CupidPair:
         if (viewer.role === Role.Cupid) return `Mày đã ghép đôi ${d.player1Name} và ${d.player2Name}.`;
         return null;
@@ -213,18 +216,22 @@ export class AgentManager implements ActionResolver {
     return this.brains.get(player.id)!;
   }
 
-  async wolfKill(wolves: Player[], state: GameState): Promise<string> {
+  async wolfKill(wolves: Player[], state: GameState, discussion: WolfDiscussMessage[]): Promise<string> {
     if (!wolves.length) return '';
-    return this.getBrain(wolves[0]).decideWolfKill(state);
+    return this.getBrain(wolves[0]).decideWolfKill(state, discussion);
   }
 
-  async wolfDoubleKill(wolves: Player[], state: GameState): Promise<[string, string]> {
+  async wolfDoubleKill(wolves: Player[], state: GameState, discussion: WolfDiscussMessage[]): Promise<[string, string]> {
     if (!wolves.length) return ['', ''];
-    return this.getBrain(wolves[0]).decideWolfDoubleKill(state);
+    return this.getBrain(wolves[0]).decideWolfDoubleKill(state, discussion);
   }
 
-  async alphaInfect(alpha: Player, state: GameState): Promise<{ target: string; infect: boolean }> {
-    return this.getBrain(alpha).decideAlphaInfect(state);
+  async alphaInfect(alpha: Player, state: GameState, discussion: WolfDiscussMessage[]): Promise<{ target: string; infect: boolean }> {
+    return this.getBrain(alpha).decideAlphaInfect(state, discussion);
+  }
+
+  async wolfDiscuss(wolf: Player, state: GameState, messages: WolfDiscussMessage[], round: number): Promise<string> {
+    return this.getBrain(wolf).decideWolfDiscuss(state, messages, round);
   }
 
   async seerInvestigate(seer: Player, state: GameState): Promise<string> {

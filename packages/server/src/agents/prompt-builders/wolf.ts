@@ -10,6 +10,11 @@ function wolfTeammates(player: Player, state: GameState): string {
   return s;
 }
 
+function formatWolfDiscussion(discussion: { playerName: string; message: string }[]): string {
+  if (!discussion.length) return '';
+  return `\nTHẢO LUẬN NỘI BỘ SÓI:\n${discussion.map(m => `${m.playerName}: "${m.message}"`).join('\n')}\n`;
+}
+
 export class WolfPromptBuilder extends BasePromptBuilder {
   roleIdentity(player: Player, state: GameState): string {
     return `VAI TRÒ: MÀY LÀ SÓI — đội lốt dân, diễn cho giỏi, đừng để ai phát hiện.
@@ -48,19 +53,30 @@ Vote 1 thằng DÂN cho hợp lý. KHÔNG vote đồng bọn sói. Hùa theo đ�
 
   // ── Night actions ──
 
-  wolfKill(player: Player, state: GameState, observations: string[]): string {
+  wolfDiscussionHint(player: Player, state: GameState, observations: string[], messages: { playerName: string; message: string }[]): string {
     const targets = state.players.filter(p => p.alive && !isWolfRole(p.role));
+    const chat = messages.map(m => `${m.playerName}: "${m.message}"`).join('\n');
     return `${taskContext(observations)}
 ${wolfTeammates(player, state)}
+Đây là cuộc họp kín phe sói ban đêm. Bàn bạc với đồng bọn chọn ai để cắn.
+Con mồi: ${targets.map(t => t.name).join(', ')}
+${chat ? `Đồng bọn đã nói:\n${chat}\n` : ''}Nói 1-2 câu ngắn gọn: đề xuất target + lý do.
+JSON: {"message":"lời nói"}`;
+  }
+
+  wolfKill(player: Player, state: GameState, observations: string[], discussion: { playerName: string; message: string }[] = []): string {
+    const targets = state.players.filter(p => p.alive && !isWolfRole(p.role));
+    return `${taskContext(observations)}
+${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 Chọn 1 người để cắn đêm nay. Ưu tiên giết role nguy hiểm (Tiên Tri, Phù Thủy) nếu đoán được.
 Danh sách con mồi: ${targets.map(t => t.name).join(', ')}
 JSON: {"target":"Tên","reasoning":"lý do ngắn"}`;
   }
 
-  wolfDoubleKill(player: Player, state: GameState, observations: string[]): string {
+  wolfDoubleKill(player: Player, state: GameState, observations: string[], discussion: { playerName: string; message: string }[] = []): string {
     const targets = state.players.filter(p => p.alive && !isWolfRole(p.role));
     return `${taskContext(observations)}
-${wolfTeammates(player, state)}
+${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 SÓI CON ĐÃ CHẾT! Đêm nay sói được cắn 2 NGƯỜI để trả thù!
 Chọn 2 người để cắn. Danh sách: ${targets.map(t => t.name).join(', ')}
 JSON: {"target1":"Tên1","target2":"Tên2","reasoning":"lý do ngắn"}`;
@@ -80,10 +96,10 @@ CHIẾN LƯỢC:
 - TUYỆT ĐỐI KHÔNG vote/nghi ngờ đồng bọn sói`;
   }
 
-  alphaInfect(player: Player, state: GameState, observations: string[]): string {
+  alphaInfect(player: Player, state: GameState, observations: string[], discussion: { playerName: string; message: string }[] = []): string {
     const targets = state.players.filter(p => p.alive && !isWolfRole(p.role));
     return `${taskContext(observations)}
-${wolfTeammates(player, state)}
+${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 MÀY LÀ SÓI ĐẦU ĐÀN. Chọn: cắn bình thường hay LÂY NHIỄM (biến thành sói, dùng 1 lần duy nhất)?
 Nên lây nhiễm nếu muốn tăng quân số sói — đặc biệt role mạnh.
 Danh sách: ${targets.map(t => t.name).join(', ')}

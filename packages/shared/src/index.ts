@@ -187,6 +187,7 @@ export enum GameEventType {
   LoverDeath = 'LoverDeath',
   ApprenticeSeerActivated = 'ApprenticeSeerActivated',
   FoolVictory = 'FoolVictory',
+  WolfDiscussMessage = 'WolfDiscussMessage',
 }
 
 export interface GameEvent {
