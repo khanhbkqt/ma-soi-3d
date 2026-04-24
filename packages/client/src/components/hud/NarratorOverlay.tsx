@@ -6,6 +6,8 @@ import { useGameStore } from '../../store/gameStore';
  *  NarratorOverlay — Game Master narration between phases
  *  Shows cinematic storytelling text when phases transition,
  *  with typewriter effect and atmospheric styling.
+ *  Also narrates night sub-phases like a real quản trò:
+ *  Guard, Wolves, Witch, Seer each get their own narration.
  * ────────────────────────────────────────────────────────────────── */
 
 interface NarrationEntry {
@@ -15,6 +17,7 @@ interface NarrationEntry {
   lines: string[]; // typewriter lines
   gradient: [string, string];
   duration: number; // total display time in ms
+  small?: boolean; // smaller overlay for sub-phase narrations
 }
 
 /* ── Narration scripts per phase transition ── */
@@ -94,9 +97,9 @@ function getPhaseNarration(
       emoji: '🌙',
       title: 'Đêm Buông',
       lines: [
-        'Bóng đêm bao trùm ngôi làng.',
-        'Dân làng chìm vào giấc ngủ...',
-        'Nhưng những con sói đang thức dậy.',
+        'Trời tối rồi, mọi người nhắm mắt lại.',
+        'Tất cả đi ngủ...',
+        'Đêm nay, ai sẽ bị lấy đi mạng sống?',
       ],
       gradient: ['#0a0a2a', '#1a2a4a'],
       duration: 4500,
@@ -105,9 +108,9 @@ function getPhaseNarration(
       emoji: '🌙',
       title: 'Đêm Buông',
       lines: [
-        'Phán quyết đã xong, ngôi làng chìm vào tĩnh lặng.',
-        'Những tiếng bước chân rón rén trong bóng tối...',
-        'Đêm nay, sói sẽ lại ra tay.',
+        'Phán quyết đã xong. Trời tối rồi, mọi người nhắm mắt lại.',
+        'Ngôi làng chìm vào giấc ngủ...',
+        'Nhưng có những kẻ... không ngủ đêm nay.',
       ],
       gradient: ['#0a0a2a', '#1a2a4a'],
       duration: 5000,
@@ -118,9 +121,9 @@ function getPhaseNarration(
       emoji: '🌅',
       title: 'Bình Minh',
       lines: [
-        'Những tia nắng đầu tiên xuyên qua màn sương.',
-        'Dân làng sợ hãi mở cửa nhìn ra...',
-        'Đêm qua ai đã ra đi?',
+        'Trời sáng rồi, mọi người mở mắt ra.',
+        'Dân làng sợ hãi nhìn quanh...',
+        'Đêm qua, ai đã không còn thức dậy?',
       ],
       gradient: ['#4a2a00', '#ff8c00'],
       duration: 4500,
@@ -131,9 +134,9 @@ function getPhaseNarration(
       emoji: '🌙',
       title: 'Đêm Đầu Tiên',
       lines: [
-        'Ngôi làng nhỏ chìm vào bóng tối.',
-        'Đêm nay, những bí mật bắt đầu được tiết lộ.',
-        'Sói mở mắt... và chọn con mồi.',
+        'Trời tối rồi, mọi người nhắm mắt lại đi!',
+        'Đêm nay, những bí mật bắt đầu được tiết lộ...',
+        'Và có kẻ sẽ không bao giờ tỉnh dậy.',
       ],
       gradient: ['#0a0a2a', '#1a2a4a'],
       duration: 5000,
@@ -144,6 +147,155 @@ function getPhaseNarration(
   if (!tmpl) return null;
   return { id, ...tmpl };
 }
+
+/* ── Night sub-phase narrations (quản trò style) ── */
+
+function getNightActionNarration(type: GameEventType, data: any): NarrationEntry | null {
+  const id = `narrator_night_${type}_${Date.now()}`;
+
+  switch (type) {
+    case GameEventType.GuardProtect:
+      return {
+        id,
+        emoji: '🛡️',
+        title: 'Bảo Vệ',
+        lines: [
+          'Bảo vệ ơi, thức dậy đi!',
+          'Đêm nay bạn muốn bảo vệ ai?',
+          `Bảo vệ đã chọn... ${data.targetName}.`,
+          'Bảo vệ nhắm mắt lại.',
+        ],
+        gradient: ['#0a2a1a', '#1a4a3a'],
+        duration: 4000,
+        small: true,
+      };
+
+    case GameEventType.NightActionPerformed:
+      if (data.action === 'wolf_kill') {
+        return {
+          id,
+          emoji: '🐺',
+          title: 'Sói Thức Dậy',
+          lines: [
+            'Sói ơi, mở mắt ra!',
+            'Đêm nay các bạn muốn cắn ai?',
+            `Sói đã chọn con mồi... ${data.targetName}.`,
+            'Sói nhắm mắt lại.',
+          ],
+          gradient: ['#1a0a0a', '#3a1a2a'],
+          duration: 4000,
+          small: true,
+        };
+      }
+      if (data.action === 'wolf_double_kill') {
+        const names = (data.targetNames || []).join(' và ');
+        return {
+          id,
+          emoji: '🐺💀',
+          title: 'Sói Báo Thù',
+          lines: [
+            'Sói ơi, mở mắt ra!',
+            'Sói con đã chết — đêm nay các bạn được cắn 2 người!',
+            `Sói chọn: ${names}.`,
+            'Sói nhắm mắt lại.',
+          ],
+          gradient: ['#2a0a0a', '#5a1a2a'],
+          duration: 4500,
+          small: true,
+        };
+      }
+      return null;
+
+    case GameEventType.AlphaInfect:
+      return {
+        id,
+        emoji: '🐺👑',
+        title: 'Sói Đầu Đàn',
+        lines: [
+          'Sói Đầu Đàn quyết định dùng sức mạnh đặc biệt...',
+          `${data.targetName} đã bị lây nhiễm thành Sói!`,
+          'Từ nay, hàng ngũ sói thêm một thành viên mới.',
+        ],
+        gradient: ['#2a0a1a', '#4a1a3a'],
+        duration: 4000,
+        small: true,
+      };
+
+    case GameEventType.WitchAction:
+      if (data.action === 'heal') {
+        return {
+          id,
+          emoji: '🧪',
+          title: 'Phù Thủy',
+          lines: [
+            'Phù thủy ơi, thức dậy đi!',
+            `Đêm nay ${data.targetName} bị sói cắn.`,
+            'Bạn có muốn dùng thuốc cứu không?',
+            'Phù thủy đã dùng thuốc cứu!',
+            'Phù thủy nhắm mắt lại.',
+          ],
+          gradient: ['#1a0a2a', '#2a1a4a'],
+          duration: 4500,
+          small: true,
+        };
+      }
+      if (data.action === 'kill') {
+        return {
+          id,
+          emoji: '🧪☠️',
+          title: 'Phù Thủy',
+          lines: [
+            'Phù thủy ơi, thức dậy đi!',
+            'Bạn có muốn dùng thuốc độc không?',
+            `Phù thủy đã đầu độc ${data.targetName}!`,
+            'Phù thủy nhắm mắt lại.',
+          ],
+          gradient: ['#2a0a2a', '#4a1a4a'],
+          duration: 4000,
+          small: true,
+        };
+      }
+      return null;
+
+    case GameEventType.SeerResult:
+      return {
+        id,
+        emoji: '🔮',
+        title: 'Tiên Tri',
+        lines: [
+          'Tiên tri ơi, mở mắt ra!',
+          'Đêm nay bạn muốn soi ai?',
+          `Tiên tri soi ${data.targetName}...`,
+          data.isWolf ? `${data.targetName} LÀ SÓI! 🐺` : `${data.targetName} KHÔNG phải sói ✓`,
+          'Tiên tri nhắm mắt lại.',
+        ],
+        gradient: ['#0a1a2a', '#1a2a5a'],
+        duration: 4500,
+        small: true,
+      };
+
+    case GameEventType.CupidPair:
+      return {
+        id,
+        emoji: '💘',
+        title: 'Thần Tình Yêu',
+        lines: [
+          'Thần Tình Yêu thức dậy!',
+          'Hãy chọn hai người để ghép đôi...',
+          `${data.player1Name} và ${data.player2Name} đã trở thành đôi tình nhân!`,
+          'Nếu một người chết, người kia cũng sẽ chết theo.',
+        ],
+        gradient: ['#2a0a2a', '#5a1a4a'],
+        duration: 4500,
+        small: true,
+      };
+
+    default:
+      return null;
+  }
+}
+
+/* ── Event-based narrations (GameOver, Execution, Deaths, etc.) ── */
 
 function getEventNarration(type: GameEventType, data: any): NarrationEntry | null {
   const id = `narrator_event_${type}_${Date.now()}`;
@@ -182,10 +334,97 @@ function getEventNarration(type: GameEventType, data: any): NarrationEntry | nul
         };
       }
       return null;
+
+    case GameEventType.PlayerDied: {
+      const causeMap: Record<string, string> = {
+        wolf_kill: 'bị sói cắn chết',
+        witch_kill: 'bị đầu độc',
+        hunter_shot: 'bị Thợ Săn bắn',
+        lover_death: 'chết theo người yêu',
+        judged: 'bị treo cổ',
+      };
+      const causeText = causeMap[data.cause] || 'đã ra đi';
+      return {
+        id,
+        emoji: '💀',
+        title: `${data.playerName} Đã Chết`,
+        lines: [`${data.playerName} đã ${causeText}.`],
+        gradient: ['#1a1a1a', '#3a3a3a'],
+        duration: 3500,
+        small: true,
+      };
+    }
+
+    case GameEventType.HunterShot:
+      return {
+        id,
+        emoji: '🏹',
+        title: 'Thợ Săn Nổ Súng!',
+        lines: [
+          'Thợ Săn trước khi chết được bắn 1 người!',
+          `Thợ Săn giơ súng... BẮN! ${data.targetName} trúng đạn!`,
+        ],
+        gradient: ['#3a2a0a', '#6a4a1a'],
+        duration: 4000,
+        small: true,
+      };
+
+    case GameEventType.LoverDeath:
+      return {
+        id,
+        emoji: '💔',
+        title: 'Tình Nhân Chết Theo',
+        lines: [
+          `${data.deadName} đã chết...`,
+          `${data.loverName} không thể sống thiếu người yêu, cũng chết theo!`,
+        ],
+        gradient: ['#2a0a1a', '#5a1a3a'],
+        duration: 4000,
+        small: true,
+      };
+
+    case GameEventType.FoolVictory:
+      return {
+        id,
+        emoji: '🃏',
+        title: 'Kẻ Ngốc Chiến Thắng!',
+        lines: [
+          `${data.foolName} bị treo cổ...`,
+          'Nhưng khoan — đó là KẺ NGỐC!',
+          'Kẻ Ngốc chỉ cần bị treo cổ để thắng. GG!',
+        ],
+        gradient: ['#2a1a3a', '#6a3a8a'],
+        duration: 5000,
+      };
+
+    case GameEventType.DawnAnnouncement:
+      if (data.peaceful) {
+        return {
+          id,
+          emoji: '🕊️',
+          title: 'Đêm Bình Yên',
+          lines: ['Mặt trời lên... và không ai bị hại đêm qua!', 'Một đêm bình yên hiếm hoi.'],
+          gradient: ['#2a4a2a', '#4a8a4a'],
+          duration: 3500,
+          small: true,
+        };
+      }
+      return null;
+
     default:
       return null;
   }
 }
+
+/* ── Night sub-phase event types that trigger narrator ── */
+const NIGHT_ACTION_EVENTS = new Set([
+  GameEventType.GuardProtect,
+  GameEventType.NightActionPerformed,
+  GameEventType.AlphaInfect,
+  GameEventType.WitchAction,
+  GameEventType.SeerResult,
+  GameEventType.CupidPair,
+]);
 
 /* ── Typewriter hook ── */
 function useTypewriter(lines: string[], speed = 35) {
@@ -257,16 +496,24 @@ export default function NarratorOverlay() {
     }
   }, [phase]);
 
-  // Track special events (GameOver, Execution)
+  // Track night sub-phase events + special events (GameOver, Execution, Deaths, etc.)
   useEffect(() => {
     if (events.length === 0) return;
-    const recent = events.slice(-3);
+    const recent = events.slice(-5);
     for (const e of recent) {
       const key = `narrator_${e.type}_${e.timestamp}`;
       if (processedRef.current.has(key)) continue;
       if (Date.now() - e.timestamp > 5000) continue;
       processedRef.current.add(key);
 
+      // Night sub-phase narrations (god-view only events)
+      if (NIGHT_ACTION_EVENTS.has(e.type)) {
+        const entry = getNightActionNarration(e.type, e.data);
+        if (entry) setQueue((q) => [...q, entry]);
+        continue;
+      }
+
+      // General event narrations
       const entry = getEventNarration(e.type, e.data);
       if (entry) setQueue((q) => [...q, entry]);
     }
@@ -299,44 +546,66 @@ export default function NarratorOverlay() {
 
   if (!current) return null;
 
+  const isSmall = current.small;
+
   return (
     <div
       className="narrator-overlay"
       style={{
         position: 'absolute',
-        inset: 0,
+        inset: isSmall ? undefined : 0,
+        ...(isSmall
+          ? {
+              bottom: '20%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 'auto',
+              maxWidth: '500px',
+              minWidth: '320px',
+              borderRadius: '16px',
+              padding: '1.2rem 2rem',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6), 0 0 60px rgba(0,0,0,0.3)',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }
+          : {}),
         zIndex: 45,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        background: `linear-gradient(to bottom, ${current.gradient[0]}dd, ${current.gradient[1]}bb)`,
+        background: isSmall
+          ? `linear-gradient(135deg, ${current.gradient[0]}ee, ${current.gradient[1]}dd)`
+          : `linear-gradient(to bottom, ${current.gradient[0]}dd, ${current.gradient[1]}bb)`,
+        backdropFilter: isSmall ? 'blur(12px)' : undefined,
         opacity,
         transition: 'opacity 0.6s ease-in-out',
         pointerEvents: 'none',
       }}
     >
-      {/* Decorative top border */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '40%',
-          height: '2px',
-          background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)',
-        }}
-      />
+      {/* Decorative top border (full-screen only) */}
+      {!isSmall && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '40%',
+            height: '2px',
+            background:
+              'linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)',
+          }}
+        />
+      )}
 
       {/* Narrator label */}
       <div
         style={{
-          fontSize: '0.7rem',
+          fontSize: isSmall ? '0.6rem' : '0.7rem',
           color: 'rgba(255,255,255,0.4)',
           letterSpacing: '0.3em',
           textTransform: 'uppercase',
-          marginBottom: '1rem',
+          marginBottom: isSmall ? '0.5rem' : '1rem',
           fontWeight: 600,
         }}
       >
@@ -347,8 +616,8 @@ export default function NarratorOverlay() {
       <div
         className="narrator-emoji"
         style={{
-          fontSize: '3.5rem',
-          marginBottom: '0.75rem',
+          fontSize: isSmall ? '2rem' : '3.5rem',
+          marginBottom: isSmall ? '0.4rem' : '0.75rem',
           filter: 'drop-shadow(0 0 25px rgba(255,255,255,0.3))',
         }}
       >
@@ -358,13 +627,13 @@ export default function NarratorOverlay() {
       {/* Title */}
       <div
         style={{
-          fontSize: '2rem',
+          fontSize: isSmall ? '1.2rem' : '2rem',
           fontWeight: 'bold',
           color: '#fff',
           textShadow: '0 0 30px rgba(255,255,255,0.3), 0 2px 10px rgba(0,0,0,0.8)',
-          letterSpacing: '0.12em',
+          letterSpacing: isSmall ? '0.08em' : '0.12em',
           textTransform: 'uppercase',
-          marginBottom: '1.2rem',
+          marginBottom: isSmall ? '0.6rem' : '1.2rem',
         }}
       >
         {current.title}
@@ -373,18 +642,18 @@ export default function NarratorOverlay() {
       {/* Typewriter narration lines */}
       <div
         style={{
-          maxWidth: '600px',
+          maxWidth: isSmall ? '420px' : '600px',
           textAlign: 'center',
           display: 'flex',
           flexDirection: 'column',
-          gap: '0.5rem',
+          gap: isSmall ? '0.3rem' : '0.5rem',
         }}
       >
         {displayedLines.map((line, i) => (
           <div
             key={i}
             style={{
-              fontSize: '1rem',
+              fontSize: isSmall ? '0.85rem' : '1rem',
               color: 'rgba(255,255,255,0.8)',
               textShadow: '0 1px 6px rgba(0,0,0,0.5)',
               lineHeight: 1.6,
@@ -397,7 +666,7 @@ export default function NarratorOverlay() {
         {partialLine && (
           <div
             style={{
-              fontSize: '1rem',
+              fontSize: isSmall ? '0.85rem' : '1rem',
               color: 'rgba(255,255,255,0.8)',
               textShadow: '0 1px 6px rgba(0,0,0,0.5)',
               lineHeight: 1.6,
@@ -410,18 +679,21 @@ export default function NarratorOverlay() {
         )}
       </div>
 
-      {/* Decorative bottom border */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '40%',
-          height: '2px',
-          background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)',
-        }}
-      />
+      {/* Decorative bottom border (full-screen only) */}
+      {!isSmall && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '40%',
+            height: '2px',
+            background:
+              'linear-gradient(to right, transparent, rgba(255,255,255,0.3), transparent)',
+          }}
+        />
+      )}
     </div>
   );
 }

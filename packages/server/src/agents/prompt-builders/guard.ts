@@ -13,7 +13,13 @@ THẾ KHÓ VÀ TƯ DUY ĐỈNH CAO (MIND GAME):
 BAN NGÀY: Giấu thân, chơi như dân. Come out khi bị đưa lên giàn.`;
   }
 
-  discussionHint(_player: Player, _state: GameState): string {
+  discussionHint(_player: Player, state: GameState): string {
+    if (state.round === 1) {
+      return `MÀY LÀ BẢO VỆ. Vòng đầu — hòa nhập:
+- Nói như dân thường. Đừng hint gì về bảo vệ hay khiên.
+- Tán gẫu, react lại lời người khác, hỏi han tự nhiên.
+- Quan sát ai đang nổi, ai đang im — info này giúp mày chọn target bảo vệ đêm sau.`;
+    }
     return `MÀY LÀ BẢO VỆ. Giấu thân, nói như dân. Tham gia thảo luận tự nhiên.
 Đừng hint gì về bảo vệ. Nếu ai come out Tiên Tri → đừng nói "tao sẽ đỡ" (lộ cho sói).`;
   }

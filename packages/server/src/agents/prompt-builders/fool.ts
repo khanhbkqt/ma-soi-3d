@@ -13,7 +13,13 @@ TƯ DUY ĐỈNH CAO — TINH TẾ, KHÔNG LỘ LIỄU:
 - Tuyệt đối KHÔNG tự nhận là Kẻ Ngốc và KHÔNG lấp liếm vụng về.`;
   }
 
-  discussionHint(_player: Player, _state: GameState): string {
+  discussionHint(_player: Player, state: GameState): string {
+    if (state.round === 1) {
+      return `MÀY LÀ KẺ NGỐC. Vòng đầu — gieo mầm:
+- Chơi bình thường, chưa cần diễn đáng ngờ. Vòng đầu mà đáng ngờ quá thì dân nhận ra ngay.
+- Nói tự nhiên, tạo quan hệ với mọi người. Lát nữa mới bắt đầu "lệch" dần.
+- Có thể hỏi câu hỏi ngây thơ hoặc nhận xét lạ lạ nhẹ nhàng — gieo hạt giống thôi.`;
+    }
     return `MÀY LÀ KẺ NGỐC. Mục tiêu: bị treo cổ.
 TƯ DUY TINH TẾ: Tạo nghi ngờ VỪA ĐỦ — nói mâu thuẫn nhẹ, bênh sai người, vote lệch có chủ đích. Đừng fake claim quá lộ liễu khiến dân nhận ra mày là Ngốc và bơ đi. Chơi như Sói đang cố giấu chứ không phải Ngốc đang cố chết.`;
   }

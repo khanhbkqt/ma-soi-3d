@@ -144,8 +144,8 @@ export function memoryPrompt(observations: string[], deductionBlock?: string): s
 }
 
 export function conversationBlock(messages: DayMessage[]): string {
-  if (!messages.length) return '\nMày là người nói đầu tiên. Mở lời đi.';
-  return `\nMọi người đang nói:\n${messages.map((m) => `${m.playerName}: "${m.message}"`).join('\n')}`;
+  if (!messages.length) return '\nChưa ai nói gì. Mày nói trước đi.';
+  return `\nCuộc nói chuyện:\n${messages.map((m) => `${m.playerName}: "${m.message}"`).join('\n')}`;
 }
 
 // ── System prompt = heavy context (reused across all LLM calls for a player) ──
@@ -236,6 +236,29 @@ export abstract class BasePromptBuilder implements PromptBuilder {
 
   // ── Day-phase user prompts: task-specific only ──
 
+  /** Override: first-round ice-breaker hint, context-aware */
+  protected firstRoundHint(
+    player: Player,
+    state: GameState,
+    messages: DayMessage[],
+    round: number,
+  ): string {
+    const isOpener = messages.length === 0;
+    const hasDeath = state.players.some((p) => !p.alive);
+
+    if (isOpener) {
+      // First speaker of first round — ice breaker
+      return `\nVÒNG ĐẦU — MỞ MÀN:\nĐây là đầu game, chưa ai nói gì. Mày là người mở lời.\nĐỪNG vội tố ai — chưa có gì để tố. Hãy MỞ MÀN TỰ NHIÊN theo tính cách:\nGợi ý (CHỌN 1, đừng làm hết):\n- Chào theo kiểu riêng → "Ê tụi bây, đêm qua ngủ ngon hông?" / "Hmm... vậy là bắt đầu rồi"\n- Nhận xét bầu không khí → "Sao tao thấy mấy đứa mặt cú vậy?" / "Im lặng gì dữ vậy ta?"\n- Chia sẻ cảm giác → "Tao có linh cảm game này hấp dẫn lắm" / "${hasDeath ? 'Vừa có đứa chết mà sao tụi mày bình tĩnh quá' : 'Mới bắt đầu, chưa ai chết, vui quá'}"\n- Hỏi câu hỏi mở → "Ai có gì muốn nói trước không?" / "Có ai thấy gì lạ đêm qua không?"\nNÓI 1 CÂU NGẮN thôi, tự nhiên. Đừng phân tích, đừng tố, đừng dài dòng.\nNGOẠI LỆ VÒNG 1: Được phép nói cảm tính, nhận xét chung, đùa giỡn. Đây là phá băng, không phải lúc phân tích.`;
+    }
+
+    if (round === 1) {
+      return `\nVÒNG ĐẦU — WARM UP:\nMới mở màn thôi, chưa có info nhiều. Đừng ép phải tố hay phân tích sâu.\n- React lại lời người vừa nói — đồng tình, cười, chọc lại, hỏi thêm\n- Có thể chia sẻ cảm giác mơ hồ: "Tao thấy ở đây có đứa giả trân lắm" hoặc "Hmm ai cũng hiền quá, nghi"\n- Nếu thật sự thấy gì lạ → nhận xét nhẹ. Nhưng KHÔNG CẦN PHẢI TỐ AI.\nNói tự nhiên, như đang tán gẫu ban đầu.\nNGOẠI LỆ VÒNG 1: Được phép nói cảm tính, nhận xét chung. Không cần bằng chứng cụ thể.`;
+    }
+
+    // Round 2+ in first game round
+    return `\nVÒNG ĐẦU — BẮT ĐẦU PHÂN TÍCH:\nMọi người đã nói qua rồi. Bây giờ có thể bắt đầu nhận xét:\n- Ai nói đáng ngờ? Ai im quá? Ai cố tỏ ra vô hại?\n- React lại những gì mọi người đã nói — đồng ý, phản bác, hỏi dồn.\n- Vẫn chưa có NHIỀU info nên đừng chắc nịch. Nói kiểu "tao thấy hơi lạ" thay vì "nó chắc chắn là sói".`;
+  }
+
   discuss(
     player: Player,
     state: GameState,
@@ -246,21 +269,23 @@ export abstract class BasePromptBuilder implements PromptBuilder {
     const lastRound = round === state.config.discussionRounds;
     const dead = state.players.filter((p) => !p.alive);
     const hasDeath = dead.length > 0;
-    const r1Hint =
-      state.round === 1 && round === 1
-        ? '\nVÒNG 1: Chưa có info. Phá không khí, đọc phản ứng mọi người, ném nghi ngờ nhẹ dựa trên cảm giác.'
-        : '';
+    const isFirstRound = state.round === 1;
+    const r1Hint = isFirstRound ? this.firstRoundHint(player, state, messages, round) : '';
     const deathHint =
-      hasDeath && round === 1
+      hasDeath && round === 1 && !isFirstRound
         ? `\nCÓ NGƯỜI CHẾT — suy luận trước khi nói: Ai chết? Tại sao sói chọn người đó? Ai hưởng lợi? Ai hôm qua bảo vệ/tố người chết? Dùng info này để tố hoặc bênh ai đó.`
         : '';
     const midHint =
-      !lastRound && round > 1
+      !lastRound && round > 1 && !isFirstRound
         ? '\nGIỮA GAME: React lại lời người khác — đồng ý, phản bác, hoặc hỏi dồn. Chỉ ra mâu thuẫn nếu thấy. Đừng lặp lại ý cũ.'
         : '';
     const lastHint = lastRound
       ? '\nLƯỢT CUỐI: Kết luận dứt khoát. Chỉ đích danh 1 người đáng nghi nhất + lý do cụ thể. Kêu gọi mọi người vote cùng nếu tự tin.'
       : '';
+    const speakInstruction =
+      isFirstRound && round <= 1
+        ? 'NÓI 1-2 CÂU, thoải mái tự nhiên. Vòng đầu không cần phải tố ai.'
+        : 'NÓI 1-2 CÂU NGẮN, tự nhiên. PHẢI react lại lời người khác nếu có. KHÔNG nói chung chung.';
     return `${taskContext(observations)}
 ${this.discussionHint(player, state)}${r1Hint}${deathHint}${midHint}${lastHint}
 Lượt thảo luận ${round}/${state.config.discussionRounds}.${conversationBlock(messages)}
@@ -268,7 +293,7 @@ TRƯỚC KHI NÓI, suy nghĩ trong "reasoning":
 - Ai đáng nghi nhất hiện tại? Bằng chứng gì?
 - Người vừa nói có điểm gì đáng chú ý? Mâu thuẫn? Lấp liếm?
 - Mày nên tố, bênh, hỏi, hay im?
-NÓI 1-2 CÂU NGẮN, tự nhiên. PHẢI react lại lời người khác nếu có. KHÔNG nói chung chung.
+${speakInstruction}
 Nếu không có gì mới → wantToSpeak: false.
 JSON: {"wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)","reasoning":"phân tích chi tiết tình huống hiện tại"}`;
   }

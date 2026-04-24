@@ -12,7 +12,13 @@ TƯ DUY CHIẾN THUẬT CỦA MỘT DÂN LÀNG LÃO LUYỆN:
 4. Cái chết nói lên điều gì?: Tại sao Sói giết người đó đêm qua? Ai hưởng lợi khi người đó im lặng?`;
   }
 
-  discussionHint(_player: Player, _state: GameState): string {
+  discussionHint(_player: Player, state: GameState): string {
+    if (state.round === 1) {
+      return `MÀY LÀ DÂN. Vòng đầu — chơi nhẹ trước:
+- Quan sát thái độ, phản ứng mọi người. Ai nói gì lạ? Ai im?
+- Có thể "thả mồi" nhẹ: nghi vờ 1 người để xem ai nhảy ra bênh bất thường.
+- Đừng phân tích nặng quá — chưa có gì nhiều để phân tích. Tự nhiên thôi.`;
+    }
     return `MÀY LÀ DÂN. Khôn khéo, đa nghi và sắc bén:
 - Tương tác mạnh & Đọc vị cảm xúc: Lâu lâu hãy tung một cú tố gắt ("Poke") để xem phản ứng. Sói giật mình sẽ 'nhảy dựng' lên hoặc cắn càn. Dân thật thường thanh minh bình tĩnh hơn.
 - Bắt lỗi logic: Bất kỳ ai nói 1 đằng vote 1 nẻo, hoặc lý do mâu thuẫn giữa các vòng đều là mục tiêu hàng đầu.

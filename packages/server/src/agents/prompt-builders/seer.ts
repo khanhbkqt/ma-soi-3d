@@ -12,7 +12,14 @@ CHIẾN THUẬT & TÂM LÝ (KHÔNG CHƠI CỨNG NHẮC):
 4. Lật Bài Ngửa (Come Out): Chỉ làm khi bắt buộc (bị đưa lên giàn) hoặc khi đã soi ra đủ Sói/Dân để chốt hạ. Khi lật bài, tung TOÀN BỘ lịch sử soi từ đêm 1, và dập nát bất kỳ đứa nào dám fake Tiên Tri.`;
   }
 
-  discussionHint(_player: Player, _state: GameState): string {
+  discussionHint(_player: Player, state: GameState): string {
+    if (state.round === 1) {
+      return `MÀY LÀ TIÊN TRI. Vòng đầu — GIẤU THÂN:
+- Đừng tỏ ra sắc bén quá sớm. Sói sẽ đánh hơi và cắn mày.
+- Nói chuyện như dân thường: hỏi hỏi, đùa đùa, react tự nhiên.
+- Nếu có kết quả soi đêm đầu → GIỮ KÍN, dùng nó để định hướng NHẸ NHÀNG (bênh người sạch, nghi người bẩn) nhưng đừng lộ.
+- Thỉnh thoảng giả vờ hơi "ngáo" để Sói nghĩ mày vô hại.`;
+    }
     return `MÀY LÀ TIÊN TRI. Đã có kết quả soi đêm qua (xem nhật ký).
 CHIẾN THUẬT BAN NGÀY (MIND GAME):
 - Dùng kết quả soi (xem PHÂN TÍCH ROLE) để định hướng: bênh người sạch một cách khéo léo, tố người bẩn bằng logic.
@@ -72,6 +79,14 @@ KHÔNG BAO GIỜ tự nhận là Tiên Tri chính hoặc bịa kết quả soi. 
   }
 
   discussionHint(_player: Player, state: GameState): string {
+    if (state.round === 1) {
+      if (state.apprenticeSeerActivated) {
+        return `MÀY LÀ TIÊN TRI TẬP SỰ (đã kế thừa). Vòng đầu — giấu thân:
+Sói có thể không biết mày đã kế thừa. Đừng lộ. Nói như dân thường, hỏi han, react tự nhiên.`;
+      }
+      return `MÀY LÀ TIÊN TRI TẬP SỰ. Vòng đầu — hòa lẫn vào đám đông:
+Chưa có skill, không cần gồng đài. Nói chuyện tự nhiên, đừng nổi bật, đừng im quá.`;
+    }
     if (state.apprenticeSeerActivated) {
       return `MÀY LÀ TIÊN TRI TẬP SỰ (đã kế thừa). Có info từ đêm qua.
 Sói có thể không biết mày là Tiên Tri mới → lợi thế bất ngờ.

@@ -16,6 +16,14 @@ BAN NGÀY: Giấu thân, chơi như dân. Come out khi bị dồn lên giàn, ho
   }
 
   discussionHint(_player: Player, state: GameState): string {
+    if (state.round === 1) {
+      const heal = state.witchPotions.healUsed ? 'ĐÃ DÙNG' : 'CÒN';
+      const kill = state.witchPotions.killUsed ? 'ĐÃ DÙNG' : 'CÒN';
+      return `MÀY LÀ PHÙ THỦY (cứu: ${heal} | độc: ${kill}). Vòng đầu — giấu thân:
+- Nói chuyện tự nhiên như dân thường. ĐỪNG bênh vực hay chú ý đặc biệt đến người bị sói cắn (nếu cứu).
+- Vòng đầu chưa cần tố ai mạnh. Hỏi han, react, tán gẫu thoải mái.
+- Giữ kín mọi info từ đêm qua.`;
+    }
     const heal = state.witchPotions.healUsed ? 'ĐÃ DÙNG' : 'CÒN';
     const kill = state.witchPotions.killUsed ? 'ĐÃ DÙNG' : 'CÒN';
     return `MÀY LÀ PHÙ THỦY (cứu: ${heal} | độc: ${kill}).

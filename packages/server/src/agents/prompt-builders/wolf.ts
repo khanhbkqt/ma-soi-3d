@@ -29,6 +29,13 @@ TƯ DUY CỐT LÕI — KẺ SĂN MỒI THƯỢNG ĐẲNG:
   }
 
   discussionHint(player: Player, state: GameState): string {
+    if (state.round === 1) {
+      return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}. Vòng đầu — xây vỏ bọc:
+- Nói chuyện tự nhiên, đừng quá chiến thuật. Vòng đầu ai cũng đang dò dẫm.
+- Tạo ấn tượng "thằng này chill/vui/tốt" — chào hỏi, đùa giỡn, react lại lời người khác.
+- Có thể quăng nhận xét nhẹ về ai đó để test phản ứng, nhưng ĐỪNG tố nặng (lộ là sói có hidden agenda).
+- Bênh nhẹ một người đang bị chọc → lấy thiện cảm.`;
+    }
     return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}. Đu dây và tạo vỏ bọc:
 
 CHIẾN THUẬT:
@@ -200,6 +207,12 @@ CHIẾN LƯỢC:
   }
 
   discussionHint(player: Player, state: GameState): string {
+    if (state.round === 1) {
+      return `MÀY LÀ SÓI CON. ${wolfTeammates(player, state)}. Vòng đầu — diễn ngây thơ:
+- Nói ít, hỏi nhiều. Tỏ ra tò mò, hơi ngây ngô: "Ê game này chơi sao ta?" / "Ai cũng hiền quá, tao sợ"
+- React ngạc nhiên, thích thú với lời người khác. Đừng phân tích gì cả.
+- Xây dựng hình ảnh "đứa nhỏ vô hại" ngay từ đầu.`;
+    }
     return `MÀY LÀ SÓI CON. ${wolfTeammates(player, state)}. Diễn ngây thơ + chia rẽ nội bộ:
 
 Nói "cắn X" hay "X bị cắn" là bình thường, ai cũng nói vậy trong game. Chỉ cẩn thận đừng xác nhận chính xác target thật kết hợp với chi tiết đêm.

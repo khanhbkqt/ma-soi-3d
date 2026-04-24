@@ -13,7 +13,13 @@ TƯ DUY ĐỈNH CAO: Nếu Sói sợ không dám cắn mày, mày sẽ VÔ DỤN
 - Doạ khi thực sự nguy kịch: Chỉ doạ "giết tao thì tao bắn lại" khi chắc chắn bị Làng dồn lên giàn.`;
   }
 
-  discussionHint(_player: Player, _state: GameState): string {
+  discussionHint(_player: Player, state: GameState): string {
+    if (state.round === 1) {
+      return `MÀY LÀ THỢ SĂN. Vòng đầu — câu nhử:
+- Nói tự nhiên nhưng tạo vẻ hơi "bí ẩn" — để sói tò mò, có thể cắn mày (mày chết thì bắn 1 thằng).
+- Đừng hổ báo quá (dân vote mày), cũng đừng quá hiền (sói bỏ qua mày).
+- Quan sát ai đang nổi — ghim mục tiêu bắn trong đầu.`;
+    }
     return `MÀY LÀ THỢ SĂN. Chết thì kéo theo 1 thằng.
 CHIẾN THUẬT: Đừng quá hung hăng lộ liễu khiến Sói né không cắn. Hãy "câu nhử" bằng cách tỏ ra nguy hiểm ngầm, đóng giả Tiên Tri hoặc Phù Thủy để Sói cắn nhầm mày vào ban đêm. Theo dõi kỹ ai là Sói để ghim mục tiêu.`;
   }

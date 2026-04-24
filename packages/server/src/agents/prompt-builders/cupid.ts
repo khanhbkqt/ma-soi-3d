@@ -14,6 +14,19 @@ Thậm chí hãy chủ động "chửi nhẹ" hoặc nghi ngờ giả vờ 1 tro
   }
 
   discussionHint(_player: Player, state: GameState): string {
+    if (state.round === 1) {
+      if (state.couple) {
+        const names = [
+          state.players.find((p) => p.id === state.couple!.player1Id)?.name,
+          state.players.find((p) => p.id === state.couple!.player2Id)?.name,
+        ].filter(Boolean);
+        return `MÀY LÀ THẦN TÌNH YÊU. Đã ghép: ${names.join(' ❤️ ')}. Vòng đầu — DISTANCING:
+- Nói tự nhiên, ĐỪNG bênh cặp đôi. Thậm chí có thể chọc nhẹ 1 trong 2.
+- Tạo ấn tượng mày không liên quan gì đến họ.`;
+      }
+      return `MÀY LÀ THẦN TÌNH YÊU. Vòng đầu — hòa nhập:
+Nói chuyện tự nhiên, thoải mái. Chưa cần chiến thuật gì đặc biệt.`;
+    }
     if (state.couple) {
       const names = [
         state.players.find((p) => p.id === state.couple!.player1Id)?.name,
