@@ -45,6 +45,6 @@ Chọn 2 người để ghép đôi. 1 chết → người kia chết theo. Có 
 Nếu cặp gồm 1 Sói + 1 Dân → Phe Cặp Đôi, thắng khi là 2 người cuối.
 Cân nhắc: ghép mình (kiểm soát được, nhưng rủi ro chết đôi) hay ghép 2 người khác (tự do hơn)?
 Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"player1":"Tên1","player2":"Tên2","reasoning":"lý do ghép đôi"}`;
+JSON: {"player1":"Tên1","player2":"Tên2"}`;
   }
 }

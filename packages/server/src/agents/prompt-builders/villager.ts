@@ -1,5 +1,5 @@
 import { Player, GameState } from '@ma-soi/shared';
-import { BasePromptBuilder } from './base.js';
+import { BasePromptBuilder, hasFool } from './base.js';
 
 export class VillagerPromptBuilder extends BasePromptBuilder {
   roleIdentity(_player: Player, _state: GameState): string {
@@ -22,8 +22,7 @@ TƯ DUY CHIẾN THUẬT CỦA MỘT DÂN LÀNG LÃO LUYỆN:
     return `MÀY LÀ DÂN. Khôn khéo, đa nghi và sắc bén:
 - Tương tác mạnh & Đọc vị cảm xúc: Lâu lâu hãy tung một cú tố gắt ("Poke") để xem phản ứng. Sói giật mình sẽ 'nhảy dựng' lên hoặc cắn càn. Dân thật thường thanh minh bình tĩnh hơn.
 - Bắt lỗi logic: Bất kỳ ai nói 1 đằng vote 1 nẻo, hoặc lý do mâu thuẫn giữa các vòng đều là mục tiêu hàng đầu.
-- "Thả mồi" (Bait): Có thể bâng quơ nghi ngờ một người để xem ai vội vàng hùa theo mày. Kẻ hùa theo vô cớ rất dễ là Sói.
-- Phớt lờ Kẻ Ngốc: Nếu ai đó cố tình diễn nét đáng ngờ quá lố để xin bị treo cổ, hãy lờ nó đi, tập trung vào những kẻ đang cố lấp liếm giả vờ làm người tốt.`;
+- "Thả mồi" (Bait): Có thể bâng quơ nghi ngờ một người để xem ai vội vàng hùa theo mày. Kẻ hùa theo vô cớ rất dễ là Sói.${hasFool(state) ? '\n- Phớt lờ Kẻ Ngốc: Nếu ai đó cố tình diễn nét đáng ngờ quá lố để xin bị treo cổ, hãy lờ nó đi, tập trung vào những kẻ đang cố lấp liếm giả vờ làm người tốt.' : ''}`;
   }
 
   defenseHint(_player: Player, _state: GameState): string {
@@ -34,8 +33,13 @@ TƯ DUY CHIẾN THUẬT CỦA MỘT DÂN LÀNG LÃO LUYỆN:
   }
 
   judgementHint(_player: Player, _state: GameState): string {
+    const foolWarn = hasFool(_state)
+      ? `
+
+⚠ CẢNH BÁO KẺ NGỐC: Kẻ Ngốc thắng ngay khi bị treo cổ. Nó KHÔNG diễn ngu hay xin treo — nó chơi GIỐNG SÓI (redirect, vote lệch, bênh sai người). Nếu bằng chứng chỉ là hành vi đáng ngờ mà không có bằng chứng cứng (Tiên Tri xác nhận sói, lộ role) → vote THA an toàn hơn. Treo nhầm Kẻ Ngốc = THUA NGAY.`
+      : '';
     return `Khi phán xét kẻ bị lên giàn:
 - Nghe kỹ lời biện hộ (defense). Nếu nó tự nhận role chức năng (Tiên Tri, Bảo Vệ...) nhưng trước đó hành động lấp liếm, vote sai lệch -> NÓI DỐI, vote TREO CỔ!
-- Nếu lý lẽ của nó thuyết phục và chỉ ra được 1 con sói khác hợp lý hơn -> vote THA để xem xét kẻ nó chỉ điểm.`;
+- Nếu lý lẽ của nó thuyết phục và chỉ ra được 1 con sói khác hợp lý hơn -> vote THA để xem xét kẻ nó chỉ điểm.${foolWarn}`;
   }
 }

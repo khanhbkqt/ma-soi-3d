@@ -6,7 +6,7 @@
  * relevance, sorts by priority, and returns top signals.
  */
 
-import { Player, GameState, DayMessage, GameEventType, isWolfRole } from '@ma-soi/shared';
+import { Player, GameState, DayMessage, GameEventType, Role, isWolfRole } from '@ma-soi/shared';
 import { RoleDeductionTracker } from './role-deduction.js';
 
 // ── Types ──
@@ -37,6 +37,7 @@ const SIGNAL_RELEVANCE: Record<string, ActionType[]> = {
   role_exposure: ['discuss', 'vote', 'night'],
   silence: ['discuss'],
   relationship_pattern: ['discuss', 'vote'],
+  fool_risk: ['judgement', 'vote'],
 };
 
 // ── Accusation patterns (reused from role-deduction) ──
@@ -54,6 +55,7 @@ export class SituationAnalyzer {
       ...this.detectRoleExposure(ctx),
       ...this.detectSilence(ctx),
       ...this.detectRelationshipPatterns(ctx),
+      ...this.detectFoolRisk(ctx),
     ];
 
     // Filter by action relevance
@@ -316,6 +318,39 @@ export class SituationAnalyzer {
     }
 
     return signals;
+  }
+
+  private detectFoolRisk(ctx: AnalyzerContext): Signal[] {
+    const { state, deduction, actionType } = ctx;
+    if (actionType !== 'judgement' && actionType !== 'vote') return [];
+    if (!state.players.some((p) => p.role === Role.Fool)) return [];
+
+    // Only relevant when someone is on trial
+    const accusedId = state.accusedId;
+    if (!accusedId && actionType === 'judgement') return [];
+
+    const accusedName = accusedId ? state.players.find((p) => p.id === accusedId)?.name : undefined;
+
+    // Check if there's hard evidence against the accused
+    if (accusedName) {
+      const seerResult = deduction.seerResults.get(accusedName);
+      if (seerResult === 'wolf') return []; // Seer confirmed wolf — safe to kill
+      const confirmed = deduction.confirmed.get(accusedName);
+      if (confirmed) return []; // Already dead/confirmed — no risk
+    }
+
+    // No hard evidence → Fool risk is real
+    if (actionType === 'judgement' && accusedName) {
+      return [
+        {
+          id: 'fool_risk',
+          priority: 92,
+          text: `🚨 CẢNH BÁO KẺ NGỐC: Không có bằng chứng cứng (Tiên Tri soi, lộ role) rằng ${accusedName} là sói. Kẻ Ngốc chơi giống sói — nếu treo nhầm Kẻ Ngốc, TẤT CẢ THUA NGAY. Khi không chắc → vote THA.`,
+        },
+      ];
+    }
+
+    return [];
   }
 }
 

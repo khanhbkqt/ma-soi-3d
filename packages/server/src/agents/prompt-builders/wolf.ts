@@ -1,5 +1,5 @@
 import { Player, GameState, Role, isWolfRole } from '@ma-soi/shared';
-import { BasePromptBuilder, taskContext, roleNameVi } from './base.js';
+import { BasePromptBuilder, taskContext, roleNameVi, hasFool } from './base.js';
 
 function wolfTeammates(player: Player, state: GameState): string {
   const wolves = state.players.filter((p) => isWolfRole(p.role) && p.id !== player.id);
@@ -87,13 +87,22 @@ Thí tốt hay Cứu?
 - Nếu phiếu đang 50/50 và có lý do chính đáng: Vote THA (với lý do như "thấy nó nói cũng tội/chưa rõ ràng").
 - ${aliveWolves <= 2 ? 'Team đang mỏng người, cố cứu nếu không lộ mình.' : 'Team đông, cứ thí tốt lấy uy tín.'}`;
     }
+    const foolWarn = hasFool(state)
+      ? `
+🚨 CẢNH BÁO KẺ NGỐC:
+Game có Kẻ Ngốc — nó thắng NGAY LẬP TỨC khi bị treo cổ. Nếu Kẻ Ngốc thắng, SÓI CŨNG THUA.
+Kẻ Ngốc chơi GIỐNG SÓI: redirect khi bị hỏi, vote lệch, bênh sai người. Nó KHÔNG diễn ngu hay xin treo.
+→ Nếu bị cáo KHÔNG PHẢI đồng bọn sói và mày KHÔNG CHẮC nó là dân thật → vote THA. Treo nhầm Kẻ Ngốc = game over cho tất cả kể cả sói.
+→ Chỉ vote GIẾT khi chắc chắn bị cáo là dân thật hoặc khi tha sẽ lộ mày.
+`
+      : '';
     return `MÀY LÀ SÓI. Bị cáo là DÂN.
 Tuyệt đối KHÔNG PHẢI LÚC NÀO CŨNG VOTE GIẾT! Cứ chăm chăm vote giết sẽ bị lộ là sói khát máu.
-Chiến thuật "Đu dây" trên giàn giáo:
-- Nếu làng đang hùa nhau THA (vì nó biện hộ hay/nhận role xịn): Vote THA theo đám đông để lấy uy tín ("ừ nghe cũng tội, tạm tha").
-- Nếu phiếu đang 50/50: Vote GIẾT để chốt hạ (bắt bẻ 1 lỗ hổng trong lời biện hộ của nó).
-- Nếu làng đang hùa nhau GIẾT: Vote GIẾT tát nước theo mưa để mượn đao giết người.
-BREAK THE PATTERN (Phá vỡ rập khuôn): Thỉnh thoảng (tỉ lệ nhỏ), hãy đi ngược đám đông một cách ngạo nghễ! Làng đòi tha, mày kiên quyết bắt bẻ đòi giết tới cùng. Làng đòi giết, mày giả vờ mù quáng vote tha vì "linh cảm nó là dân". Tạo ra sự hỗn loạn và không thể đoán trước!`;
+${foolWarn}Chiến thuật "Đu dây" trên giàn giáo:
+- Nếu làng đang hùa nhau THA: Vote THA theo đám đông để lấy uy tín.
+- Nếu phiếu đang 50/50: Cân nhắc THA nếu không chắc bị cáo là dân thật.
+- Nếu làng đang hùa nhau GIẾT VÀ mày chắc bị cáo là dân: Vote GIẾT tát nước theo mưa.
+BREAK THE PATTERN: Thỉnh thoảng đi ngược đám đông một cách ngạo nghễ!`;
   }
 
   // ── Night actions ──
@@ -133,7 +142,7 @@ JSON: {"message":"lời nói"}`;
     return `${taskContext(observations)}
 ${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 Chọn 1 người để cắn đêm nay.
-ƯU TIÊN CẮN (suy nghĩ trong reasoning):
+ƯU TIÊN CẮN (suy nghĩ nội bộ):
 1. Tiên Tri đã come out (nếu nghĩ Bảo Vệ không đỡ). Nếu nghĩ Bảo Vệ đang đỡ Tiên Tri → cắn chéo hoặc cắn Bảo Vệ trước.
 2. Bảo Vệ đã come out → CẮN NGAY! Neutralize khiên = đêm sau cắn thoải mái.
 3. Phù Thủy đã come out + còn thuốc → Cắn Phù Thủy để triệt thuốc.
@@ -145,7 +154,7 @@ TRÁNH CẮN:
 - Mấy con "cừu ngu" đang vote bậy (giữ lại làm bia đỡ đạn vòng sau).
 - Đứa nổi nhất làng (dễ bị kê khiên).
 Danh sách con mồi: ${targets.map((t) => t.name).join(', ')}
-JSON: {"target":"Tên","reasoning":"phân tích target priority"}`;
+JSON: {"target":"Tên"}`;
   }
 
   wolfDoubleKill(
@@ -158,12 +167,12 @@ JSON: {"target":"Tên","reasoning":"phân tích target priority"}`;
     return `${taskContext(observations)}
 ${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 SÓI CON ĐÃ CHẾT! Đêm nay sói được cắn 2 NGƯỜI để trả thù!
-Suy nghĩ chọn 2 target (trong reasoning):
+Suy nghĩ nội bộ chọn 2 target:
 - Target 1: Cắt "đầu tàu" nguy hiểm (Tiên Tri, Phù Thủy, người dẫn dắt dân).
 - Target 2: Đứa "trung bình" để né khiên Bảo Vệ, hoặc đánh bồi 1 đứa mà Bảo Vệ có thể đỡ Target 1 (để chắc chắn 1 mạng ngã xuống).
 - Đừng phí mạng vào bọn "cừu ngu" đang bị cả làng nghi ngờ.
 Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"target1":"Tên1","target2":"Tên2","reasoning":"phân tích chọn 2 target"}`;
+JSON: {"target1":"Tên1","target2":"Tên2"}`;
   }
 }
 
@@ -194,12 +203,12 @@ CHIẾN LƯỢC LÂY NHIỄM:
     return `${taskContext(observations)}
 ${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
 MÀY LÀ SÓI ĐẦU ĐÀN. Chọn: cắn bình thường hay LÂY NHIỄM (biến thành sói, dùng 1 lần duy nhất)?
-Suy nghĩ trong reasoning:
+Suy nghĩ nội bộ:
 - LÂY NHIỄM khi: target là role cực mạnh (Bảo Vệ, Thợ Săn), hoặc người đang tin tưởng mày (pocketing → biến thành đồng minh thật).
 - CẮN THƯỜNG khi: Cần triệt tiêu gốc rễ (Tiên Tri đã come out), hoặc "đầu tàu" của làng.
 - KHÔNG lây nhiễm: Tiên Tri (nó đã biết mày sói), người sắp bị vote chết, hoặc mấy đứa cừu ngu không có giá trị.
 Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"target":"Tên","infect":true/false,"reasoning":"phân tích infect vs kill"}`;
+JSON: {"target":"Tên","infect":true/false}`;
   }
 }
 

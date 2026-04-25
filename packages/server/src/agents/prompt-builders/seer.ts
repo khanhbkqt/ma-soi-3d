@@ -1,5 +1,5 @@
 import { Player, GameState, Role } from '@ma-soi/shared';
-import { BasePromptBuilder, taskContext } from './base.js';
+import { BasePromptBuilder, taskContext, hasFool } from './base.js';
 
 export class SeerPromptBuilder extends BasePromptBuilder {
   roleIdentity(_player: Player, _state: GameState): string {
@@ -37,10 +37,13 @@ CHIẾN THUẬT BAN NGÀY (MIND GAME):
   }
 
   judgementHint(_player: Player, _state: GameState): string {
+    const foolWarn = hasFool(_state)
+      ? ' Cẩn thận Kẻ Ngốc — nó chơi giống sói (redirect, vote lệch) chứ không diễn ngu. Nếu không có bằng chứng cứng → vote THA an toàn hơn. Treo Kẻ Ngốc = thua ngay.'
+      : '';
     return `LUẬT SẮT CỦA TIÊN TRI KHI PHÁN XÉT:
 - Nếu người bị xử là người mày đã soi ra KHÔNG PHẢI SÓI → vote THA ngay, không cần suy nghĩ thêm.
 - Nếu người bị xử là người mày soi ra LÀ SÓI → vote GIẾT.
-- Nếu chưa soi → đánh giá bằng chứng bình thường. Cẩn thận Kẻ Ngốc — nó thắng khi bị treo cổ!`;
+- Nếu chưa soi → đánh giá bằng chứng bình thường.${foolWarn}`;
   }
 
   defenseHint(_player: Player, _state: GameState): string {
@@ -67,7 +70,7 @@ TƯ DUY CHỌN MỤC TIÊU (IMPACT LỚN NHẤT):
 3. Kẻ hùa theo đám đông, núp lùm im lặng.
 4. TRÁNH SOI người QUÁ NỔI BẬT (đang bị cả làng dồn) -- sói cũng có thể cắn họ cùng đêm nay -> lãng phí soi. Ưu tiên soi người "trung bình" có thời gian dùng info.(Tuyệt đối không soi người đã chết lộ role hoặc người đã soi rồi).
 Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"target":"Tên","reasoning":"lý do chọn target"}`;
+JSON: {"target":"Tên"}`;
   }
 }
 

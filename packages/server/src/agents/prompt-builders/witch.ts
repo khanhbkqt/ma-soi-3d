@@ -1,5 +1,5 @@
 import { Player, GameState } from '@ma-soi/shared';
-import { BasePromptBuilder, taskContext } from './base.js';
+import { BasePromptBuilder, taskContext, hasFool } from './base.js';
 
 export class WitchPromptBuilder extends BasePromptBuilder {
   roleIdentity(_player: Player, state: GameState): string {
@@ -61,8 +61,7 @@ Nếu COME OUT: Dump toàn bộ info. Chỉ ra kẻ đáng nghi nhất.`;
           ? 'Thuốc cứu đã dùng.'
           : 'Đêm nay không ai bị cắn.';
     const killInfo = !potions.killUsed
-      ? `Đầu độc ai không? Chỉ độc khi có bằng chứng mạnh — độc nhầm dân = thảm họa. Độc Thợ Săn → không được bắn phát cuối.
-⚠ CẢNH BÁO TRƯỚC KHI ĐỘC: (1) Game có Kẻ Ngốc — kẻ chơi bẩn/xạo/claim sai chưa chắc là Sói, có thể là Ngốc đang câu treo. (2) KHÔNG độc người đã lộ role phe dân (xem PHÂN TÍCH ROLE mục Xác nhận). Chỉ độc khi có BẰNG CHỨNG CỨNG là Sói.
+      ? `Đầu độc ai không? Chỉ độc khi có bằng chứng mạnh — độc nhầm dân = thảm họa. Độc Thợ Săn → không được bắn phát cuối.${hasFool(state) ? '\n⚠ CẢNH BÁO: Game có Kẻ Ngốc — kẻ chơi bẩn/xạo/claim sai chưa chắc là Sói, có thể là Ngốc đang câu treo.' : ''} KHÔNG độc người đã lộ role phe dân (xem PHÂN TÍCH ROLE mục Xác nhận). Chỉ độc khi có BẰNG CHỨNG CỨNG là Sói.
 Danh sách: ${targets.map((t) => t.name).join(', ')}`
       : 'Thuốc độc đã dùng.';
     return `${taskContext(observations)}
@@ -70,6 +69,6 @@ ${healInfo}
 ${killInfo}
 Thuốc cứu: ${potions.healUsed ? 'ĐÃ DÙNG' : 'còn'} | Thuốc độc: ${potions.killUsed ? 'ĐÃ DÙNG' : 'còn'}
 Mày KHÔNG biết Bảo Vệ đã bảo vệ ai đêm nay.
-JSON: {"heal":true/false,"killTarget":"Tên"|null,"reasoning":"lý do quyết định"}`;
+JSON: {"heal":true/false,"killTarget":"Tên"|null}`;
   }
 }
