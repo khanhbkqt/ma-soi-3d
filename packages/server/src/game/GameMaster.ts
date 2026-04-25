@@ -700,45 +700,51 @@ export class GameMaster extends EventEmitter {
     const alivePlayers = this.alive();
     const timeLimitMs = this.state.config.discussionTimeLimitMs || 90_000;
     const maxRounds = this.state.config.discussionRounds;
-    const batchSize = Math.min(5, Math.max(3, Math.ceil(alivePlayers.length / 2)));
+    const batchSize = Math.min(4, Math.max(3, Math.ceil(alivePlayers.length / 3)));
     const spokenCount = new Map<string, number>();
     const startTime = Date.now();
     let silentTicks = 0;
+    let mentionedIds = new Set<string>();
 
     for (let round = 1; round <= maxRounds; round++) {
       if (Date.now() - startTime >= timeLimitMs) break;
 
-      // Pick candidates: prioritize those who haven't spoken yet, then least-spoken
+      // Pick candidates: mentioned players first, then unheard, then least-spoken
       const pool = alivePlayers.filter((p) => p.alive);
-      const neverSpoken = pool.filter((p) => !spokenCount.has(p.id));
-      // In early rounds, force unheard players in; later rounds use normal selection
-      let candidates: Player[];
-      if (neverSpoken.length > 0 && round <= Math.ceil(maxRounds / 2)) {
-        // Fill batch with unheard players first, then least-spoken
-        const shuffled = neverSpoken.sort(() => Math.random() - 0.5);
-        candidates = shuffled.slice(0, batchSize);
-        if (candidates.length < batchSize) {
-          const rest = pool
-            .filter((p) => spokenCount.has(p.id))
-            .sort((a, b) => (spokenCount.get(a.id) || 0) - (spokenCount.get(b.id) || 0));
-          candidates.push(...rest.slice(0, batchSize - candidates.length));
-        }
-      } else {
-        pool.sort((a, b) => (spokenCount.get(a.id) || 0) - (spokenCount.get(b.id) || 0));
-        const topHalf = pool.slice(0, Math.max(batchSize, Math.ceil(pool.length / 2)));
-        candidates = topHalf.sort(() => Math.random() - 0.5).slice(0, batchSize);
-      }
+      const mentioned = pool.filter((p) => mentionedIds.has(p.id));
+      const neverSpoken = pool.filter((p) => !spokenCount.has(p.id) && !mentionedIds.has(p.id));
 
-      // Ask candidates SEQUENTIALLY (not parallel) so each agent sees previous messages
-      // from the current batch. Prevents hallucination where agents in the same batch
-      // appear to "reply" to each other despite speaking independently.
+      let candidates: Player[] = [...mentioned];
+      if (
+        candidates.length < batchSize &&
+        neverSpoken.length > 0 &&
+        round <= Math.ceil(maxRounds / 2)
+      ) {
+        const shuffled = neverSpoken.sort(() => Math.random() - 0.5);
+        candidates.push(...shuffled.slice(0, batchSize - candidates.length));
+      }
+      if (candidates.length < batchSize) {
+        const rest = pool
+          .filter((p) => !candidates.includes(p))
+          .sort((a, b) => (spokenCount.get(a.id) || 0) - (spokenCount.get(b.id) || 0));
+        candidates.push(...rest.slice(0, batchSize - candidates.length));
+      }
+      candidates = candidates.slice(0, batchSize);
+      mentionedIds = new Set();
+
+      // Ask candidates SEQUENTIALLY so each agent sees previous messages
+      // from the same batch — enables natural back-and-forth replies.
       let anyoneSpoke = false;
+      const batchStartIdx = this.state.discussionMessages.length;
       for (const player of candidates) {
         const { message, wantToSpeak } = await this.thinkWrap([player.id], () =>
           this.resolver.discuss(player, this.state, this.state.discussionMessages, round),
         );
 
-        if (!wantToSpeak) continue;
+        // Mentioned players must reply — override silent skip
+        const isMentioned = mentionedIds.has(player.id);
+        if (!wantToSpeak && !isMentioned) continue;
+        if (!wantToSpeak && isMentioned && (!message || message === '...')) continue;
         const dayMsg: DayMessage = {
           playerId: player.id,
           playerName: player.name,
@@ -757,6 +763,15 @@ export class GameMaster extends EventEmitter {
         silentTicks++;
       } else {
         silentTicks = 0;
+        // Detect mentioned players from this batch's new messages for reply priority
+        const newMsgs = this.state.discussionMessages.slice(batchStartIdx);
+        for (const msg of newMsgs) {
+          for (const p of pool) {
+            if (p.id !== msg.playerId && msg.message.includes(p.name)) {
+              mentionedIds.add(p.id);
+            }
+          }
+        }
       }
       if (silentTicks >= 3) break;
     }
