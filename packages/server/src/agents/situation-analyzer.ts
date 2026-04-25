@@ -38,6 +38,8 @@ const SIGNAL_RELEVANCE: Record<string, ActionType[]> = {
   silence: ['discuss'],
   relationship_pattern: ['discuss', 'vote'],
   fool_risk: ['judgement', 'vote'],
+  bandwagon: ['discuss', 'vote', 'judgement'],
+  unverified_claim: ['discuss', 'vote', 'judgement'],
 };
 
 // ── Accusation patterns (reused from role-deduction) ──
@@ -56,6 +58,8 @@ export class SituationAnalyzer {
       ...this.detectSilence(ctx),
       ...this.detectRelationshipPatterns(ctx),
       ...this.detectFoolRisk(ctx),
+      ...this.detectBandwagon(ctx),
+      ...this.detectUnverifiedClaims(ctx),
     ];
 
     // Filter by action relevance
@@ -351,6 +355,78 @@ export class SituationAnalyzer {
     }
 
     return [];
+  }
+
+  private detectBandwagon(ctx: AnalyzerContext): Signal[] {
+    const { state, deduction } = ctx;
+    const signals: Signal[] = [];
+
+    // Check if many people are accusing the same target without hard evidence
+    for (const [target, accusers] of deduction.accusations) {
+      if (accusers.length < 3) continue;
+      // Check if there's hard evidence (seer result or confirmed)
+      const seerResult = deduction.seerResults.get(target);
+      const confirmed = deduction.confirmed.get(target);
+      if (seerResult === 'wolf' || confirmed) continue; // Hard evidence exists, not bandwagon
+
+      const targetAlive = state.players.find((p) => p.name === target && p.alive);
+      if (!targetAlive) continue;
+
+      signals.push({
+        id: 'bandwagon',
+        priority: 72,
+        text: `⚠ ĐÔNG NGƯỜI TỐ ${target} (${accusers.length} người) nhưng KHÔNG CÓ bằng chứng CỨNG. Đám đông có thể bị sói dẫn dắt. Kiểm tra: ai dẫn đầu tố? Người đó có đáng tin không?`,
+      });
+      break; // Only report strongest bandwagon
+    }
+
+    return signals;
+  }
+
+  private detectUnverifiedClaims(ctx: AnalyzerContext): Signal[] {
+    const { state, deduction } = ctx;
+    const signals: Signal[] = [];
+
+    for (const [claimant, claims] of deduction.claims) {
+      // Skip dead players
+      const claimantAlive = state.players.find((p) => p.name === claimant && p.alive);
+      if (!claimantAlive) continue;
+
+      for (const claim of claims) {
+        // Check if claim has been verified
+        const seerResult = deduction.seerResults.get(claimant);
+        const confirmed = deduction.confirmed.get(claimant);
+        if (seerResult || confirmed) continue; // Verified
+
+        // Check for counter-claims (someone else claiming same role)
+        let hasConflict = false;
+        for (const [otherClaimant, otherClaims] of deduction.claims) {
+          if (otherClaimant === claimant) continue;
+          if (otherClaims.some((c) => c.role === claim.role)) {
+            hasConflict = true;
+            break;
+          }
+        }
+
+        if (hasConflict) {
+          signals.push({
+            id: 'unverified_claim',
+            priority: 78,
+            text: `⚠ CÓ 2 NGƯỜI claim ${claim.role}! MỘT TRONG HAI ĐANG NÓI LÁO. Cross-check vote pattern và hành vi để xác định ai thật.`,
+          });
+        } else {
+          signals.push({
+            id: 'unverified_claim',
+            priority: 55,
+            text: `${claimant} claim ${claim.role} nhưng CHƯA VERIFY. Claim = bằng chứng MỀM. Đừng tin ngay — verify bằng vote pattern, ai bị cắn sau claim.`,
+          });
+        }
+        break; // Only report first claim per player
+      }
+      if (signals.length >= 2) break; // Cap at 2 claim signals
+    }
+
+    return signals;
   }
 }
 

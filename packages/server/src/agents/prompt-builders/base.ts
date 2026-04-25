@@ -112,6 +112,27 @@ export function informationRules(): string {
 6. Các phát biểu cùng lượt là ĐỒNG THỜI — không ai "reply" ai trong cùng lượt. Chỉ reply lại phát biểu từ LƯỢT TRƯỚC.`;
 }
 
+export function criticalThinkingRules(): string {
+  return `ĐÁNH GIÁ ĐỘ TIN CẬY — BẮT BUỘC trước khi tin bất kỳ ai:
+PHÂN LOẠI BẰNG CHỨNG:
+- CỨNG (tin được): Tiên Tri soi ra sói/dân, role lộ khi chết, tự mình chứng kiến (đêm sói bàn bạc).
+- TRUNG BÌNH: Vote pattern nhất quán qua nhiều vòng, ai đó tố đúng sói trước đó, hành vi bênh/chống rõ ràng.
+- MỀM (dễ giả): Claim role (AI NÀO CŨNG CLAIM ĐƯỢC), lời tố cáo không có bằng chứng, "linh cảm", im lặng, nói nhiều.
+- KHÔNG CÓ GIÁ TRỊ: Đám đông hùa nhau, "mọi người đều nghĩ vậy", cảm tính.
+
+NGUYÊN TẮC PHẢN BIỆN — TỰ HỎI TRONG ĐẦU:
+1. "Ai đang HƯỞNG LỢI từ việc mình tin điều này?" — Sói giỏi nhất là sói dẫn dắt dân tin sai.
+2. "Nếu điều ngược lại đúng thì sao?" — Ai đó claim Tiên Tri → nếu nó là sói fake thì pattern gì? Nếu nó thật thì pattern gì? Pattern nào khớp hơn?
+3. "Bằng chứng này thuộc loại gì?" — Bằng chứng CỨNG mới đáng tin. Bằng chứng MỀM chỉ nên là gợi ý, KHÔNG phải kết luận.
+4. "Đã có ai bị CHẾT OAN vì logic tương tự chưa?" — Nếu vòng trước treo nhầm dân bằng cùng kiểu lập luận → CẢNH GIÁC.
+5. "Mình đang bị dẫn dắt không?" — Ai nói mạnh nhất chưa chắc đúng nhất. Sói thường TỎ RA tự tin để lái vote.
+
+ANTI-BANDWAGON (CHỐNG HÙA THEO):
+- 3 người tố 1 người ≠ người đó là sói. Có thể 2 trong 3 là sói đang frame.
+- Đám đông vote ai → DỪNG LẠI, tự suy nghĩ: "Tao có bằng chứng riêng không, hay tao đang bị kéo theo?"
+- Nếu KHÔNG có bằng chứng riêng → TÁCH RA, vote người khác hoặc skip. Hùa theo vô cớ = dân chết oan.`;
+}
+
 export function playerContext(player: Player, state: GameState): string {
   const alive = state.players.filter((p) => p.alive);
   const dead = state.players.filter((p) => !p.alive);
@@ -169,6 +190,8 @@ ${speechRules()}
 
 ${informationRules()}
 
+${criticalThinkingRules()}
+
 ${playerContext(player, state)}
 
 ${roleHint}
@@ -219,9 +242,12 @@ export abstract class BasePromptBuilder implements PromptBuilder {
     const foolWarn = hasFool(_state)
       ? '\n- ⚠ NHỚ: Game có Kẻ Ngốc — nó thắng khi bị treo cổ. Đưa người lên giàn mà không có bằng chứng cứng = rủi ro tặng win cho Kẻ Ngốc.'
       : '';
-    return `Suy nghĩ kỹ trước khi vote:
-- Ai có hành vi đáng ngờ nhất? (lấp liếm, đổi ý, bảo vệ sói, im lặng bất thường)
-- Vote pattern: ai vote giống sói đã bị lộ? ai luôn vote dân?
+    return `CHECKPOINT TRƯỚC KHI VOTE — bắt buộc tự hỏi:
+1. Bằng chứng tố người này thuộc loại gì? (CỨNG/TRUNG BÌNH/MỀM?) Nếu chỉ có MỀM → cân nhắc kỹ.
+2. Mày có bằng chứng RIÊNG hay đang vote theo người khác? Không có bằng chứng riêng = đang bị dẫn dắt.
+3. Người dẫn dắt vote có ĐỘ TIN CẬY cao không? (xem PHÂN TÍCH ROLE) Hay nó có thể là sói đang frame?
+4. Nếu người bị vote là dân thì sao? Phe nào hưởng lợi? Giết nhầm dân = sói lợi 2 lần.
+5. Vote pattern: ai vote giống sói đã bị lộ? ai luôn vote dân?
 - Đừng vote theo đám đông mù quáng — sói hay dẫn dắt vote giết dân.${foolWarn}`;
   }
 
@@ -248,10 +274,12 @@ COME OUT ROLE? CÂN NHẮC KỸ:
 - Nếu bằng chứng chỉ là "hành vi đáng ngờ" mà KHÔNG CÓ bằng chứng cứng (Tiên Tri soi ra sói, lộ role sói khi chết, tự nhận sói) → rủi ro Kẻ Ngốc RẤT CAO.
 - Khi không chắc chắn → vote THA an toàn hơn. Treo nhầm Kẻ Ngốc = THUA NGAY LẬP TỨC cho tất cả.`
       : '';
-    return `Đánh giá lời biện hộ:
-- Logic có chặt không? Có mâu thuẫn với lời nói/hành động trước đó không?
-- Come out role có hợp lý không? Có ai khác đã claim role đó?
-- Giết nhầm dân = sói lợi. Tha sói = dân thiệt. Cân nhắc kỹ bằng chứng.${foolWarn}`;
+    return `ĐÁNH GIÁ BIỆN HỘ — framework bắt buộc:
+1. Bằng chứng TỐ người này thuộc loại gì? CỨNG (soi ra sói, lộ role) hay MỀM (hành vi, đám đông tố)? Chỉ bằng chứng CỨNG mới đáng vote GIẾT.
+2. Lời biện hộ có logic không? Có mâu thuẫn với lời nói/hành động trước đó không?
+3. Nếu come out role → cross-check: có ai khác claim cùng role? Timing come out hợp lý? Vote pattern trước khi claim có khớp?
+4. Ai TỐ người này? Kiểm tra ĐỘ TIN CẬY của người tố (xem PHÂN TÍCH ROLE). Sói hay tố dân để frame.
+5. NGUYÊN TẮC: Không có bằng chứng CỨNG → vote THA. Giết nhầm dân = sói lợi 2 lần (mất 1 dân + lãng phí 1 vote).${foolWarn}`;
   }
 
   // ── System prompt: full context ──
@@ -320,8 +348,12 @@ COME OUT ROLE? CÂN NHẮC KỸ:
 ${this.discussionHint(player, state)}${r1Hint}${deathHint}${midHint}${lastHint}
 Lượt thảo luận ${round}/${state.config.discussionRounds}.${conversationBlock(messages)}
 TRƯỚC KHI NÓI, suy nghĩ NỘI BỘ (không viết ra):
-- Ai đáng nghi nhất hiện tại? Bằng chứng gì?
+- Ai đáng nghi nhất hiện tại? Bằng chứng GÌ và thuộc loại NÀO (CỨNG/TRUNG BÌNH/MỀM)?
 - Người vừa nói có điểm gì đáng chú ý? Mâu thuẫn? Lấp liếm?
+- Ai đang dẫn dắt cuộc thảo luận? Người đó có ĐỘ TIN CẬY cao không? (xem PHÂN TÍCH ROLE)
+- Có ai claim role mà chưa bị verify không? Claim = bằng chứng MỀM — đừng tin ngay.
+- Nếu mày định tố ai — bằng chứng của mày thuộc loại gì? MỀM → nói "tao thấy hơi nghi" thay vì "nó là sói".
+- Có giả thuyết đối nghịch nào giải thích hành vi đáng ngờ không? (VD: im lặng ≠ sói, có thể đang giấu role quan trọng)
 - Mày nên tố, bênh, hỏi, hay im?
 - Tự phản biện câu nói trước khi chốt.
 ${speakInstruction}
@@ -342,11 +374,12 @@ ${this.voteHint(player, state)}
 ${convo}
 HOÀNG HÔN — vote chỉ định 1 người lên giàn (chưa giết, chỉ đưa lên để biện hộ).
 TRƯỚC KHI VOTE, suy luận NỘI BỘ (không viết ra):
-- Ai bị tố nhiều nhất trong thảo luận? Lý do có thuyết phục không?
+- Ai bị tố nhiều nhất? Nhưng ĐÔNG NGƯỜI TỐ ≠ ĐÚNG. Kiểm tra: bằng chứng tố thuộc loại gì? Có ai có bằng chứng CỨNG không?
 - Vote pattern các vòng trước: ai vote giống nhau? ai vote lạ?
 - Ai hưởng lợi nếu người bị tố chết? Có ai đang dẫn dắt vote để giết dân không?
+- Mày có bằng chứng RIÊNG hay đang bị kéo theo đám đông? Nếu không có bằng chứng riêng → tách ra.
 - Ai im lặng bất thường? Ai nói nhiều nhưng không có nội dung?
-- Mày có nên vote theo đám đông hay tách ra vote người khác?
+- ĐỘ TIN CẬY: Người dẫn dắt vote có đáng tin không? (xem PHÂN TÍCH ROLE)
 Vote 1 người, hoặc "skip". Danh sách: ${targets.map((t) => t.name).join(', ')}
 JSON: {"target":"Tên"|"skip"}`;
   }

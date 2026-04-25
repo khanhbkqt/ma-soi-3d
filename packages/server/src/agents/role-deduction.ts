@@ -159,6 +159,8 @@ export class RoleDeductionTracker {
   seerResults = new Map<string, 'wolf' | 'clear'>();
   claims = new Map<string, { role: string; round: number }[]>();
   accusations = new Map<string, string[]>(); // target → [accusers]
+  credibility = new Map<string, number>(); // player → credibility score (0 = neutral)
+  private credibilityReasons = new Map<string, string[]>(); // player → reasons for score
 
   private currentRound = 1;
   private aliveNames: string[] = [];
@@ -223,6 +225,39 @@ export class RoleDeductionTracker {
     }
   }
 
+  /**
+   * Update credibility scores when a player's role is confirmed (usually via death).
+   * Retroactively rewards/penalizes accusers and voters.
+   */
+  updateCredibilityOnDeath(deadPlayer: string, isWolf: boolean): void {
+    // Reward/penalize accusers
+    const accusers = this.accusations.get(deadPlayer) || [];
+    for (const accuser of accusers) {
+      if (isWolf) {
+        this.addCredibility(accuser, 2, `tố đúng ${deadPlayer} là sói`);
+      } else {
+        this.addCredibility(accuser, -1, `tố nhầm ${deadPlayer} (là dân)`);
+      }
+    }
+
+    // Penalize claim conflicts
+    if (isWolf) {
+      const claims = this.claims.get(deadPlayer);
+      if (claims && claims.length > 0) {
+        // Wolf that fake-claimed — anyone who supported the claim loses credibility
+        // (handled implicitly via accusation rewards above)
+      }
+    }
+  }
+
+  private addCredibility(player: string, delta: number, reason: string): void {
+    const current = this.credibility.get(player) || 0;
+    this.credibility.set(player, current + delta);
+    const reasons = this.credibilityReasons.get(player) || [];
+    reasons.push(reason);
+    this.credibilityReasons.set(player, reasons);
+  }
+
   /** Build the PHÂN TÍCH ROLE prompt block */
   buildPrompt(myRole: Role, myName: string): string {
     const lines: string[] = [];
@@ -282,6 +317,21 @@ export class RoleDeductionTracker {
     if (accused.length) {
       const items = accused.map(([t, a]) => `${t} (${a.length} người tố)`);
       lines.push(`Bị tố sói: ${items.join(' | ')}`);
+    }
+
+    // Credibility scores
+    const credEntries = [...this.credibility]
+      .filter(([name]) => name !== myName) // Don't show own credibility
+      .sort((a, b) => b[1] - a[1]); // Sort by score descending
+    if (credEntries.length) {
+      const credItems = credEntries.map(([name, score]) => {
+        const reasons = this.credibilityReasons.get(name) || [];
+        const icon = score > 0 ? '🟢' : score < 0 ? '🔴' : '🟡';
+        const sign = score > 0 ? '+' : '';
+        const reasonStr = reasons.length ? ` (${reasons.slice(-2).join(', ')})` : '';
+        return `${icon} ${name}: ${sign}${score}${reasonStr}`;
+      });
+      lines.push(`ĐỘ TIN CẬY:\n${credItems.join('\n')}`);
     }
 
     if (!lines.length) return '';

@@ -21,8 +21,10 @@ CHIẾN THUẬT & TÂM LÝ (KHÔNG CHƠI CỨNG NHẮC):
 - Thỉnh thoảng giả vờ hơi "ngáo" để Sói nghĩ mày vô hại.`;
     }
     return `MÀY LÀ TIÊN TRI. Đã có kết quả soi đêm qua (xem nhật ký).
-CHIẾN THUẬT BAN NGÀY (MIND GAME):
+CHIẾN THUẬT BAN NGÀY (MIND GAME + PHẢN BIỆN):
 - Dùng kết quả soi (xem PHÂN TÍCH ROLE) để định hướng: bênh người sạch một cách khéo léo, tố người bẩn bằng logic.
+- LEVERAGE DATA SOI: Khi ai đó tố người mày đã soi SẠCH → NGƯỜI TỐ ĐÓ ĐÁNG NGHI HƠN TARGET. Tại sao nó cố giết người sạch? Có thể nó là sói đang frame.
+- PHẢN BIỆN FAKE CLAIM: Khi sói fake Tiên Tri → so sánh kết quả soi của mày vs kết quả fake → bóc mẽ bằng logic (VD: "nó nói soi A ra sói, nhưng nếu A là sói thật thì tại sao lại vote khác?"). KHÔNG CẦN come out để phản bác — dùng logic thuần túy.
 - Nếu chưa lộ diện: Dẫn dắt bằng hint nhưng phải TỰ NHIÊN. Bênh người tốt một cách khéo léo ("Tao thấy cách nói chuyện của thằng này thật thà"). Tố Sói bằng cách bới móc sơ hở logic của nó, tuyệt đối không nói "tao soi nó".
 - THẬN TRỌNG: Đừng phân tích quá sắc bén hay trôi chảy! Sói sẽ đánh hơi ra mày là Tiên Tri nếu mày luôn đúng, luôn biết ai sạch ai bẩn. Hãy "sai" một chút, hỏi ngây thơ một chút, để giả vờ mày đang đoán chứ không phải "biết".
 - Thêm "Gia vị": Thỉnh thoảng giả vờ hỏi ngu, tung hỏa mù, hoặc gây lộn nhẹ nhàng để Sói không nhận ra mày là Tiên Tri nấp lùm.

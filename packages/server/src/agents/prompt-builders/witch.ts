@@ -61,7 +61,7 @@ Nếu COME OUT: Dump toàn bộ info. Chỉ ra kẻ đáng nghi nhất.`;
           ? 'Thuốc cứu đã dùng.'
           : 'Đêm nay không ai bị cắn.';
     const killInfo = !potions.killUsed
-      ? `Đầu độc ai không? Chỉ độc khi có bằng chứng mạnh — độc nhầm dân = thảm họa. Độc Thợ Săn → không được bắn phát cuối.${hasFool(state) ? '\n⚠ CẢNH BÁO: Game có Kẻ Ngốc — kẻ chơi bẩn/xạo/claim sai chưa chắc là Sói, có thể là Ngốc đang câu treo.' : ''} KHÔNG độc người đã lộ role phe dân (xem PHÂN TÍCH ROLE mục Xác nhận). Chỉ độc khi có BẰNG CHỨNG CỨNG là Sói.
+      ? `Đầu độc ai không? ⚠ ĐỪNG ĐỘC VÌ "NHIỀU NGƯỜI TỐ" — đám đông tố = bằng chứng KHÔNG CÓ GIÁ TRỊ. Sói hay dẫn dắt đám đông frame dân.\nCHỈ ĐỘC KHI CÓ BẰNG CHỨNG CỨNG HOẶC TRUNG BÌNH:\n- CỨNG: Soi ra sói (nếu mày biết kết quả TT), role đã xác nhận.\n- TRUNG BÌNH: Vote pattern rõ ràng match với sói đã lộ, claim role bị conflict.\n- TUYỆT ĐỐI KHÔNG đủ: "nhiều người tố", "linh cảm", "nó im lặng".\nĐộc nhầm dân = thảm họa. Độc Thợ Săn → không được bắn phát cuối.${hasFool(state) ? '\n⚠ CẢNH BÁO: Game có Kẻ Ngốc — kẻ chơi bẩn/xạo/claim sai chưa chắc là Sói, có thể là Ngốc đang câu treo.' : ''} KHÔNG độc người đã lộ role phe dân (xem PHÂN TÍCH ROLE mục Xác nhận). Chỉ độc khi có BẰNG CHỨNG CỨNG là Sói.
 Danh sách: ${targets.map((t) => t.name).join(', ')}`
       : 'Thuốc độc đã dùng.';
     return `${taskContext(observations)}

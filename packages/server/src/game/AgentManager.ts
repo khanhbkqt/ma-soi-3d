@@ -127,6 +127,17 @@ export class AgentManager implements ActionResolver {
         const alive = this.gm.state.players.filter((p) => p.alive).map((p) => p.name);
         for (const [, brain] of this.brains) brain.deduction.setAliveNames(alive);
       }
+      // Update credibility scores when a player dies
+      if (event.type === GameEventType.PlayerDied) {
+        const deadName = d.playerName as string;
+        const deadRole = d.role as string;
+        const wolfRoles = ['Sói', 'Sói Đầu Đàn', 'Sói Con'];
+        const deadIsWolf = wolfRoles.includes(deadRole);
+        for (const [, brain] of this.brains) {
+          brain.deduction.updateCredibilityOnDeath(deadName, deadIsWolf);
+        }
+      }
+
       for (const [id, brain] of this.brains) {
         const obs = this.eventToObservation(event, brain.player);
         if (obs) {
