@@ -1,28 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import { Phase, GameEventType } from '@ma-soi/shared';
+import { Phase } from '@ma-soi/shared';
 import { useGameStore } from '../../store/gameStore';
 
-/* ──────────────────────────────────────────────────────────────────
- *  DiscussionCountdown — Shows remaining time during Day (discussion) phase
- *  Tracks time based on when the Day phase started (PhaseChanged event timestamp)
- *  and counts down from config.discussionTimeLimitMs.
- * ────────────────────────────────────────────────────────────────── */
-
 export default function DiscussionCountdown() {
-  const gameState = useGameStore((s) => s.gameState);
-  const events = useGameStore((s) => s.events);
-  const phase = gameState?.phase;
-  const timeLimitMs = gameState?.config.discussionTimeLimitMs ?? 90_000;
+  const phase = useGameStore((s) => s.gameState?.phase);
+  const timeLimitMs = useGameStore((s) => s.gameState?.config.discussionTimeLimitMs ?? 90_000);
+  const dayPhaseStartTime = useGameStore((s) => s.dayPhaseStartTime);
 
   const [remaining, setRemaining] = useState<number | null>(null);
-  const startTimeRef = useRef<number | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Find when the Day phase started
   useEffect(() => {
-    if (phase !== Phase.Day) {
+    if (phase !== Phase.Day || !dayPhaseStartTime) {
       setRemaining(null);
-      startTimeRef.current = null;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -30,18 +20,9 @@ export default function DiscussionCountdown() {
       return;
     }
 
-    // Find the most recent PhaseChanged event for the Day phase
-    const dayPhaseEvent = [...events]
-      .reverse()
-      .find((e) => e.type === GameEventType.PhaseChanged && e.data.phase === Phase.Day);
-
-    const startTime = dayPhaseEvent?.timestamp ?? Date.now();
-    startTimeRef.current = startTime;
-
     const update = () => {
-      const elapsed = Date.now() - startTime;
-      const left = Math.max(0, timeLimitMs - elapsed);
-      setRemaining(left);
+      const elapsed = Date.now() - dayPhaseStartTime;
+      setRemaining(Math.max(0, timeLimitMs - elapsed));
     };
 
     update();
@@ -53,7 +34,7 @@ export default function DiscussionCountdown() {
         intervalRef.current = null;
       }
     };
-  }, [phase, timeLimitMs, events.length]);
+  }, [phase, timeLimitMs, dayPhaseStartTime]);
 
   if (phase !== Phase.Day || remaining === null) return null;
 
@@ -64,7 +45,6 @@ export default function DiscussionCountdown() {
   const isLow = remaining < 15_000;
   const isCritical = remaining < 5_000;
 
-  // Color transitions
   const barColor = isCritical ? '#ef4444' : isLow ? '#f59e0b' : '#3b82f6';
   const textColor = isCritical ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-blue-300';
   const glowColor = isCritical
@@ -84,13 +64,10 @@ export default function DiscussionCountdown() {
         padding: '4px 12px',
       }}
     >
-      {/* Timer display */}
       <div className="flex items-center gap-2">
         <span
           className={`text-xs font-medium ${textColor} transition-colors duration-300`}
-          style={{
-            textShadow: `0 0 8px ${glowColor}`,
-          }}
+          style={{ textShadow: `0 0 8px ${glowColor}` }}
         >
           ⏱️
         </span>
@@ -105,8 +82,6 @@ export default function DiscussionCountdown() {
           {minutes}:{seconds.toString().padStart(2, '0')}
         </span>
       </div>
-
-      {/* Progress bar */}
       <div
         style={{
           width: '80px',

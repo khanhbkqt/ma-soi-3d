@@ -1,56 +1,32 @@
-import { GameState, GameEvent, GameEventType, Player, Role } from '@ma-soi/shared';
+import { GameEventType } from '@ma-soi/shared';
 import { ROLE_NAMES_VI } from './constants';
-
-interface TimelineEntry {
-  phase: string;
-  round: number;
-  type: string;
-  player?: string;
-  role?: string;
-  message?: string;
-  reasoning?: string;
-  target?: string;
-  action?: string;
-  details?: Record<string, any>;
-}
-
-export function buildGameTimeline(gameState: GameState) {
+export function buildGameTimeline(gameState) {
   const playerMap = new Map(gameState.players.map((p) => [p.id, p]));
-  const roleName = (r: Role) => ROLE_NAMES_VI[r] || r;
-  const playerInfo = (p: Player) => ({
+  const roleName = (r) => ROLE_NAMES_VI[r] || r;
+  const playerInfo = (p) => ({
     name: p.name,
     role: roleName(p.role),
     personality: p.personality.id,
   });
-
   let currentPhase = 'Lobby';
   let currentRound = 0;
-  const timeline: TimelineEntry[] = [];
-
+  const timeline = [];
   for (const e of gameState.events) {
     const d = e.data;
-
-    // Skip UI-only narrator events
-    if (e.type === GameEventType.NarratorAnnouncement || e.type === GameEventType.NarratorDismiss) {
-      continue;
-    }
-
     if (e.type === GameEventType.PhaseChanged) {
       currentPhase = d.phase;
       currentRound = d.round;
       timeline.push({ phase: d.phase, round: d.round, type: 'PhaseChanged' });
       continue;
     }
-
     const base = { phase: currentPhase, round: currentRound };
-
     switch (e.type) {
       case GameEventType.DayMessage:
         timeline.push({
           ...base,
           type: 'DayMessage',
           player: d.playerName,
-          role: roleName(playerMap.get(d.playerId)?.role as Role),
+          role: roleName(playerMap.get(d.playerId)?.role),
           message: d.message,
           reasoning: d.reasoning,
         });
@@ -153,7 +129,7 @@ export function buildGameTimeline(gameState: GameState) {
           ...base,
           type: 'Death',
           player: d.playerName,
-          role: roleName(d.role as Role),
+          role: roleName(d.role),
           action: d.cause,
         });
         break;
@@ -177,12 +153,10 @@ export function buildGameTimeline(gameState: GameState) {
         break;
     }
   }
-
   // Strip undefined values for cleaner JSON
   const clean = timeline.map((entry) =>
     Object.fromEntries(Object.entries(entry).filter(([, v]) => v !== undefined)),
   );
-
   return {
     gameId: gameState.id,
     players: gameState.players.map((p) => ({

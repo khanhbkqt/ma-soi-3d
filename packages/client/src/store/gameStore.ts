@@ -3,8 +3,10 @@ import {
   SocketEvents,
   GameState,
   GameEvent,
+  GameEventType,
   GameConfig,
   Phase,
+  Player,
   PlayerViewState,
   GameTokenUsage,
 } from '@ma-soi/shared';
@@ -15,6 +17,9 @@ interface GameStore {
   connected: boolean;
   gameState: GameState | null;
   events: GameEvent[];
+  lastEvent: GameEvent | null;
+  playersMap: Map<string, Player>;
+  dayPhaseStartTime: number | null;
   spectatorMode: 'god' | 'fog' | 'player';
   playerViewState: PlayerViewState | null;
   playerViewId: string | null;
@@ -32,11 +37,20 @@ interface GameStore {
   setView(view: 'lobby' | 'game'): void;
 }
 
+function buildPlayersMap(players: Player[]): Map<string, Player> {
+  const map = new Map<string, Player>();
+  for (const p of players) map.set(p.id, p);
+  return map;
+}
+
 export const useGameStore = create<GameStore>((set, get) => ({
   socket: null,
   connected: false,
   gameState: null,
   events: [],
+  lastEvent: null,
+  playersMap: new Map(),
+  dayPhaseStartTime: null,
   spectatorMode: 'god',
   playerViewState: null,
   playerViewId: null,
@@ -44,7 +58,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   view: 'lobby',
 
   connect() {
-    // Guard against double invocation (React StrictMode in dev)
     const existing = get().socket;
     if (existing) {
       existing.disconnect();
@@ -60,20 +73,38 @@ export const useGameStore = create<GameStore>((set, get) => ({
     socket.on('disconnect', () => set({ connected: false }));
 
     socket.on(SocketEvents.GAME_STATE, (state: GameState) => {
-      set({ gameState: state, events: state.events });
-      if (state.phase !== Phase.Lobby && state.phase !== Phase.GameOver) {
-        set({ view: 'game' });
+      // Don't overwrite events from GAME_STATE — GAME_EVENT handles incremental updates.
+      // Only seed events if our local array is empty (initial load / reconnect).
+      const s = get();
+      const updates: Partial<GameStore> = {
+        gameState: state,
+        playersMap: buildPlayersMap(state.players),
+      };
+      if (s.events.length === 0 && state.events.length > 0) {
+        updates.events = state.events;
+        updates.lastEvent = state.events[state.events.length - 1] ?? null;
       }
+      if (state.phase !== Phase.Lobby && state.phase !== Phase.GameOver) {
+        updates.view = 'game';
+      }
+      set(updates);
     });
 
     socket.on(SocketEvents.GAME_EVENT, (event: GameEvent) => {
       set((s) => {
-        // Deduplicate: skip if this event timestamp already exists
         if (s.events.some((e) => e.timestamp === event.timestamp && e.type === event.type)) {
           return s;
         }
         const next = [...s.events, event];
-        return { events: next.length > 200 ? next.slice(-200) : next };
+        const updates: Partial<GameStore> = {
+          events: next.length > 200 ? next.slice(-200) : next,
+          lastEvent: event,
+        };
+        // Track day phase start time
+        if (event.type === GameEventType.PhaseChanged && event.data.phase === Phase.Day) {
+          updates.dayPhaseStartTime = event.timestamp;
+        }
+        return updates;
       });
     });
 
@@ -97,7 +128,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
   startGame() {
     get().socket?.emit(SocketEvents.START_GAME);
-    set({ view: 'game', events: [] });
+    set({ view: 'game', events: [], lastEvent: null, dayPhaseStartTime: null });
   },
   pauseGame() {
     get().socket?.emit(SocketEvents.PAUSE_GAME);
@@ -119,7 +150,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!playerId) {
       socket?.emit(SocketEvents.SET_PLAYER_VIEW, null);
       set({ spectatorMode: 'god', playerViewId: null, playerViewState: null });
-      // Re-sync to god mode
       socket?.emit(SocketEvents.SET_SPECTATOR_MODE, 'god');
     } else {
       socket?.emit(SocketEvents.SET_PLAYER_VIEW, playerId);

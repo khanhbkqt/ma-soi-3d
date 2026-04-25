@@ -16,6 +16,7 @@ import {
   JudgementVote,
   DefenseMessage,
   CoupleState,
+  NarratorAnnouncementData,
 } from '@ma-soi/shared';
 
 export interface WolfDiscussMessage {
@@ -117,6 +118,15 @@ export class GameMaster extends EventEmitter {
     const event: GameEvent = { type, data, timestamp: Date.now(), isPublic };
     this.state.events.push(event);
     this.emit('gameEvent', event);
+  }
+
+  private narratorId = 0;
+  private emitNarrator(data: Omit<NarratorAnnouncementData, 'id'>) {
+    const id = `narrator_${++this.narratorId}_${Date.now()}`;
+    this.emitEvent(GameEventType.NarratorAnnouncement, { ...data, id }, true);
+  }
+  private emitNarratorDismiss() {
+    this.emitEvent(GameEventType.NarratorDismiss, {}, true);
   }
 
   private async thinkWrap<T>(playerIds: string[], fn: () => Promise<T>): Promise<T> {
@@ -297,6 +307,20 @@ export class GameMaster extends EventEmitter {
   async startGame() {
     this.state.phase = Phase.Day;
     this.state.round = 1;
+
+    const playerCount = this.state.players.length;
+    this.emitNarrator({
+      emoji: '🐺',
+      title: 'Trò Chơi Bắt Đầu',
+      lines: [
+        `${playerCount} người chơi quây quần bên bếp lửa...`,
+        'Trong số họ, có những con sói đội lốt cừu.',
+        'Ai sẽ sống? Ai sẽ chết? Cuộc chơi bắt đầu!',
+      ],
+      gradient: ['#1a0a2a', '#3a1a5a'],
+      duration: 6000,
+    });
+
     this.emitEvent(
       GameEventType.GameStarted,
       { players: this.state.players.map((p) => ({ id: p.id, name: p.name })) },
@@ -344,6 +368,15 @@ export class GameMaster extends EventEmitter {
     const cupid = this.state.players.find((p) => p.role === Role.Cupid && p.alive);
     if (!cupid) return;
 
+    this.emitNarrator({
+      emoji: '💘',
+      title: 'Thần Tình Yêu',
+      lines: ['Thần Tình Yêu thức dậy!', 'Hãy chọn hai người để ghép đôi...'],
+      gradient: ['#2a0a2a', '#5a1a4a'],
+      duration: 4500,
+      small: true,
+    });
+
     const [name1, name2] = await this.thinkWrap([cupid.id], () =>
       this.resolver.cupidPair(cupid, this.state),
     );
@@ -357,6 +390,7 @@ export class GameMaster extends EventEmitter {
         false,
       );
     }
+    this.emitNarratorDismiss();
   }
 
   // ── NIGHT PHASE ──
@@ -369,7 +403,17 @@ export class GameMaster extends EventEmitter {
       { phase: Phase.Night, round: this.state.round },
       true,
     );
+
+    this.emitNarrator({
+      emoji: '🌙',
+      title: 'Đêm Buông',
+      lines: ['Trời tối rồi, mọi người nhắm mắt lại.', 'Đêm nay, ai sẽ bị lấy đi mạng sống?'],
+      gradient: ['#0a0a2a', '#1a2a4a'],
+      duration: 4500,
+    });
+
     await this.delay(this.state.config.phaseDelay);
+    this.emitNarratorDismiss();
 
     const wolfTargets: Player[] = [];
     let guardedId: string | null = null;
@@ -377,6 +421,15 @@ export class GameMaster extends EventEmitter {
     // ── 1. Guard protects (runs first) ──
     const guard = this.aliveWithRole(Role.Guard)[0];
     if (guard) {
+      this.emitNarrator({
+        emoji: '🛡️',
+        title: 'Bảo Vệ',
+        lines: ['Bảo vệ ơi, thức dậy đi!', 'Đêm nay bạn muốn bảo vệ ai?'],
+        gradient: ['#0a2a1a', '#1a4a3a'],
+        duration: 4000,
+        small: true,
+      });
+
       const targetName = await this.thinkWrap([guard.id], () =>
         this.resolver.guardProtect(guard, this.state, this.state.lastGuardedId),
       );
@@ -395,12 +448,25 @@ export class GameMaster extends EventEmitter {
           false,
         );
       }
+      this.emitNarratorDismiss();
       await this.delay(this.state.config.phaseDelay / 3);
     }
 
     // ── 2. Wolves discuss & attack ──
     const wolves = this.aliveWolves();
     const wolfDiscussion: WolfDiscussMessage[] = [];
+
+    if (wolves.length > 0) {
+      this.emitNarrator({
+        emoji: '🐺',
+        title: 'Sói Thức Dậy',
+        lines: ['Sói ơi, mở mắt ra!', 'Đêm nay các bạn muốn cắn ai?'],
+        gradient: ['#1a0a0a', '#3a1a2a'],
+        duration: 4000,
+        small: true,
+      });
+    }
+
     if (wolves.length > 1) {
       for (let round = 1; round <= 1; round++) {
         const order = [...wolves].sort(() => Math.random() - 0.5);
@@ -426,7 +492,6 @@ export class GameMaster extends EventEmitter {
       const alpha = wolves.find((w) => w.role === Role.AlphaWolf);
 
       if (this.state.wolfCubRevengeActive) {
-        // Wolf Cub revenge: kill 2 this night
         this.state.wolfCubRevengeActive = false;
         const [name1, name2] = await this.thinkWrap(
           wolves.map((w) => w.id),
@@ -456,14 +521,12 @@ export class GameMaster extends EventEmitter {
           false,
         );
       } else if (alpha && !this.state.alphaInfectUsed) {
-        // Alpha can choose to infect instead of kill
         const decision = await this.thinkWrap([alpha.id], () =>
           this.resolver.alphaInfect(alpha, this.state, wolfDiscussion),
         );
         const target = this.findByName(decision.target);
         if (target) {
           if (decision.infect && !isWolfRole(target.role)) {
-            // Infect: convert target to regular Werewolf
             this.state.alphaInfectUsed = true;
             this.state.nightActions.push({
               type: 'wolf_infect',
@@ -480,7 +543,6 @@ export class GameMaster extends EventEmitter {
               },
               false,
             );
-            // Role change happens at resolve
           } else {
             wolfTargets.push(target);
             this.state.nightActions.push({
@@ -496,7 +558,6 @@ export class GameMaster extends EventEmitter {
           }
         }
       } else {
-        // Normal wolf kill
         const targetName = await this.thinkWrap(
           wolves.map((w) => w.id),
           () => this.resolver.wolfKill(wolves, this.state, wolfDiscussion),
@@ -516,12 +577,22 @@ export class GameMaster extends EventEmitter {
           );
         }
       }
+      this.emitNarratorDismiss();
       await this.delay(this.state.config.phaseDelay / 3);
     }
 
     // ── 3. Witch acts (knows who was bitten) ──
     const witch = this.aliveWithRole(Role.Witch)[0];
     if (witch) {
+      this.emitNarrator({
+        emoji: '🧪',
+        title: 'Phù Thủy',
+        lines: ['Phù thủy ơi, thức dậy đi!', 'Bạn có muốn dùng thuốc không?'],
+        gradient: ['#1a0a2a', '#2a1a4a'],
+        duration: 4500,
+        small: true,
+      });
+
       const primaryKilledName = wolfTargets[0]?.name || null;
       const decision = await this.thinkWrap([witch.id], () =>
         this.resolver.witchAction(witch, this.state, primaryKilledName, this.state.witchPotions),
@@ -556,6 +627,7 @@ export class GameMaster extends EventEmitter {
           );
         }
       }
+      this.emitNarratorDismiss();
       await this.delay(this.state.config.phaseDelay / 3);
     }
 
@@ -570,6 +642,15 @@ export class GameMaster extends EventEmitter {
     }
 
     if (activeSeer) {
+      this.emitNarrator({
+        emoji: '🔮',
+        title: 'Tiên Tri',
+        lines: ['Tiên tri ơi, mở mắt ra!', 'Đêm nay bạn muốn soi ai?'],
+        gradient: ['#0a1a2a', '#1a2a5a'],
+        duration: 4500,
+        small: true,
+      });
+
       const targetName = await this.thinkWrap([activeSeer.id], () =>
         this.resolver.seerInvestigate(activeSeer, this.state),
       );
@@ -580,8 +661,6 @@ export class GameMaster extends EventEmitter {
           actorId: activeSeer.id,
           targetId: target.id,
         });
-        // Seer sees the role as it was BEFORE this night's infect resolves
-        // (per standard Werewolf rules, infect takes effect after dawn)
         const pendingInfect = this.state.nightActions.some(
           (a) => a.type === 'wolf_infect' && a.targetId === target.id,
         );
@@ -592,6 +671,7 @@ export class GameMaster extends EventEmitter {
           false,
         );
       }
+      this.emitNarratorDismiss();
       await this.delay(this.state.config.phaseDelay / 3);
     }
 
@@ -663,7 +743,21 @@ export class GameMaster extends EventEmitter {
       { phase: Phase.Dawn, round: this.state.round },
       true,
     );
+
+    this.emitNarrator({
+      emoji: '🌅',
+      title: 'Bình Minh',
+      lines: [
+        'Trời sáng rồi, mọi người mở mắt ra.',
+        'Dân làng sợ hãi nhìn quanh...',
+        'Đêm qua, ai đã không còn thức dậy?',
+      ],
+      gradient: ['#4a2a00', '#ff8c00'],
+      duration: 4500,
+    });
+
     await this.delay(this.state.config.phaseDelay);
+    this.emitNarratorDismiss();
 
     const deaths = this.state.pendingDeaths;
     this.emitEvent(
@@ -695,7 +789,25 @@ export class GameMaster extends EventEmitter {
     this.state.phase = Phase.Day;
     this.state.discussionMessages = [];
     this.emitEvent(GameEventType.PhaseChanged, { phase: Phase.Day, round: this.state.round }, true);
+
+    const aliveCount = this.alive().length;
+    const round = this.state.round;
+    this.emitNarrator({
+      emoji: '☀️',
+      title: 'Ban Ngày — Thảo Luận',
+      lines:
+        round <= 2
+          ? ['Mặt trời lên cao, dân làng quây quần bàn bạc.', 'Ai đáng ngờ? Ai đang nói dối?']
+          : [
+              `Vòng ${round} — Chỉ còn ${aliveCount} người sống sót.`,
+              'Mỗi lời nói giờ đều có thể là lời cuối cùng...',
+            ],
+      gradient: ['#2a3a5a', '#4488cc'],
+      duration: 5000,
+    });
+
     await this.delay(this.state.config.phaseDelay);
+    this.emitNarratorDismiss();
 
     const alivePlayers = this.alive();
     const timeLimitMs = this.state.config.discussionTimeLimitMs || 90_000;
@@ -789,7 +901,20 @@ export class GameMaster extends EventEmitter {
       { phase: Phase.Dusk, round: this.state.round },
       true,
     );
+
+    this.emitNarrator({
+      emoji: '🌇',
+      title: 'Hoàng Hôn — Bỏ Phiếu',
+      lines: [
+        'Mặt trời lặn dần, bóng tối phủ xuống ngôi làng.',
+        'Đã đến lúc chọn ra kẻ tình nghi.',
+      ],
+      gradient: ['#5a2a00', '#cc6600'],
+      duration: 4500,
+    });
+
     await this.delay(this.state.config.phaseDelay / 2);
+    this.emitNarratorDismiss();
 
     const alivePlayers = this.alive();
     const voteOrder = [...alivePlayers].sort(() => Math.random() - 0.5);
@@ -871,7 +996,20 @@ export class GameMaster extends EventEmitter {
       { phase: Phase.Judgement, round: this.state.round },
       true,
     );
+
+    this.emitNarrator({
+      emoji: '⚖️',
+      title: 'Phán Xét',
+      lines: [
+        'Bị cáo bước lên giàn, đối mặt với dân làng.',
+        'GIẾT hay THA — số phận nằm trong tay các bạn!',
+      ],
+      gradient: ['#3a0a0a', '#8a2222'],
+      duration: 5000,
+    });
+
     await this.delay(this.state.config.phaseDelay / 2);
+    this.emitNarratorDismiss();
 
     const accused = this.state.players.find((p) => p.id === this.state.accusedId);
     if (!accused || !accused.alive) {

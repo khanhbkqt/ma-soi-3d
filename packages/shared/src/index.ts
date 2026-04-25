@@ -270,6 +270,9 @@ export enum GameEventType {
   WolfDiscussMessage = 'WolfDiscussMessage',
   InfectResolved = 'InfectResolved',
   PlayerThinking = 'PlayerThinking',
+  // Narrator (server-driven announcements)
+  NarratorAnnouncement = 'NarratorAnnouncement',
+  NarratorDismiss = 'NarratorDismiss',
 }
 
 export interface GameEvent {
@@ -277,6 +280,16 @@ export interface GameEvent {
   data: any;
   timestamp: number;
   isPublic: boolean; // false = god-view only
+}
+
+export interface NarratorAnnouncementData {
+  id: string;
+  emoji: string;
+  title: string;
+  lines: string[];
+  gradient: [string, string];
+  duration: number;
+  small?: boolean;
 }
 
 // ── Game State ──

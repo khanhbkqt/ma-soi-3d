@@ -11,17 +11,20 @@ import DiscussionCountdown from './DiscussionCountdown';
 
 export default function HUD() {
   const [showRoster, setShowRoster] = useState(true);
-  const gameState = useGameStore((s) => s.gameState);
+  const phase = useGameStore((s) => s.gameState?.phase);
+  const round = useGameStore((s) => s.gameState?.round ?? 0);
+  const players = useGameStore((s) => s.gameState?.players);
   const spectatorMode = useGameStore((s) => s.spectatorMode);
   const playerViewState = useGameStore((s) => s.playerViewState);
-  if (!gameState) return null;
 
-  const phase = PHASE_INFO[gameState.phase] || PHASE_INFO[Phase.Lobby];
-  const alive = gameState.players.filter((p) => p.alive).length;
-  const wolves = gameState.players.filter((p) => p.alive && isWolfRole(p.role)).length;
-  const isDusk = gameState.phase === Phase.Dusk;
-  const isJudgement = gameState.phase === Phase.Judgement;
-  const isDay = gameState.phase === Phase.Day;
+  if (!phase || !players) return null;
+
+  const phaseInfo = PHASE_INFO[phase] || PHASE_INFO[Phase.Lobby];
+  const alive = players.filter((p) => p.alive).length;
+  const wolves = players.filter((p) => p.alive && isWolfRole(p.role)).length;
+  const isDusk = phase === Phase.Dusk;
+  const isJudgement = phase === Phase.Judgement;
+  const isDay = phase === Phase.Day;
   const isPlayerView = spectatorMode === 'player';
 
   return (
@@ -41,11 +44,11 @@ export default function HUD() {
         <div className="flex items-center gap-4">
           <span className="text-amber-400 font-bold text-sm">🐺 Ma Sói 3D</span>
           <span
-            className={`text-sm font-medium ${phase.color} ${isDusk ? 'voting-phase-pulse' : ''} ${isJudgement ? 'judgement-phase-pulse' : ''}`}
+            className={`text-sm font-medium ${phaseInfo.color} ${isDusk ? 'voting-phase-pulse' : ''} ${isJudgement ? 'judgement-phase-pulse' : ''}`}
           >
-            {phase.icon} {phase.label}
+            {phaseInfo.icon} {phaseInfo.label}
           </span>
-          <span className="text-gray-400 text-xs">Vòng {gameState.round}</span>
+          <span className="text-gray-400 text-xs">Vòng {round}</span>
           {isDay && <DiscussionCountdown />}
           {isPlayerView && playerViewState && (
             <span className="text-cyan-300 text-xs font-medium px-2 py-0.5 rounded bg-cyan-900/40 border border-cyan-700/30">
