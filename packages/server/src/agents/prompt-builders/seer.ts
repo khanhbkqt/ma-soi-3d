@@ -14,10 +14,11 @@ CHIẾN THUẬT & TÂM LÝ (KHÔNG CHƠI CỨNG NHẮC):
 
   discussionHint(_player: Player, state: GameState): string {
     if (state.round === 1) {
-      return `MÀY LÀ TIÊN TRI. Vòng đầu — GIẤU THÂN:
-- Đừng tỏ ra sắc bén quá sớm. Sói sẽ đánh hơi và cắn mày.
-- Nói chuyện như dân thường: hỏi hỏi, đùa đùa, react tự nhiên.
-- Nếu có kết quả soi đêm đầu → GIỮ KÍN, dùng nó để định hướng NHẸ NHÀNG (bênh người sạch, nghi người bẩn) nhưng đừng lộ.
+      return `MÀY LÀ TIÊN TRI. Vòng đầu — sau đêm soi đầu tiên:
+- Mày đã có kết quả soi đêm 1 (xem nhật ký). Đây là info CỰC KỲ GIÁ TRỊ.
+- GIẤU KÍN — dùng nó để định hướng NHẸ NHÀNG: bênh người sạch, hướng nghi ngờ vào người bẩn, nhưng đừng lộ.
+- React lại cái chết đêm qua một cách tự nhiên. Đừng tỏ ra biết quá nhiều.
+- Sói đang quan sát xem ai phân tích sắc bén → ĐỪNG để lộ mày là Tiên Tri.
 - Thỉnh thoảng giả vờ hơi "ngáo" để Sói nghĩ mày vô hại.`;
     }
     return `MÀY LÀ TIÊN TRI. Đã có kết quả soi đêm qua (xem nhật ký).
@@ -97,11 +98,11 @@ KHÔNG BAO GIỜ tự nhận là Tiên Tri chính hoặc bịa kết quả soi. 
   discussionHint(_player: Player, state: GameState): string {
     if (state.round === 1) {
       if (state.apprenticeSeerActivated) {
-        return `MÀY LÀ TIÊN TRI TẬP SỰ (đã kế thừa). Vòng đầu — giấu thân:
-Sói có thể không biết mày đã kế thừa. Đừng lộ. Nói như dân thường, hỏi han, react tự nhiên.`;
+        return `MÀY LÀ TIÊN TRI TẬP SỰ (đã kế thừa). Vòng đầu — sau đêm đầu tiên:
+Sói có thể không biết mày đã kế thừa. Đừng lộ. React lại sự kiện đêm qua như dân thường.`;
       }
-      return `MÀY LÀ TIÊN TRI TẬP SỰ. Vòng đầu — hòa lẫn vào đám đông:
-Chưa có skill, không cần gồng đài. Nói chuyện tự nhiên, đừng nổi bật, đừng im quá.`;
+      return `MÀY LÀ TIÊN TRI TẬP SỰ. Vòng đầu — sau đêm đầu tiên:
+Chưa có skill, không cần gồng đài. Nói chuyện tự nhiên, react lại sự kiện đêm qua, đừng nổi bật, đừng im quá.`;
     }
     if (state.apprenticeSeerActivated) {
       return `MÀY LÀ TIÊN TRI TẬP SỰ (đã kế thừa). Có info từ đêm qua.

@@ -318,22 +318,26 @@ ${this.roleIdentity(player, state)}`,
     const hasDeath = state.players.some((p) => !p.alive);
 
     if (isOpener) {
-      // First speaker of first round — ice breaker
-      return `\nVÒNG ĐẦU — MỞ MÀN:\nĐây là đầu game, chưa ai nói gì. Mày là người mở lời.\nĐỪNG vội tố ai — chưa có gì để tố. Hãy MỞ MÀN TỰ NHIÊN theo tính cách:\nGợi ý (CHỌN 1, đừng làm hết):\n- Chào theo kiểu riêng → "Ê tụi bây, đêm qua ngủ ngon hông?" / "Hmm... vậy là bắt đầu rồi"\n- Nhận xét bầu không khí → "Sao tao thấy mấy đứa mặt cú vậy?" / "Im lặng gì dữ vậy ta?"\n- Chia sẻ cảm giác → "Tao có linh cảm game này hấp dẫn lắm" / "${hasDeath ? 'Vừa có đứa chết mà sao tụi mày bình tĩnh quá' : 'Mới bắt đầu, chưa ai chết, vui quá'}"\n- Hỏi câu hỏi mở → "Ai có gì muốn nói trước không?" / "Có ai thấy gì lạ đêm qua không?"\nNÓI 1 CÂU NGẮN thôi, tự nhiên. Đừng phân tích, đừng tố, đừng dài dòng.\nNGOẠI LỆ VÒNG 1: Được phép nói cảm tính, nhận xét chung, đùa giỡn. Đây là phá băng, không phải lúc phân tích.`;
+      // First speaker of first round — after the first night, deaths may have happened
+      if (hasDeath) {
+        return `\nVÒNG ĐẦU — SAU ĐÊM ĐẦU TIÊN:\nĐêm qua đã có người chết! Mày là người mở lời.\nĐây là buổi sáng đầu tiên — dân làng vừa thức dậy và phát hiện có đứa không còn nữa.\nGợi ý (CHỌN 1, đừng làm hết):\n- Bàng hoàng / giận dữ → "Đ*t mẹ, mới đêm đầu mà đã có đứa chết rồi!" / "Ai vừa bị cắn vậy?!"\n- Nghi ngờ ngay → "Sao tao thấy mấy đứa bình tĩnh quá vậy? Mới chết người mà!"\n- Hỏi mở → "Có ai thấy gì lạ đêm qua không?" / "Ai có manh mối gì chưa?"\n- Nhận xét → "Vậy là sói đã ra tay rồi... giờ tìm nó thôi"\nNÓI 1-2 CÂU NGẮN, tự nhiên, react lại cái chết đêm qua. Có thể bắt đầu nghi ngờ nhẹ.`;
+      }
+      return `\nVÒNG ĐẦU — SAU ĐÊM ĐẦU TIÊN:\nĐêm qua không ai chết! Mày là người mở lời.\nBảo Vệ hoặc Phù Thủy đã cứu được → ai đó đang làm tốt.\nGợi ý (CHỌN 1, đừng làm hết):\n- Nhận xét → "Ê, không ai chết đêm qua hả? Ai đó đỡ giỏi ghê" / "Hmm đêm yên bình, thú vị"\n- Hỏi mở → "Có ai muốn nói gì không?" / "Sói cắn ai mà bị đỡ vậy ta?"\n- Đùa → "Bình minh đẹp thật, mới đêm đầu mà drama chưa kịp bắt đầu"\nNÓI 1 CÂU NGẮN thôi, tự nhiên. Đây là phá băng, nhưng đã có info từ đêm qua.`;
     }
 
     if (round === 1) {
-      return `\nVÒNG ĐẦU — WARM UP:\nMới mở màn thôi, chưa có info nhiều. Đừng ép phải tố hay phân tích sâu.\n- React lại lời người vừa nói — đồng tình, cười, chọc lại, hỏi thêm\n- Có thể chia sẻ cảm giác mơ hồ: "Tao thấy ở đây có đứa giả trân lắm" hoặc "Hmm ai cũng hiền quá, nghi"\n- Nếu thật sự thấy gì lạ → nhận xét nhẹ. Nhưng KHÔNG CẦN PHẢI TỐ AI.\nNói tự nhiên, như đang tán gẫu ban đầu.\nNGOẠI LỆ VÒNG 1: Được phép nói cảm tính, nhận xét chung. Không cần bằng chứng cụ thể.`;
+      if (hasDeath) {
+        return `\nVÒNG ĐẦU — PHẢN ỨNG SAU ĐÊM ĐẦU:\nĐêm qua có người chết — đây là manh mối đầu tiên.\n- React lại cái chết: tại sao sói chọn người đó? Ai hưởng lợi?\n- React lại lời người vừa nói — đồng tình, phản bác, chọc lại\n- Có thể bắt đầu nghi ngờ nhẹ dựa trên phản ứng mọi người\n- Chưa cần tố gắt — nhưng ĐÃ CÓ INFO để suy luận, đừng giả vờ không biết gì.\nNói tự nhiên, bắt đầu dò xét nhau.`;
+      }
+      return `\nVÒNG ĐẦU — WARM UP:\nĐêm qua không ai chết — Bảo Vệ/Phù Thủy đã ra tay.\n- React lại lời người vừa nói — đồng tình, cười, chọc lại, hỏi thêm\n- Có thể chia sẻ cảm giác mơ hồ: "Tao thấy ở đây có đứa giả trân lắm" hoặc "Hmm ai cũng hiền quá, nghi"\n- Nếu thật sự thấy gì lạ → nhận xét nhẹ.\nNói tự nhiên. Đã có info từ đêm qua nhưng chưa nhiều.`;
     }
 
     // Round 2+ in first game round
-    return `\nVÒNG ĐẦU — BẮT ĐẦU PHÂN TÍCH:\nMọi người đã nói qua rồi. Bây giờ có thể bắt đầu nhận xét:\n- Ai nói đáng ngờ? Ai im quá? Ai cố tỏ ra vô hại?\n- React lại những gì mọi người đã nói — đồng ý, phản bác, hỏi dồn.\n- Vẫn chưa có NHIỀU info nên đừng chắc nịch. Nói kiểu "tao thấy hơi lạ" thay vì "nó chắc chắn là sói".`;
+    return `\nVÒNG ĐẦU — BẮT ĐẦU PHÂN TÍCH:\nMọi người đã nói qua rồi. Bây giờ có thể bắt đầu nhận xét:\n- Ai nói đáng ngờ? Ai im quá? Ai cố tỏ ra vô hại?\n- Ai react lạ với cái chết đêm qua? Ai bình tĩnh quá mức?\n- React lại những gì mọi người đã nói — đồng ý, phản bác, hỏi dồn.\n- Dùng info từ đêm qua (ai chết, ai sống) để suy luận. Nhưng đừng chắc nịch quá.`;
   }
 
   /** Build structured death analysis block for discussion prompts */
   protected buildDeathAnalysis(state: GameState): string {
-    if (state.round <= 1) return '';
-
     const causeVi: Record<string, string> = {
       wolf_kill: 'bị sói cắn',
       witch_kill: 'bị Phù Thủy đầu độc',
@@ -423,7 +427,8 @@ Suy luận: Sói thường cắn người đang tố đúng chúng, hoặc role 
     const hasSpoken = messages.some((m) => m.playerId === player.id);
     const r1Hint = isFirstRound ? this.firstRoundHint(player, state, messages, round) : '';
     // Structured death analysis — fires for all rounds when there are deaths (not just round 1)
-    const deathHint = hasDeath && !isFirstRound ? this.buildDeathAnalysis(state) : '';
+    // Death analysis — fires for ALL rounds including round 1 (game starts at night, so round 1 already has deaths)
+    const deathHint = hasDeath ? this.buildDeathAnalysis(state) : '';
     const midHint =
       !lastRound && round > 1 && !isFirstRound
         ? '\nGIỮA GAME: React lại lời người khác — đồng ý, phản bác, hoặc hỏi dồn. Chỉ ra mâu thuẫn nếu thấy. Đừng lặp lại ý cũ.'
@@ -432,8 +437,8 @@ Suy luận: Sói thường cắn người đang tố đúng chúng, hoặc role 
       ? '\nLƯỢT CUỐI: Kết luận dứt khoát. Chỉ đích danh 1 người đáng nghi nhất + lý do cụ thể. Kêu gọi mọi người vote cùng nếu tự tin.'
       : '';
     const speakInstruction =
-      isFirstRound && round <= 1
-        ? 'NÓI 1-2 CÂU, thoải mái tự nhiên. Vòng đầu không cần phải tố ai.'
+      isFirstRound && round <= 1 && !hasDeath
+        ? 'NÓI 1-2 CÂU, thoải mái tự nhiên. Chưa ai chết, có thể warm up nhẹ.'
         : 'NÓI 1-2 CÂU NGẮN, tự nhiên. PHẢI react lại lời người khác nếu có. KHÔNG nói chung chung.';
     const skipRule = hasSpoken
       ? 'Nếu không có gì mới → wantToSpeak: false.'

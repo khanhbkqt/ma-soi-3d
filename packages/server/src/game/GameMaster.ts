@@ -305,7 +305,7 @@ export class GameMaster extends EventEmitter {
   }
 
   async startGame() {
-    this.state.phase = Phase.Day;
+    this.state.phase = Phase.Night;
     this.state.round = 1;
 
     const playerCount = this.state.players.length;
@@ -315,9 +315,9 @@ export class GameMaster extends EventEmitter {
       lines: [
         `${playerCount} người chơi quây quần bên bếp lửa...`,
         'Trong số họ, có những con sói đội lốt cừu.',
-        'Ai sẽ sống? Ai sẽ chết? Cuộc chơi bắt đầu!',
+        'Màn đêm buông xuống... Cuộc chơi bắt đầu!',
       ],
-      gradient: ['#1a0a2a', '#3a1a5a'],
+      gradient: ['#0a0a2a', '#1a2a4a'],
       duration: 6000,
     });
 
@@ -336,10 +336,17 @@ export class GameMaster extends EventEmitter {
       );
     }
 
-    // Cupid pairs on the first day (before the loop starts)
+    // Cupid pairs on the first night (before wolves act)
     await this.cupidPhase();
 
     while (!this.state.winner) {
+      // Night -> Dawn (standard Ma Sói: game starts at night)
+      await this.nightPhase();
+      if (this.state.winner) break;
+
+      await this.dawnPhase();
+      if (this.state.winner) break;
+
       // Day -> Dusk -> Judgement
       await this.dayPhase();
       if (this.state.winner) break;
@@ -351,13 +358,6 @@ export class GameMaster extends EventEmitter {
         await this.judgementPhase();
         if (this.state.winner) break;
       }
-
-      // Night -> Dawn
-      await this.nightPhase();
-      if (this.state.winner) break;
-
-      await this.dawnPhase();
-      if (this.state.winner) break;
 
       this.state.round++;
     }

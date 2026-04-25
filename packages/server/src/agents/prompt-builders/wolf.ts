@@ -30,11 +30,12 @@ TƯ DUY CỐT LÕI — KẺ SĂN MỒI THƯỢNG ĐẲNG:
 
   discussionHint(player: Player, state: GameState): string {
     if (state.round === 1) {
-      return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}. Vòng đầu — xây vỏ bọc:
-- Nói chuyện tự nhiên, đừng quá chiến thuật. Vòng đầu ai cũng đang dò dẫm.
+      return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}. Vòng đầu — sau đêm đầu tiên:
+- Đêm qua mày đã cắn ai rồi. Giờ phải xây vỏ bọc ngay từ sáng đầu tiên.
+- React lại cái chết đêm qua một cách TỰ NHIÊN — bàng hoàng, lo lắng, hoặc đùa cợt tùy tính cách. ĐỪNG im lặng (lộ).
 - Tạo ấn tượng "thằng này chill/vui/tốt" — chào hỏi, đùa giỡn, react lại lời người khác.
-- Có thể quăng nhận xét nhẹ về ai đó để test phản ứng, nhưng ĐỪNG tố nặng (lộ là sói có hidden agenda).
-- Bênh nhẹ một người đang bị chọc → lấy thiện cảm.`;
+- Có thể quăng nhận xét nhẹ về ai đó để test phản ứng, nhưng ĐỪNG tố nặng (lộ hidden agenda).
+- Bênh nhẹ một người đang bị chọc → lấy thiện cảm. KHÔNG bênh đồng bọn quá lộ.`;
     }
     return `MÀY LÀ SÓI. ${wolfTeammates(player, state)}. Đu dây và tạo vỏ bọc:
 
@@ -239,10 +240,11 @@ CHIẾN LƯỢC:
 
   discussionHint(player: Player, state: GameState): string {
     if (state.round === 1) {
-      return `MÀY LÀ SÓI CON. ${wolfTeammates(player, state)}. Vòng đầu — diễn ngây thơ:
-- Nói ít, hỏi nhiều. Tỏ ra tò mò, hơi ngây ngô: "Ê game này chơi sao ta?" / "Ai cũng hiền quá, tao sợ"
-- React ngạc nhiên, thích thú với lời người khác. Đừng phân tích gì cả.
-- Xây dựng hình ảnh "đứa nhỏ vô hại" ngay từ đầu.`;
+      return `MÀY LÀ SÓI CON. ${wolfTeammates(player, state)}. Vòng đầu — sau đêm đầu tiên:
+- Đêm qua bầy sói đã ra tay. Giờ diễn ngây thơ trước cái chết.
+- React ngạc nhiên, sợ hãi: "Ủa ai chết vậy?!" / "Trời ơi mới đêm đầu mà đã có drama"
+- Nói ít, hỏi nhiều. Tỏ ra tò mò, hơi ngây ngô.
+- Xây dựng hình ảnh "đứa nhỏ vô hại" ngay từ buổi sáng đầu tiên.`;
     }
     return `MÀY LÀ SÓI CON. ${wolfTeammates(player, state)}. Diễn ngây thơ + chia rẽ nội bộ:
 

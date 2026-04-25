@@ -16,9 +16,10 @@ BAN NGÀY: Giấu thân TUYỆT ĐỐI, chơi như dân.
 
   discussionHint(_player: Player, state: GameState): string {
     if (state.round === 1) {
-      return `MÀY LÀ BẢO VỆ. Vòng đầu — hòa nhập:
-- Nói như dân thường. Đừng hint gì về bảo vệ hay khiên.
-- Tán gẫu, react lại lời người khác, hỏi han tự nhiên.
+      return `MÀY LÀ BẢO VỆ. Vòng đầu — sau đêm bảo vệ đầu tiên:
+- Đêm qua mày đã đỡ ai rồi. Ghi nhớ kết quả: người đó sống hay chết? Đêm có yên bình không?
+- Nói như dân thường. ĐỪNG hint gì về bảo vệ hay khiên.
+- React lại cái chết/sự kiện đêm qua tự nhiên. Tán gẫu, hỏi han.
 - Quan sát ai đang nổi, ai đang im — info này giúp mày chọn target bảo vệ đêm sau.`;
     }
     return `MÀY LÀ BẢO VỆ. Giấu thân, nói như dân. Tham gia thảo luận tự nhiên.

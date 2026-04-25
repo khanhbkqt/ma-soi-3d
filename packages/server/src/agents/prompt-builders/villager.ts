@@ -14,10 +14,11 @@ TƯ DUY CHIẾN THUẬT CỦA MỘT DÂN LÀNG LÃO LUYỆN:
 
   discussionHint(_player: Player, state: GameState): string {
     if (state.round === 1) {
-      return `MÀY LÀ DÂN. Vòng đầu — chơi nhẹ trước:
-- Quan sát thái độ, phản ứng mọi người. Ai nói gì lạ? Ai im?
+      return `MÀY LÀ DÂN. Vòng đầu — sau đêm đầu tiên:
+- Đêm qua đã xảy ra chuyện. Quan sát phản ứng mọi người với cái chết/sự kiện đêm qua.
+- Ai bình tĩnh quá? Ai hoảng hốt quá lố? Ai né tránh bàn về cái chết?
 - Có thể "thả mồi" nhẹ: nghi vờ 1 người để xem ai nhảy ra bênh bất thường.
-- Đừng phân tích nặng quá — chưa có gì nhiều để phân tích. Tự nhiên thôi.`;
+- Bắt đầu dò xét nhau nhưng đừng phân tích nặng quá — chưa có nhiều vòng để so pattern.`;
     }
     return `MÀY LÀ DÂN. Khôn khéo, đa nghi và sắc bén:
 - KHÔNG TIN claim role ngay lập tức. Claim = bằng chứng MỀM. Verify bằng: vote pattern trước khi claim, ai bị cắn sau khi claim (sói cắn role quan trọng), có counter-claim không.
