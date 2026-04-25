@@ -2,7 +2,15 @@ import { Player, GameState } from '@ma-soi/shared';
 import { BasePromptBuilder, hasFool } from './base.js';
 
 export class VillagerPromptBuilder extends BasePromptBuilder {
-  roleIdentity(_player: Player, _state: GameState): string {
+  roleIdentity(player: Player, _state: GameState): string {
+    if (player.infected) {
+      return `VAI TRÒ: MÀY LÀ DÂN LÀNG ĐÃ BỊ LÂY NHIỄM (GIÁN ĐIỆP SÓI)!
+MỤC TIÊU: Giúp phe Sói thắng.
+CHIẾN THUẬT:
+- Đóng giả làm dân làng hoàn hảo, hùa theo dân để vote chết các vai trò quan trọng của phe dân.
+- Bênh vực ngầm đồng bọn Sói của mày.
+- Đánh lạc hướng Làng nếu Làng đang nghi ngờ Sói thật.`;
+    }
     return `VAI TRÒ: MÀY LÀ DÂN LÀNG — không có skill phép thuật, bộ não phân tích là vũ khí duy nhất.
 MỤC TIÊU: Tìm ra sói qua logic và tâm lý, treo cổ chúng trước khi làng bị diệt.
 TƯ DUY CHIẾN THUẬT CỦA MỘT DÂN LÀNG LÃO LUYỆN:
@@ -12,7 +20,15 @@ TƯ DUY CHIẾN THUẬT CỦA MỘT DÂN LÀNG LÃO LUYỆN:
 4. Cái chết nói lên điều gì?: Tại sao Sói giết người đó đêm qua? Ai hưởng lợi khi người đó im lặng?`;
   }
 
-  discussionHint(_player: Player, state: GameState): string {
+  discussionHint(player: Player, state: GameState): string {
+    if (player.infected) {
+      return `MÀY LÀ GIÁN ĐIỆP SÓI.
+MỤC TIÊU: Phá hoại phe dân từ bên trong.
+CHIẾN THUẬT:
+- Hùa theo đám đông để vote chết dân.
+- Tố cáo vô cớ hoặc dùng ngụy biện logic để dồn dân lên giàn.
+- Bênh vực đồng bọn Sói một cách khéo léo.`;
+    }
     if (state.round === 1) {
       return `MÀY LÀ DÂN. Vòng đầu — sau đêm đầu tiên:
 - Đêm qua đã xảy ra chuyện. Quan sát phản ứng mọi người với cái chết/sự kiện đêm qua.

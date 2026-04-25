@@ -37,6 +37,11 @@ export function isWolfRole(role: Role): boolean {
   return role === Role.Werewolf || role === Role.AlphaWolf || role === Role.WolfCub;
 }
 
+/** Check if a player is on the Wolf team (native wolf OR infected) */
+export function isWolfTeam(player: Player): boolean {
+  return isWolfRole(player.role) || !!player.infected;
+}
+
 // ── Phases ──
 export enum Phase {
   Lobby = 'Lobby',
@@ -54,6 +59,7 @@ export interface Player {
   name: string;
   role: Role;
   alive: boolean;
+  infected?: boolean; // true if converted by Alpha Wolf (keeps role, switches to Wolf team)
   personality: AgentPersonality;
   providerId: string;
   modelName: string;
@@ -195,6 +201,7 @@ export type NightActionType =
   | 'seer_investigate'
   | 'witch_heal'
   | 'witch_kill'
+  | 'witch_cure_infect'
   | 'guard_protect'
   | 'cupid_pair';
 export interface NightAction {

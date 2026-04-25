@@ -2,7 +2,15 @@ import { Player, GameState } from '@ma-soi/shared';
 import { BasePromptBuilder, taskContext } from './base.js';
 
 export class CupidPromptBuilder extends BasePromptBuilder {
-  roleIdentity(_player: Player, state: GameState): string {
+  roleIdentity(player: Player, state: GameState): string {
+    if (player.infected) {
+      return `VAI TRÒ: MÀY LÀ THẦN TÌNH YÊU ĐÃ BỊ LÂY NHIỄM (GIÁN ĐIỆP SÓI)!
+MỤC TIÊU: Giúp phe Sói thắng.
+CHIẾN THUẬT:
+- Mày đã ghép đôi xong từ đêm đầu tiên nên giờ chỉ chơi như một dân thường phe Sói.
+- Hãy dùng thông tin về cặp đôi (nếu mày biết cặp đôi đó là phe nào) để tạo lợi thế cho Sói.
+- Đóng giả dân, dẫn dắt vote sai, bảo vệ đồng bọn Sói.`;
+    }
     const paired = state.couple ? 'Đã ghép đôi xong.' : 'Chưa ghép đôi (ghép đêm đầu tiên).';
     return `VAI TRÒ: MÀY LÀ THẦN TÌNH YÊU — ghép đôi 2 người (đêm đầu), 1 chết thì kia chết theo.
 ${paired}
@@ -13,7 +21,12 @@ Nếu mày cứ lẽo đẽo bảo vệ họ, Sói sẽ nhận ra ngay mày là 
 Thậm chí hãy chủ động "chửi nhẹ" hoặc nghi ngờ giả vờ 1 trong 2 người để tạo chứng cứ ngoại phạm (Distancing). Mày phải coi họ như người xa lạ.`;
   }
 
-  discussionHint(_player: Player, state: GameState): string {
+  discussionHint(player: Player, state: GameState): string {
+    if (player.infected) {
+      return `MÀY LÀ GIÁN ĐIỆP SÓI.
+MỤC TIÊU: Phá hoại phe dân từ bên trong.
+CHIẾN THUẬT: Đóng giả dân, hùa theo Sói vote chết dân.`;
+    }
     if (state.round === 1) {
       if (state.couple) {
         const names = [

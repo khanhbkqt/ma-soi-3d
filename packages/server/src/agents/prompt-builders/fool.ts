@@ -2,7 +2,15 @@ import { Player, GameState } from '@ma-soi/shared';
 import { BasePromptBuilder } from './base.js';
 
 export class FoolPromptBuilder extends BasePromptBuilder {
-  roleIdentity(_player: Player, _state: GameState): string {
+  roleIdentity(player: Player, _state: GameState): string {
+    if (player.infected) {
+      return `VAI TRÒ: MÀY LÀ KẺ NGỐC ĐÃ BỊ LÂY NHIỄM (GIÁN ĐIỆP SÓI)!
+MỤC TIÊU: MÀY ĐÃ BỊ LÂY NHIỄM NÊN SẼ KHÔNG CÒN THẮNG NẾU BỊ TREO CỔ NỮA. Giờ mày thuộc PHE SÓI, chỉ thắng khi Sói thắng!
+CHIẾN THUẬT:
+- Dừng ngay việc cố gắng bị treo cổ!
+- Đóng giả một dân làng bình thường, giúp Sói vote treo cổ dân.
+- Nếu bị đưa lên giàn, hãy biện hộ cẩn thận để sống sót, hoặc nếu chắc chắn chết, cố gắng bôi nhọ một dân làng khác.`;
+    }
     return `VAI TRÒ: MÀY LÀ KẺ NGỐC — mày THẮNG ngay lập tức khi bị dân vote treo cổ. Bị sói cắn = chết bình thường, không thắng.
 MỤC TIÊU: Khiến dân nghĩ mày là SÓI → vote treo cổ mày → mày thắng.
 THẾ KHÓ: Ai cố tình diễn "đáng ngờ" (nói ngắc ngứ, vote ngược bầy) sẽ bị Làng nhận ra ngay là Kẻ Ngốc và BƠ ĐI.
@@ -13,7 +21,11 @@ TƯ DUY ĐỈNH CAO — TINH TẾ, KHÔNG LỘ LIỄU:
 - Tuyệt đối KHÔNG tự nhận là Kẻ Ngốc và KHÔNG lấp liếm vụng về.`;
   }
 
-  discussionHint(_player: Player, state: GameState): string {
+  discussionHint(player: Player, state: GameState): string {
+    if (player.infected) {
+      return `MÀY LÀ KẺ NGỐC ĐÃ BỊ LÂY NHIỄM (GIÁN ĐIỆP SÓI).
+Chiến thuật: Bỏ ngay mục tiêu bị treo cổ. Đóng giả Dân làng để giúp Sói thắng.`;
+    }
     if (state.round === 1) {
       return `MÀY LÀ KẺ NGỐC. Vòng đầu — sau đêm đầu tiên:
 - Đêm qua đã có chuyện xảy ra. Chơi bình thường trước, react lại sự kiện đêm qua.
@@ -25,16 +37,19 @@ TƯ DUY ĐỈNH CAO — TINH TẾ, KHÔNG LỘ LIỄU:
 TƯ DUY TINH TẾ: Tạo nghi ngờ VỪA ĐỦ — nói mâu thuẫn nhẹ, bênh sai người, vote lệch có chủ đích. Đừng fake claim quá lộ liễu khiến dân nhận ra mày là Ngốc và bơ đi. Chơi như Sói đang cố giấu chứ không phải Ngốc đang cố chết.`;
   }
 
-  voteHint(_player: Player, _state: GameState): string {
+  voteHint(player: Player, _state: GameState): string {
+    if (player.infected) return `Vote nhắm vào các vai trò quan trọng của phe Dân. Hỗ trợ Sói.`;
     return `MÀY LÀ KẺ NGỐC. Đừng vote lạ một cách vô lý. Hãy vote hùa theo những mũi tấn công sai lầm, hoặc kiên quyết vote một người vô tội đến cùng để chứng tỏ mày là Sói đang khát máu.`;
   }
 
-  defenseHint(_player: Player, _state: GameState): string {
+  defenseHint(player: Player, _state: GameState): string {
+    if (player.infected) return super.defenseHint(player, _state);
     return `MÀY LÀ KẺ NGỐC đang bị đưa lên giàn — CƠ HỘI THẮNG!
 Biện hộ yếu nhưng tự nhiên — đừng thuyết phục quá, nhưng cũng đừng nói "giết tao đi". Mục tiêu: dân vote GIẾT.`;
   }
 
-  judgementHint(_player: Player, _state: GameState): string {
+  judgementHint(player: Player, _state: GameState): string {
+    if (player.infected) return super.judgementHint(player, _state);
     return `MÀY LÀ KẺ NGỐC. Người khác bị xử → vote THA (để mày vẫn là target sau). Đưa lý do tha hợp lý.`;
   }
 }

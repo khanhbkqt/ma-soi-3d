@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getRoleDistribution, isWolfRole, Role } from '@ma-soi/shared';
+import { getRoleDistribution, isWolfRole, isWolfTeam, Role } from '@ma-soi/shared';
 
 const wolfRoles = [Role.Werewolf, Role.AlphaWolf, Role.WolfCub];
 
@@ -55,5 +55,38 @@ describe('isWolfRole', () => {
     for (const r of villageRoles) {
       expect(isWolfRole(r)).toBe(false);
     }
+  });
+});
+
+describe('isWolfTeam', () => {
+  const makePlayer = (role: Role, infected = false) => ({
+    id: 'x',
+    name: 'X',
+    role,
+    alive: true,
+    infected,
+    personality: {} as any,
+    providerId: '',
+    modelName: '',
+  });
+
+  it('native wolf roles are on wolf team', () => {
+    expect(isWolfTeam(makePlayer(Role.Werewolf))).toBe(true);
+    expect(isWolfTeam(makePlayer(Role.AlphaWolf))).toBe(true);
+    expect(isWolfTeam(makePlayer(Role.WolfCub))).toBe(true);
+  });
+
+  it('infected villager is on wolf team even with village role', () => {
+    expect(isWolfTeam(makePlayer(Role.Seer, true))).toBe(true);
+    expect(isWolfTeam(makePlayer(Role.Hunter, true))).toBe(true);
+    expect(isWolfTeam(makePlayer(Role.Villager, true))).toBe(true);
+    expect(isWolfTeam(makePlayer(Role.Guard, true))).toBe(true);
+    expect(isWolfTeam(makePlayer(Role.Witch, true))).toBe(true);
+  });
+
+  it('non-infected villagers are NOT on wolf team', () => {
+    expect(isWolfTeam(makePlayer(Role.Seer))).toBe(false);
+    expect(isWolfTeam(makePlayer(Role.Villager))).toBe(false);
+    expect(isWolfTeam(makePlayer(Role.Witch))).toBe(false);
   });
 });

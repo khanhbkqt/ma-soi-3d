@@ -188,19 +188,27 @@ JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target1":"T
 
 export class AlphaWolfPromptBuilder extends WolfPromptBuilder {
   roleIdentity(player: Player, state: GameState): string {
-    const infectStatus = state.alphaInfectUsed ? 'ĐÃ DÙNG' : 'CÒN (1 lần duy nhất)';
+    const infectStatus = state.alphaInfectUsed
+      ? 'ĐÃ DÙNG'
+      : state.round <= 1
+        ? 'CÒN (dùng được từ đêm 2)'
+        : 'CÒN (1 lần duy nhất)';
     return `VAI TRÒ: MÀY LÀ SÓI ĐẦU ĐÀN — thủ lĩnh bầy sói, bậc thầy thao túng.
-Khả năng đặc biệt: LÂY NHIỄM — biến 1 người thành sói thay vì giết (${infectStatus}).
+Khả năng đặc biệt: LÂY NHIỄM — biến 1 người thành GIÁN ĐIỆP SÓI (giữ nguyên role + kỹ năng nhưng đổi phe sang Sói). Dùng ${infectStatus}.
+⚠ Bảo Vệ có thể chặn lây nhiễm! Phù Thủy có thể tự chữa lây nhiễm nếu dùng thuốc cứu.
 ${wolfTeammates(player, state)}
 TƯ DUY THỦ LĨNH:
 - Dẫn dắt vote TINH TẾ — gợi ý thay vì ra lệnh. Dùng chiến thuật "Bắn tỉa" và "Đu dây".
-- Bênh vực kẻ yếu để lấy lòng tin. Lấy lòng tin rồi thì biến nó thành sói.
+- Bênh vực kẻ yếu để lấy lòng tin. Lấy lòng tin rồi thì biến nó thành gián điệp.
 - Gieo rắc nghi ngờ vào những kẻ có tiếng nói, chia rẽ nội bộ dân làng.
 - SẴN SÀNG BUS ĐỒNG ĐỘI: Đồng đội bị lộ → vote giết luôn, lấy uy tín "Dân xịn". Thủ lĩnh phải sống tới cuối.
-CHIẾN LƯỢC LÂY NHIỄM:
-- Lây nhiễm role mạnh: Bảo Vệ (chặn protect), Thợ Săn (thêm quân + vô hiệu bắn).
+CHIẾN LƯỢC LÂY NHIỄM (GIÁN ĐIỆP):
+- TIÊN TRI → gián điệp ĐỈNH NHẤT: soi ra sói → bao che, soi ra dân → vu khống. Come out giả + báo kết quả ngược → phá nát Làng.
+- BẢO VỆ → khiên cho sói: đỡ đồng đội sói thay vì dân quan trọng.
+- PHÙ THỦY → rủi ro cao: nó có thể TỰ CHỮA bằng thuốc cứu. Nhưng nếu hết thuốc cứu → gián điệp độc quyền, cực mạnh.
+- THỢ SĂN → thêm quân + khi chết bắn được dân.
 - Lây nhiễm người đang tin mày (pocket) → đồng minh giả thành đồng minh thật.
-- KHÔNG lây nhiễm Tiên Tri (nó soi rồi sẽ biết mày là sói) hoặc mấy con cừu ngu sắp bị treo cổ.`;
+- TRÁNH lây nhiễm: người sắp bị vote chết, Dân thường (ít giá trị).`;
   }
 
   alphaInfect(
@@ -209,16 +217,17 @@ CHIẾN LƯỢC LÂY NHIỄM:
     observations: string[],
     discussion: { playerName: string; message: string }[] = [],
   ): string {
-    const targets = state.players.filter((p) => p.alive && !isWolfRole(p.role));
+    const targets = state.players.filter((p) => p.alive && !isWolfRole(p.role) && !p.infected);
     return `${taskContext(observations)}
 
 <task>
 ${wolfTeammates(player, state)}${formatWolfDiscussion(discussion)}
-MÀY LÀ SÓI ĐẦU ĐÀN. Chọn: cắn bình thường hay LÂY NHIỄM (biến thành sói, dùng 1 lần duy nhất)?
+MÀY LÀ SÓI ĐẦU ĐÀN. Chọn: cắn bình thường hay LÂY NHIỄM (biến thành GIÁN ĐIỆP SÓI — giữ role + kỹ năng nhưng đổi phe)?
+⚠ Bảo Vệ có thể CHẶN lây nhiễm! Phù Thủy có thể TỰ CHỮA!
 Suy nghĩ nội bộ:
-- LÂY NHIỄM khi: target là role cực mạnh (Bảo Vệ, Thợ Săn), hoặc người đang tin tưởng mày (pocketing → biến thành đồng minh thật).
-- CẮN THƯỜNG khi: Cần triệt tiêu gốc rễ (Tiên Tri đã come out), hoặc "đầu tàu" của làng.
-- KHÔNG lây nhiễm: Tiên Tri (nó đã biết mày sói), người sắp bị vote chết, hoặc mấy đứa cừu ngu không có giá trị.
+- LÂY NHIỄM khi: target là Tiên Tri (gián điệp đỉnh nhất!), Bảo Vệ (khiên cho sói), hoặc Thợ Săn (thêm quân).
+- CẮN THƯỜNG khi: Cần triệt tiêu (Tiên Tri đã come out + soi nhiều sói), hoặc "đầu tàu" Làng.
+- KHÔNG lây nhiễm: người sắp bị vote chết, Dân thường ít giá trị, Phù Thủy còn thuốc cứu (sẽ tự chữa).
 Danh sách: ${targets.map((t) => t.name).join(', ')}
 JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target":"Tên","infect":true/false}
 </task>`;

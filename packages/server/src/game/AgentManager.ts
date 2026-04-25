@@ -8,6 +8,7 @@ import {
   getRoleDistribution,
   GameEventType,
   isWolfRole,
+  isWolfTeam,
   PlayerViewState,
   RoleContext,
   VIETNAMESE_NAMES,
@@ -206,28 +207,36 @@ export class AgentManager implements ActionResolver {
         if (viewer.role === Role.Guard) return `Mày đã bảo vệ ${d.targetName} đêm nay.`;
         return null;
       case GameEventType.WitchAction:
-        if (viewer.role === Role.Witch)
+        if (viewer.role === Role.Witch) {
+          if (d.action === 'cure_infect')
+            return `Mày đã dùng thuốc cứu để CHỮA LÂY NHIỄM cho chính mình! Mày vẫn là phe Dân.`;
           return `Mày đã dùng thuốc ${d.action === 'heal' ? 'cứu' : 'độc'} cho ${d.targetName}.`;
+        }
         return null;
       case GameEventType.NightActionPerformed:
-        if (isWolfRole(viewer.role))
-          return `Sói cắn ${d.targetName || d.targetNames?.join(', ')} đêm nay.`;
+        if (isWolfTeam(viewer))
+          return d.action === 'infect_blocked'
+            ? `Lây nhiễm ${d.targetName} bị chặn! (có thể do Bảo Vệ)`
+            : `Sói cắn ${d.targetName || d.targetNames?.join(', ')} đêm nay.`;
         return null;
       case GameEventType.AlphaInfect:
-        if (viewer.id === d.targetId) return `MÀY ĐÃ BỊ SÓI ĐẦU ĐÀN LÂY NHIỄM! Mày giờ là Sói!`;
-        if (isWolfRole(viewer.role))
-          return `Sói Đầu Đàn lây nhiễm ${d.targetName}! Hắn giờ là sói.`;
+        if (viewer.id === d.targetId) return `MÀY ĐÃ BỊ SÓI ĐẦU ĐÀN CHỌN LÀM MỤC TIÊU LÂY NHIỄM!`;
+        if (isWolfTeam(viewer)) return `Sói Đầu Đàn lây nhiễm ${d.targetName}!`;
         return null;
       case GameEventType.WolfCubRevenge:
-        if (isWolfRole(viewer.role)) return `Sói Con đã chết! Đêm sau sói cắn 2 người trả thù.`;
+        if (isWolfTeam(viewer)) return `Sói Con đã chết! Đêm sau sói cắn 2 người trả thù.`;
         return null;
       case GameEventType.WolfDiscussMessage:
-        if (isWolfRole(viewer.role)) return `[Họp sói] ${d.playerName}: "${d.message}"`;
+        if (isWolfTeam(viewer)) return `[Họp sói] ${d.playerName}: "${d.message}"`;
         return null;
       case GameEventType.InfectResolved: {
         if (viewer.id !== d.targetId) return null;
-        // Retroactively give the infected player wolf context they missed
+        // Give the infected player wolf context + spy instructions
         const parts: string[] = [];
+        const roleVi = roleNameVi(d.originalRole || viewer.role);
+        parts.push(
+          `🐺 MÀY ĐÃ BỊ LÂY NHIỄM! Giờ mày thuộc PHE SÓI nhưng VẪN GIỮ NGUYÊN kỹ năng ${roleVi}. Dùng kỹ năng để giúp phe Sói!`,
+        );
         const teammates = d.wolfTeammates
           .map((w: any) => `${w.name}(${roleNameVi(w.role)})`)
           .join(', ');
@@ -289,9 +298,9 @@ export class AgentManager implements ActionResolver {
   private buildRoleContext(player: Player, state: GameState): RoleContext {
     const ctx: RoleContext = {};
 
-    if (isWolfRole(player.role)) {
+    if (isWolfRole(player.role) || player.infected) {
       ctx.wolfTeammates = state.players
-        .filter((p) => isWolfRole(p.role) && p.id !== player.id)
+        .filter((p) => isWolfTeam(p) && p.id !== player.id)
         .map((p) => ({ name: p.name, role: roleNameVi(p.role), alive: p.alive }));
       ctx.alphaInfectUsed = state.alphaInfectUsed;
     }
@@ -400,6 +409,12 @@ export class AgentManager implements ActionResolver {
     potions: WitchPotions,
   ): Promise<{ heal: boolean; killTarget: string | null }> {
     const brain = this.getBrain(witch);
+    // Inject wolf bite info into Witch's memory — persists across rounds
+    if (killedName) {
+      brain.addObservation(`[Phù Thủy] Sói vừa cắn ${killedName} đêm nay.`);
+    } else {
+      brain.addObservation(`[Phù Thủy] Đêm nay không ai bị sói cắn.`);
+    }
     const result = await brain.decideWitchAction(state, killedName, potions);
     this.storeReasoning(witch, brain);
     return result;
@@ -466,6 +481,13 @@ export class AgentManager implements ActionResolver {
     const brain = this.getBrain(hunter);
     const result = await brain.hunterShot(state);
     this.storeReasoning(hunter, brain);
+    return result;
+  }
+
+  async witchCureInfect(witch: Player, state: GameState): Promise<boolean> {
+    const brain = this.getBrain(witch);
+    const result = await brain.decideWitchCureInfect(state);
+    this.storeReasoning(witch, brain);
     return result;
   }
 

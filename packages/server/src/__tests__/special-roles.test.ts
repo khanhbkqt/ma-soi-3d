@@ -15,29 +15,147 @@ describe('Alpha Wolf infect', () => {
     return players;
   }
 
-  it('infect converts target to Werewolf', async () => {
+  it('infect sets infected=true, keeps original role, does NOT kill', async () => {
     const players = infectSetup();
     const hunter = players.find((p) => p.name === 'Hunter')!;
-    const { gm } = createTestGM(players, {
-      guardProtect: vi.fn().mockResolvedValue('Alpha'),
-      alphaInfect: vi.fn().mockResolvedValue({ target: 'Hunter', infect: true }),
-      witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
-      seerInvestigate: vi.fn().mockResolvedValue('V1'),
-    });
+    const { gm } = createTestGM(
+      players,
+      {
+        guardProtect: vi.fn().mockResolvedValue('Alpha'),
+        alphaInfect: vi.fn().mockResolvedValue({ target: 'Hunter', infect: true }),
+        witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
+        witchCureInfect: vi.fn().mockResolvedValue(false), // irrelevant (Hunter is not Witch)
+        seerInvestigate: vi.fn().mockResolvedValue('V1'),
+      },
+      { round: 2 }, // round > 1 required
+    );
     await (gm as any).nightPhase();
-    expect(hunter.role).toBe(Role.Werewolf);
+    // Infected: flag set, role preserved
+    expect(hunter.infected).toBe(true);
+    expect(hunter.role).toBe(Role.Hunter); // role unchanged!
     expect(gm.state.alphaInfectUsed).toBe(true);
-    expect(gm.state.pendingDeaths).toHaveLength(0); // infect, not kill
+    expect(gm.state.pendingDeaths).toHaveLength(0); // infect does NOT kill
   });
 
-  it('emits AlphaInfect and InfectResolved events', async () => {
+  it('cannot infect on night 1 (round === 1)', async () => {
     const players = infectSetup();
-    const { gm } = createTestGM(players, {
-      guardProtect: vi.fn().mockResolvedValue('Alpha'),
-      alphaInfect: vi.fn().mockResolvedValue({ target: 'Hunter', infect: true }),
-      witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
-      seerInvestigate: vi.fn().mockResolvedValue('V1'),
-    });
+    const hunter = players.find((p) => p.name === 'Hunter')!;
+    const alphaInfect = vi.fn().mockResolvedValue({ target: 'Hunter', infect: true });
+    const { gm } = createTestGM(
+      players,
+      {
+        guardProtect: vi.fn().mockResolvedValue('Alpha'),
+        alphaInfect,
+        wolfKill: vi.fn().mockResolvedValue('V1'), // fallback regular kill
+        witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
+        seerInvestigate: vi.fn().mockResolvedValue('V1'),
+      },
+      { round: 1 }, // night 1 — infect blocked
+    );
+    await (gm as any).nightPhase();
+    // alphaInfect resolver not called (logic gated at round > 1)
+    expect(alphaInfect).not.toHaveBeenCalled();
+    expect(hunter.infected).toBeFalsy();
+    expect(hunter.role).toBe(Role.Hunter);
+  });
+
+  it('guard blocks infect — target NOT infected, no kill', async () => {
+    const players = [
+      createMockPlayer({ name: 'Alpha', role: Role.AlphaWolf }),
+      createMockPlayer({ name: 'Wolf2', role: Role.Werewolf }),
+      createMockPlayer({ name: 'Seer', role: Role.Seer }),
+      createMockPlayer({ name: 'Guard', role: Role.Guard }), // must have Guard player!
+      createMockPlayer({ name: 'Hunter', role: Role.Hunter }),
+      createMockPlayer({ name: 'V1', role: Role.Villager }),
+    ];
+    const hunter = players.find((p) => p.name === 'Hunter')!;
+    const { gm } = createTestGM(
+      players,
+      {
+        guardProtect: vi.fn().mockResolvedValue('Hunter'), // guard protects Hunter
+        alphaInfect: vi.fn().mockResolvedValue({ target: 'Hunter', infect: true }),
+        witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
+        seerInvestigate: vi.fn().mockResolvedValue('V1'),
+      },
+      { round: 2 },
+    );
+    const events = collectEvents(gm);
+    await (gm as any).nightPhase();
+    expect(hunter.infected).toBeFalsy(); // Guard blocked infect
+    expect(gm.state.alphaInfectUsed).toBe(true); // used up even if blocked
+    expect(gm.state.pendingDeaths).toHaveLength(0);
+    // NightActionPerformed event with infect_blocked emitted
+    expect(
+      events.some(
+        (e) => e.type === GameEventType.NightActionPerformed && e.data.action === 'infect_blocked',
+      ),
+    ).toBe(true);
+  });
+
+  it('witch self-cures when infected (uses heal potion)', async () => {
+    const players = [
+      createMockPlayer({ name: 'Alpha', role: Role.AlphaWolf }),
+      createMockPlayer({ name: 'Wolf2', role: Role.Werewolf }),
+      createMockPlayer({ name: 'Witch', role: Role.Witch }),
+      createMockPlayer({ name: 'V1', role: Role.Villager }),
+      createMockPlayer({ name: 'V2', role: Role.Villager }),
+      createMockPlayer({ name: 'V3', role: Role.Villager }),
+    ];
+    const witch = players.find((p) => p.name === 'Witch')!;
+    const { gm } = createTestGM(
+      players,
+      {
+        guardProtect: vi.fn().mockResolvedValue('Alpha'),
+        alphaInfect: vi.fn().mockResolvedValue({ target: 'Witch', infect: true }),
+        witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
+        witchCureInfect: vi.fn().mockResolvedValue(true), // cure!
+        seerInvestigate: vi.fn().mockResolvedValue('V1'),
+      },
+      { round: 2 },
+    );
+    await (gm as any).nightPhase();
+    expect(witch.infected).toBe(false); // cured!
+    expect(gm.state.witchPotions.healUsed).toBe(true); // potion consumed
+  });
+
+  it('witch infected and declines to cure → stays infected', async () => {
+    const players = [
+      createMockPlayer({ name: 'Alpha', role: Role.AlphaWolf }),
+      createMockPlayer({ name: 'Wolf2', role: Role.Werewolf }),
+      createMockPlayer({ name: 'Witch', role: Role.Witch }),
+      createMockPlayer({ name: 'V1', role: Role.Villager }),
+      createMockPlayer({ name: 'V2', role: Role.Villager }),
+      createMockPlayer({ name: 'V3', role: Role.Villager }),
+    ];
+    const witch = players.find((p) => p.name === 'Witch')!;
+    const { gm } = createTestGM(
+      players,
+      {
+        guardProtect: vi.fn().mockResolvedValue('Alpha'),
+        alphaInfect: vi.fn().mockResolvedValue({ target: 'Witch', infect: true }),
+        witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
+        witchCureInfect: vi.fn().mockResolvedValue(false), // declines
+        seerInvestigate: vi.fn().mockResolvedValue('V1'),
+      },
+      { round: 2 },
+    );
+    await (gm as any).nightPhase();
+    expect(witch.infected).toBe(true); // not cured
+    expect(gm.state.witchPotions.healUsed).toBe(false); // potion not consumed
+  });
+
+  it('emits AlphaInfect and InfectResolved events with originalRole', async () => {
+    const players = infectSetup();
+    const { gm } = createTestGM(
+      players,
+      {
+        guardProtect: vi.fn().mockResolvedValue('Alpha'),
+        alphaInfect: vi.fn().mockResolvedValue({ target: 'Hunter', infect: true }),
+        witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
+        seerInvestigate: vi.fn().mockResolvedValue('V1'),
+      },
+      { round: 2 },
+    );
     const events = collectEvents(gm);
     await (gm as any).nightPhase();
 
@@ -47,13 +165,14 @@ describe('Alpha Wolf infect', () => {
     const resolved = events.find((e) => e.type === GameEventType.InfectResolved);
     expect(resolved).toBeDefined();
     expect(resolved.data.targetName).toBe('Hunter');
+    expect(resolved.data.originalRole).toBe(Role.Hunter); // new field
     expect(resolved.data.wolfTeammates.length).toBeGreaterThan(0);
     expect(Array.isArray(resolved.data.wolfDiscussion)).toBe(true);
   });
 });
 
 describe('Regression: Seer + infect same night', () => {
-  it('seer sees infected target as NOT wolf (pendingInfect)', async () => {
+  it('seer sees infected target AS WOLF after infection resolves (isWolfTeam)', async () => {
     const players = [
       createMockPlayer({ name: 'Alpha', role: Role.AlphaWolf }),
       createMockPlayer({ name: 'Wolf2', role: Role.Werewolf }),
@@ -62,20 +181,27 @@ describe('Regression: Seer + infect same night', () => {
       createMockPlayer({ name: 'V1', role: Role.Villager }),
       createMockPlayer({ name: 'V2', role: Role.Villager }),
     ];
-    const { gm } = createTestGM(players, {
-      guardProtect: vi.fn().mockResolvedValue('Alpha'),
-      alphaInfect: vi.fn().mockResolvedValue({ target: 'Target', infect: true }),
-      witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
-      seerInvestigate: vi.fn().mockResolvedValue('Target'), // seer soi the infected target
-    });
+    const { gm } = createTestGM(
+      players,
+      {
+        guardProtect: vi.fn().mockResolvedValue('Alpha'),
+        alphaInfect: vi.fn().mockResolvedValue({ target: 'Target', infect: true }),
+        witchAction: vi.fn().mockResolvedValue({ heal: false, killTarget: null }),
+        seerInvestigate: vi.fn().mockResolvedValue('Target'), // seer investigates the infected target
+      },
+      { round: 2 },
+    );
     const events = collectEvents(gm);
     await (gm as any).nightPhase();
 
     const seerResult = events.find((e) => e.type === GameEventType.SeerResult);
     expect(seerResult.data.targetName).toBe('Target');
-    expect(seerResult.data.isWolf).toBe(false); // not wolf yet at seer time
-    // But target IS now a wolf after resolve
-    expect(players.find((p) => p.name === 'Target')!.role).toBe(Role.Werewolf);
+    // Infect resolves BEFORE Seer result is emitted → infected target shows as wolf
+    expect(seerResult.data.isWolf).toBe(true);
+    // Role preserved but infected flag set
+    const target = players.find((p) => p.name === 'Target')!;
+    expect(target.role).toBe(Role.Hunter);
+    expect(target.infected).toBe(true);
   });
 
   it('seer sees normal wolf as wolf', async () => {
@@ -98,11 +224,11 @@ describe('Regression: Seer + infect same night', () => {
     expect(events.find((e) => e.type === GameEventType.SeerResult)!.data.isWolf).toBe(true);
   });
 
-  it('seer sees previously infected player as wolf (next night)', async () => {
+  it('seer sees previously infected player (infected=true) as wolf', async () => {
     const players = [
       createMockPlayer({ name: 'Alpha', role: Role.AlphaWolf }),
       createMockPlayer({ name: 'Seer', role: Role.Seer }),
-      createMockPlayer({ name: 'Target', role: Role.Werewolf }), // already converted
+      createMockPlayer({ name: 'Target', role: Role.Hunter, infected: true }), // already infected
       createMockPlayer({ name: 'V1', role: Role.Villager }),
       createMockPlayer({ name: 'V2', role: Role.Villager }),
       createMockPlayer({ name: 'V3', role: Role.Villager }),

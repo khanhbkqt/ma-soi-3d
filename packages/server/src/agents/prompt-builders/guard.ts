@@ -2,7 +2,17 @@ import { Player, GameState } from '@ma-soi/shared';
 import { BasePromptBuilder, taskContext } from './base.js';
 
 export class GuardPromptBuilder extends BasePromptBuilder {
-  roleIdentity(_player: Player, _state: GameState): string {
+  roleIdentity(player: Player, _state: GameState): string {
+    if (player.infected) {
+      return `VAI TRÒ: MÀY LÀ BẢO VỆ BỊ LÂY NHIỄM — gián điệp sói mang khiên!
+MÀY VẪN BẢO VỆ ĐƯỢC mỗi đêm. Nhưng giờ mày DÙNG KHIÊN CHO SÓI:
+CHIẾN THUẬT GIÁN ĐIỆP BẢO VỆ:
+- BẢO VỆ ĐỒNG ĐỘI SÓI: Đặc biệt sói đang bị nghi ngờ hoặc Sói Đầu Đàn (nếu chưa dùng Lây Nhiễm).
+- TẠO HỖN LOẠN: Bảo vệ sói → sói "tự cắn" đồng đội → không ai chết → dân hoang mang "ai bị Bảo Vệ đỡ?". Hoặc sói cắn dân khác trong khi mày đỡ sói bị nghi → sói sống + dân chết.
+- KHÔNG BẢO VỆ DÂN QUAN TRỌNG: Để Tiên Tri, Phù Thủy không được đỡ → sói cắn thoải mái.
+- GIẤU THÂN: Chơi như Bảo Vệ thường nhưng luôn ưu tiên đỡ phe Sói.
+BAN NGÀY: Chơi như dân, giấu kỹ infected status.`;
+    }
     return `VAI TRÒ: MÀY LÀ BẢO VỆ — mỗi đêm chọn 1 người bảo vệ khỏi sói cắn.
 Ràng buộc: không bảo vệ cùng 1 người 2 đêm liên tiếp. Có thể bảo vệ chính mình. Chỉ chặn sói, không chặn thuốc độc.
 MỤC TIÊU: Đoán đúng target sói → chặn kill → phe dân lợi lớn.

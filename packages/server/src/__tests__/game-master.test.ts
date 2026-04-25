@@ -145,6 +145,43 @@ describe('GameMaster — win conditions', () => {
     const { gm } = createTestGM(players);
     expect((gm as any).checkWin()).toBeNull();
   });
+
+  it('infected villager counts as wolf for win condition (wolves >= villagers)', () => {
+    // 1 native wolf + 1 infected Seer = 2 wolf-team vs 2 villagers → Wolf wins
+    const players = [
+      createMockPlayer({ name: 'Wolf1', role: Role.Werewolf }),
+      createMockPlayer({ name: 'Seer', role: Role.Seer, infected: true }), // infected spy
+      createMockPlayer({ name: 'V1', role: Role.Villager }),
+      createMockPlayer({ name: 'V2', role: Role.Villager }),
+    ];
+    const { gm } = createTestGM(players);
+    expect((gm as any).checkWin()).toBe('Wolf');
+  });
+
+  it('infected villager counts as wolf — village still wins when all wolf-team dead', () => {
+    // All wolves dead, infected spy also dead → Village wins
+    const players = [
+      createMockPlayer({ name: 'Wolf1', role: Role.Werewolf, alive: false }),
+      createMockPlayer({ name: 'Seer', role: Role.Seer, infected: true, alive: false }), // dead spy
+      createMockPlayer({ name: 'V1', role: Role.Villager }),
+      createMockPlayer({ name: 'V2', role: Role.Villager }),
+    ];
+    const { gm } = createTestGM(players);
+    expect((gm as any).checkWin()).toBe('Village');
+  });
+
+  it('infected spy alive but outnumbered — game continues', () => {
+    // 1 infected spy vs 3 clean villagers → no win yet
+    const players = [
+      createMockPlayer({ name: 'Wolf1', role: Role.Werewolf, alive: false }),
+      createMockPlayer({ name: 'Guard', role: Role.Guard, infected: true }),
+      createMockPlayer({ name: 'V1', role: Role.Villager }),
+      createMockPlayer({ name: 'V2', role: Role.Villager }),
+      createMockPlayer({ name: 'V3', role: Role.Villager }),
+    ];
+    const { gm } = createTestGM(players);
+    expect((gm as any).checkWin()).toBeNull();
+  });
 });
 
 describe('GameMaster — judgement', () => {

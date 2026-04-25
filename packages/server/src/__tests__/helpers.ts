@@ -83,6 +83,7 @@ export function createMockResolver(overrides: Partial<ActionResolver> = {}): Act
     defend: vi.fn().mockResolvedValue('I am innocent'),
     judgeVote: vi.fn().mockResolvedValue('spare'),
     hunterShot: vi.fn().mockResolvedValue(''),
+    witchCureInfect: vi.fn().mockResolvedValue(true),
     ...overrides,
   };
 }

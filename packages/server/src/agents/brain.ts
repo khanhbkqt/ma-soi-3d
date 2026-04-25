@@ -5,6 +5,7 @@ import {
   AgentMemory,
   DayMessage,
   isWolfRole,
+  isWolfTeam,
   TokenUsage,
 } from '@ma-soi/shared';
 import { LLMProvider, LLMMessage, ContentBlock } from '../providers/index.js';
@@ -383,7 +384,7 @@ export class AgentBrain {
    * in their day discussion message. Logs a warning if detected.
    */
   private sanitizeWolfMessage(message: string, _state: GameState): string {
-    if (!isWolfRole(this.player.role)) return message;
+    if (!isWolfTeam(this.player)) return message;
 
     const nightLeakPatterns = [
       /cắn .+? (đêm|đêm qua)/i, // "cắn Trang đêm qua"
@@ -465,5 +466,18 @@ export class AgentBrain {
     const filtered = valid.filter((n) => !village.includes(n));
     if (filtered.length) valid = filtered;
     return parseActionResponse(res, valid).target || valid[0];
+  }
+
+  async decideWitchCureInfect(state: GameState): Promise<boolean> {
+    this.setAction('night');
+    const b = this.builder as WitchPromptBuilder;
+    const prompt = b.witchCureInfect(this.player, state, this.memory.observations);
+    const res = await this.ask(prompt, state);
+    try {
+      const json = JSON.parse(res.match(/\{[\s\S]*\}/)?.[0] || '{}');
+      return json.cure !== false; // default to curing (self-preservation)
+    } catch {
+      return true;
+    }
   }
 }

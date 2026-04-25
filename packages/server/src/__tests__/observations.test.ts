@@ -131,19 +131,22 @@ describe('eventToObservation — role-gated events', () => {
 });
 
 describe('eventToObservation — InfectResolved regression', () => {
-  it('returns string[] for infected player with teammates + discussion', () => {
+  it('returns string[] for infected player with spy instructions + teammates + discussion', () => {
     const e = ev(GameEventType.InfectResolved, {
       targetId: 'target-id',
       targetName: 'Target',
+      originalRole: Role.Hunter,
       wolfTeammates: [{ name: 'Alpha', role: Role.AlphaWolf, alive: true }],
       wolfDiscussion: [{ playerName: 'Alpha', message: 'cắn V1' }],
       wolfKillTarget: null,
     });
     const result = obs(e, targetPlayer);
     expect(Array.isArray(result)).toBe(true);
-    expect(result.length).toBe(2); // teammates + 1 discussion msg
-    expect(result[0]).toContain('Đồng bọn sói');
-    expect(result[1]).toContain('[Họp sói]');
+    // Structure: [spy_instructions, teammates, ...discussion_msgs]
+    expect(result.length).toBe(3);
+    expect(result[0]).toContain('LÂY NHIỄM'); // spy instructions
+    expect(result[1]).toContain('Đồng bọn sói'); // teammate list
+    expect(result[2]).toContain('[Họp sói]'); // wolf discussion
   });
 
   it('includes wolfKillTarget when present', () => {

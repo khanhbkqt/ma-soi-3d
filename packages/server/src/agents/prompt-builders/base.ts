@@ -5,6 +5,7 @@ import {
   Phase,
   DayMessage,
   isWolfRole,
+  isWolfTeam,
   GameEventType,
 } from '@ma-soi/shared';
 import { compressedMemoryPrompt } from '../memory-compression.js';
@@ -47,7 +48,8 @@ export function phaseNameVi(phase: Phase | string): string {
 /** Role description registry — extensible: add new roles here, gameRules() picks them up automatically. */
 export const roleDescriptions: Record<Role, string> = {
   [Role.Werewolf]: 'Sói — mỗi đêm cùng bầy sói vote chọn 1 người để cắn chết.',
-  [Role.AlphaWolf]: 'Sói Đầu Đàn — có thể lây nhiễm 1 người (biến thành sói), dùng 1 lần cả game.',
+  [Role.AlphaWolf]:
+    'Sói Đầu Đàn — có thể lây nhiễm 1 người (biến thành gián điệp sói, giữ nguyên role + kỹ năng nhưng đổi phe), dùng 1 lần cả game. Không dùng được đêm đầu tiên. Bảo Vệ có thể chặn lây nhiễm.',
   [Role.WolfCub]: 'Sói Con — nếu chết, đêm sau bầy sói được cắn 2 người thay vì 1.',
   [Role.Villager]: 'Dân — không có kỹ năng đặc biệt, dùng logic và suy luận để tìm sói.',
   [Role.Seer]: 'Tiên Tri — mỗi đêm soi 1 người, biết người đó LÀ SÓI hay KHÔNG PHẢI SÓI.',
@@ -151,12 +153,17 @@ export function playerContext(player: Player, state: GameState): string {
   }
   const distStr = [...roleCounts.entries()].map(([r, c]) => `${c} ${r}`).join(', ');
 
-  const teamVi = isWolfRole(player.role) ? 'Sói' : 'Dân';
+  const teamVi = isWolfTeam(player) ? 'Sói' : 'Dân';
+  const infectedTag = player.infected
+    ? '\n🐺 MÀY ĐÃ BỊ LÂY NHIỄM! Mày vẫn giữ kỹ năng ' +
+      roleNameVi(player.role) +
+      ' nhưng giờ thuộc PHE SÓI. Dùng kỹ năng để GIÚP SÓI THẮNG!'
+    : '';
   return `Mày là "${player.name}" — ${roleNameVi(player.role)} (phe ${teamVi}).
 Game có ${state.players.length} người chơi. Phân bố role: ${distStr}.
 ${roundContext}
 Còn sống (${alive.length}): ${alive.map((p) => p.name).join(', ')}.
-${dead.length ? `Đã chết: ${dead.map((p) => `${p.name}(${roleNameVi(p.role)})`).join(', ')}.` : 'Chưa ai chết.'}${coupleInfo}`;
+${dead.length ? `Đã chết: ${dead.map((p) => `${p.name}(${roleNameVi(p.role)}${p.infected ? ' - bị lây nhiễm' : ''})`).join(', ')}.` : 'Chưa ai chết.'}${coupleInfo}${infectedTag}`;
 }
 
 export function personalityPrompt(player: Player): string {

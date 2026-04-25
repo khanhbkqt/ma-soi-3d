@@ -13,6 +13,7 @@ import {
   WitchPotions,
   getRoleDistribution,
   isWolfRole,
+  isWolfTeam,
   JudgementVote,
   DefenseMessage,
   CoupleState,
@@ -71,6 +72,7 @@ export type ActionResolver = {
     messages: DayMessage[],
   ): Promise<'kill' | 'spare'>;
   hunterShot(hunter: Player, state: GameState): Promise<string>;
+  witchCureInfect(witch: Player, state: GameState): Promise<boolean>;
 };
 
 export class GameMaster extends EventEmitter {
@@ -174,8 +176,8 @@ export class GameMaster extends EventEmitter {
       }
     }
 
-    const wolves = alivePlayers.filter((p) => isWolfRole(p.role)).length;
-    const villagers = alivePlayers.filter((p) => !isWolfRole(p.role)).length;
+    const wolves = alivePlayers.filter((p) => isWolfTeam(p)).length;
+    const villagers = alivePlayers.filter((p) => !isWolfTeam(p)).length;
     if (wolves === 0) return Team.Village;
     if (wolves >= villagers) return Team.Wolf;
     return null;
@@ -417,133 +419,139 @@ export class GameMaster extends EventEmitter {
 
     const wolfTargets: Player[] = [];
     let guardedId: string | null = null;
-
-    // ── 1. Guard protects (runs first) ──
-    const guard = this.aliveWithRole(Role.Guard)[0];
-    if (guard) {
-      this.emitNarrator({
-        emoji: '🛡️',
-        title: 'Bảo Vệ',
-        lines: ['Bảo vệ ơi, thức dậy đi!', 'Đêm nay bạn muốn bảo vệ ai?'],
-        gradient: ['#0a2a1a', '#1a4a3a'],
-        duration: 4000,
-        small: true,
-      });
-
-      const targetName = await this.thinkWrap([guard.id], () =>
-        this.resolver.guardProtect(guard, this.state, this.state.lastGuardedId),
-      );
-      const target = this.findByName(targetName);
-      if (target) {
-        guardedId = target.id;
-        this.state.lastGuardedId = target.id;
-        this.state.nightActions.push({
-          type: 'guard_protect',
-          actorId: guard.id,
-          targetId: target.id,
-        });
-        this.emitEvent(
-          GameEventType.GuardProtect,
-          { guardId: guard.id, targetId: target.id, targetName: target.name },
-          false,
-        );
-      }
-      this.emitNarratorDismiss();
-      await this.delay(this.state.config.phaseDelay / 3);
-    }
-
-    // ── 2. Wolves discuss & attack ──
-    const wolves = this.aliveWolves();
     const wolfDiscussion: WolfDiscussMessage[] = [];
 
-    if (wolves.length > 0) {
-      this.emitNarrator({
-        emoji: '🐺',
-        title: 'Sói Thức Dậy',
-        lines: ['Sói ơi, mở mắt ra!', 'Đêm nay các bạn muốn cắn ai?'],
-        gradient: ['#1a0a0a', '#3a1a2a'],
-        duration: 4000,
-        small: true,
-      });
-    }
+    // ── Guard, Wolves, Seer run in PARALLEL ──
+    // LLM decisions are independent; game resolution happens after all complete.
+    // Witch runs sequentially after wolves (needs to know who was bitten).
+    await Promise.all([
+      // ── Guard protects ──
+      (async () => {
+        const guard = this.aliveWithRole(Role.Guard)[0];
+        if (!guard) return;
 
-    if (wolves.length > 1) {
-      for (let round = 1; round <= 1; round++) {
-        const order = [...wolves].sort(() => Math.random() - 0.5);
-        for (const wolf of order) {
-          const msg = await this.thinkWrap([wolf.id], () =>
-            this.resolver.wolfDiscuss(wolf, this.state, wolfDiscussion, round),
-          );
-          const dm: WolfDiscussMessage = {
-            playerId: wolf.id,
-            playerName: wolf.name,
-            message: msg,
-            round,
-            timestamp: Date.now(),
-          };
-          wolfDiscussion.push(dm);
-          this.emitEvent(GameEventType.WolfDiscussMessage, dm, false);
-          await this.delay(this.state.config.phaseDelay / 4);
-        }
-      }
-    }
-
-    if (wolves.length > 0) {
-      const alpha = wolves.find((w) => w.role === Role.AlphaWolf);
-
-      if (this.state.wolfCubRevengeActive) {
-        this.state.wolfCubRevengeActive = false;
-        const [name1, name2] = await this.thinkWrap(
-          wolves.map((w) => w.id),
-          () => this.resolver.wolfDoubleKill(wolves, this.state, wolfDiscussion),
+        const targetName = await this.thinkWrap([guard.id], () =>
+          this.resolver.guardProtect(guard, this.state, this.state.lastGuardedId),
         );
-        const t1 = this.findByName(name1);
-        const t2 = this.findByName(name2);
-        if (t1) {
-          wolfTargets.push(t1);
-          this.state.nightActions.push({
-            type: 'wolf_kill',
-            actorId: wolves[0].id,
-            targetId: t1.id,
-          });
-        }
-        if (t2 && t2.id !== t1?.id) {
-          wolfTargets.push(t2);
-          this.state.nightActions.push({
-            type: 'wolf_kill',
-            actorId: wolves[0].id,
-            targetId: t2.id,
-          });
-        }
-        this.emitEvent(
-          GameEventType.NightActionPerformed,
-          { action: 'wolf_double_kill', targetNames: wolfTargets.map((t) => t.name) },
-          false,
-        );
-      } else if (alpha && !this.state.alphaInfectUsed) {
-        const decision = await this.thinkWrap([alpha.id], () =>
-          this.resolver.alphaInfect(alpha, this.state, wolfDiscussion),
-        );
-        const target = this.findByName(decision.target);
+        const target = this.findByName(targetName);
         if (target) {
-          if (decision.infect && !isWolfRole(target.role)) {
-            this.state.alphaInfectUsed = true;
+          guardedId = target.id;
+          this.state.lastGuardedId = target.id;
+          this.state.nightActions.push({
+            type: 'guard_protect',
+            actorId: guard.id,
+            targetId: target.id,
+          });
+          this.emitEvent(
+            GameEventType.GuardProtect,
+            { guardId: guard.id, targetId: target.id, targetName: target.name },
+            false,
+          );
+        }
+      })(),
+
+      // ── Wolves discuss & attack ──
+      (async () => {
+        const wolves = this.aliveWolves();
+        if (wolves.length === 0) return;
+
+        // Wolf discussion (sequential among wolves for natural conversation)
+        if (wolves.length > 1) {
+          for (let round = 1; round <= 1; round++) {
+            const order = [...wolves].sort(() => Math.random() - 0.5);
+            for (const wolf of order) {
+              const msg = await this.thinkWrap([wolf.id], () =>
+                this.resolver.wolfDiscuss(wolf, this.state, wolfDiscussion, round),
+              );
+              const dm: WolfDiscussMessage = {
+                playerId: wolf.id,
+                playerName: wolf.name,
+                message: msg,
+                round,
+                timestamp: Date.now(),
+              };
+              wolfDiscussion.push(dm);
+              this.emitEvent(GameEventType.WolfDiscussMessage, dm, false);
+            }
+          }
+        }
+
+        // Wolf attack decision
+        const alpha = wolves.find((w) => w.role === Role.AlphaWolf);
+
+        if (this.state.wolfCubRevengeActive) {
+          this.state.wolfCubRevengeActive = false;
+          const [name1, name2] = await this.thinkWrap(
+            wolves.map((w) => w.id),
+            () => this.resolver.wolfDoubleKill(wolves, this.state, wolfDiscussion),
+          );
+          const t1 = this.findByName(name1);
+          const t2 = this.findByName(name2);
+          if (t1) {
+            wolfTargets.push(t1);
             this.state.nightActions.push({
-              type: 'wolf_infect',
-              actorId: alpha.id,
-              targetId: target.id,
+              type: 'wolf_kill',
+              actorId: wolves[0].id,
+              targetId: t1.id,
             });
-            this.emitEvent(
-              GameEventType.AlphaInfect,
-              {
-                alphaId: alpha.id,
+          }
+          if (t2 && t2.id !== t1?.id) {
+            wolfTargets.push(t2);
+            this.state.nightActions.push({
+              type: 'wolf_kill',
+              actorId: wolves[0].id,
+              targetId: t2.id,
+            });
+          }
+          this.emitEvent(
+            GameEventType.NightActionPerformed,
+            { action: 'wolf_double_kill', targetNames: wolfTargets.map((t) => t.name) },
+            false,
+          );
+        } else if (alpha && !this.state.alphaInfectUsed && this.state.round > 1) {
+          const decision = await this.thinkWrap([alpha.id], () =>
+            this.resolver.alphaInfect(alpha, this.state, wolfDiscussion),
+          );
+          const target = this.findByName(decision.target);
+          if (target) {
+            if (decision.infect && !isWolfTeam(target)) {
+              this.state.alphaInfectUsed = true;
+              this.state.nightActions.push({
+                type: 'wolf_infect',
+                actorId: alpha.id,
                 targetId: target.id,
-                targetName: target.name,
-                oldRole: target.role,
-              },
-              false,
-            );
-          } else {
+              });
+              this.emitEvent(
+                GameEventType.AlphaInfect,
+                {
+                  alphaId: alpha.id,
+                  targetId: target.id,
+                  targetName: target.name,
+                  oldRole: target.role,
+                },
+                false,
+              );
+            } else {
+              wolfTargets.push(target);
+              this.state.nightActions.push({
+                type: 'wolf_kill',
+                actorId: wolves[0].id,
+                targetId: target.id,
+              });
+              this.emitEvent(
+                GameEventType.NightActionPerformed,
+                { action: 'wolf_kill', targetName: target.name },
+                false,
+              );
+            }
+          }
+        } else {
+          const targetName = await this.thinkWrap(
+            wolves.map((w) => w.id),
+            () => this.resolver.wolfKill(wolves, this.state, wolfDiscussion),
+          );
+          const target = this.findByName(targetName);
+          if (target) {
             wolfTargets.push(target);
             this.state.nightActions.push({
               type: 'wolf_kill',
@@ -557,31 +565,36 @@ export class GameMaster extends EventEmitter {
             );
           }
         }
-      } else {
-        const targetName = await this.thinkWrap(
-          wolves.map((w) => w.id),
-          () => this.resolver.wolfKill(wolves, this.state, wolfDiscussion),
+      })(),
+
+      // ── Seer investigates ──
+      (async () => {
+        let activeSeer: Player | undefined;
+        if (this.state.apprenticeSeerActivated) {
+          activeSeer = this.aliveWithRole(Role.ApprenticeSeer)[0];
+        }
+        if (!activeSeer) {
+          activeSeer = this.aliveWithRole(Role.Seer)[0];
+        }
+        if (!activeSeer) return;
+
+        const targetName = await this.thinkWrap([activeSeer.id], () =>
+          this.resolver.seerInvestigate(activeSeer, this.state),
         );
         const target = this.findByName(targetName);
         if (target) {
-          wolfTargets.push(target);
           this.state.nightActions.push({
-            type: 'wolf_kill',
-            actorId: wolves[0].id,
+            type: 'seer_investigate',
+            actorId: activeSeer.id,
             targetId: target.id,
           });
-          this.emitEvent(
-            GameEventType.NightActionPerformed,
-            { action: 'wolf_kill', targetName: target.name },
-            false,
-          );
+          // SeerResult is emitted in resolution phase (after Alpha Infect processes)
+          // so the Seer correctly sees infected targets as wolves.
         }
-      }
-      this.emitNarratorDismiss();
-      await this.delay(this.state.config.phaseDelay / 3);
-    }
+      })(),
+    ]);
 
-    // ── 3. Witch acts (knows who was bitten) ──
+    // ── Witch acts SEQUENTIALLY (needs to know who was bitten) ──
     const witch = this.aliveWithRole(Role.Witch)[0];
     if (witch) {
       this.emitNarrator({
@@ -631,71 +644,88 @@ export class GameMaster extends EventEmitter {
       await this.delay(this.state.config.phaseDelay / 3);
     }
 
-    // ── 4. Seer investigates (runs last) ──
-    let activeSeer: Player | undefined;
+    // ── 5. RESOLVE Night Actions ──
 
-    if (this.state.apprenticeSeerActivated) {
-      activeSeer = this.aliveWithRole(Role.ApprenticeSeer)[0];
+    // Process Alpha Infect — Guard can block, Witch can self-cure
+    const infectAction = this.state.nightActions.find((a) => a.type === 'wolf_infect');
+    let infectTarget: Player | undefined;
+    if (infectAction) {
+      infectTarget = this.state.players.find((p) => p.id === infectAction.targetId);
+      if (infectTarget) {
+        // Guard blocks infect
+        if (guardedId === infectTarget.id) {
+          // Infect blocked by Guard — notify wolves only
+          this.emitEvent(
+            GameEventType.NightActionPerformed,
+            { action: 'infect_blocked', targetName: infectTarget.name },
+            false,
+          );
+          infectTarget = undefined; // cancel infect
+        } else {
+          // Infect succeeds — keep original role, set infected flag
+          infectTarget.infected = true;
+          const wolves = this.state.players.filter(
+            (p) => isWolfTeam(p) && p.id !== infectTarget!.id,
+          );
+          this.emitEvent(
+            GameEventType.InfectResolved,
+            {
+              targetId: infectTarget.id,
+              targetName: infectTarget.name,
+              originalRole: infectTarget.role,
+              wolfTeammates: wolves.map((w) => ({ name: w.name, role: w.role, alive: w.alive })),
+              wolfKillTarget: wolfTargets[0]?.name || null,
+              wolfDiscussion: wolfDiscussion.map((m) => ({
+                playerName: m.playerName,
+                message: m.message,
+              })),
+            },
+            false,
+          );
+        }
+      }
     }
-    if (!activeSeer) {
-      activeSeer = this.aliveWithRole(Role.Seer)[0];
-    }
 
-    if (activeSeer) {
-      this.emitNarrator({
-        emoji: '🔮',
-        title: 'Tiên Tri',
-        lines: ['Tiên tri ơi, mở mắt ra!', 'Đêm nay bạn muốn soi ai?'],
-        gradient: ['#0a1a2a', '#1a2a5a'],
-        duration: 4500,
-        small: true,
-      });
-
-      const targetName = await this.thinkWrap([activeSeer.id], () =>
-        this.resolver.seerInvestigate(activeSeer, this.state),
+    // Witch self-cure: if Witch was infected this night and has heal potion
+    const witch2 = this.aliveWithRole(Role.Witch)[0];
+    if (
+      infectTarget &&
+      witch2 &&
+      infectTarget.id === witch2.id &&
+      !this.state.witchPotions.healUsed
+    ) {
+      const cureDecision = await this.thinkWrap([witch2.id], () =>
+        this.resolver.witchCureInfect(witch2, this.state),
       );
-      const target = this.findByName(targetName);
-      if (target) {
+      if (cureDecision) {
+        infectTarget.infected = false;
+        this.state.witchPotions.healUsed = true;
         this.state.nightActions.push({
-          type: 'seer_investigate',
-          actorId: activeSeer.id,
-          targetId: target.id,
+          type: 'witch_cure_infect',
+          actorId: witch2.id,
+          targetId: infectTarget.id,
         });
-        const pendingInfect = this.state.nightActions.some(
-          (a) => a.type === 'wolf_infect' && a.targetId === target.id,
-        );
-        const isWolf = pendingInfect ? false : isWolfRole(target.role);
         this.emitEvent(
-          GameEventType.SeerResult,
-          { seerId: activeSeer.id, targetId: target.id, targetName: target.name, isWolf },
+          GameEventType.WitchAction,
+          { action: 'cure_infect', targetName: infectTarget.name },
           false,
         );
       }
-      this.emitNarratorDismiss();
-      await this.delay(this.state.config.phaseDelay / 3);
     }
 
-    // ── 5. RESOLVE Night Actions ──
-    // Process Alpha Infect
-    const infectAction = this.state.nightActions.find((a) => a.type === 'wolf_infect');
-    if (infectAction) {
-      const target = this.state.players.find((p) => p.id === infectAction.targetId);
-      if (target) {
-        target.role = Role.Werewolf; // Convert to regular werewolf
-        // Notify AgentManager so it can inject wolf-context observations
-        // (wolf discussion, kill target, teammates) into the infected player's memory
-        const wolves = this.state.players.filter((p) => isWolfRole(p.role) && p.id !== target.id);
+    // Emit Seer result AFTER infect resolution — so infected targets correctly show as wolf
+    const seerAction = this.state.nightActions.find((a) => a.type === 'seer_investigate');
+    if (seerAction) {
+      const seerTarget = this.state.players.find((p) => p.id === seerAction.targetId);
+      if (seerTarget) {
+        const isWolf = isWolfTeam(seerTarget);
         this.emitEvent(
-          GameEventType.InfectResolved,
+          GameEventType.SeerResult,
           {
-            targetId: target.id,
-            targetName: target.name,
-            wolfTeammates: wolves.map((w) => ({ name: w.name, role: w.role, alive: w.alive })),
-            wolfKillTarget: wolfTargets[0]?.name || null,
-            wolfDiscussion: wolfDiscussion.map((m) => ({
-              playerName: m.playerName,
-              message: m.message,
-            })),
+            seerId: seerAction.actorId,
+            targetId: seerTarget.id,
+            targetName: seerTarget.name,
+            isWolf,
           },
           false,
         );
@@ -1082,8 +1112,8 @@ export class GameMaster extends EventEmitter {
     );
 
     if (executed) {
-      // Check Fool victory — if Fool is executed, Fool wins immediately
-      if (accused.role === Role.Fool) {
+      // Check Fool victory — if Fool is executed, Fool wins immediately (unless infected)
+      if (accused.role === Role.Fool && !accused.infected) {
         this.state.winner = 'Fool';
         this.state.phase = Phase.GameOver;
         this.emitEvent(

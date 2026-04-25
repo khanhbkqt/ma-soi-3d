@@ -2,7 +2,15 @@ import { Player, GameState } from '@ma-soi/shared';
 import { BasePromptBuilder, taskContext } from './base.js';
 
 export class HunterPromptBuilder extends BasePromptBuilder {
-  roleIdentity(_player: Player, _state: GameState): string {
+  roleIdentity(player: Player, _state: GameState): string {
+    if (player.infected) {
+      return `VAI TRÒ: MÀY LÀ THỢ SĂN ĐÃ BỊ LÂY NHIỄM (GIÁN ĐIỆP SÓI)!
+MỤC TIÊU: Giúp phe Sói thắng. Nếu chết, mày vẫn được bắn 1 phát (trừ khi bị Phù Thủy độc).
+CHIẾN THUẬT:
+- Nếu mày chết, HÃY BẮN CHẾT MỘT DÂN LÀNG! Ưu tiên bắn Tiên Tri, Phù Thủy, Bảo Vệ hoặc người được dân tin tưởng nhất.
+- TUYỆT ĐỐI KHÔNG bắn đồng bọn Sói. (Xem danh sách đồng bọn trong event_log).
+- Ban ngày: Đóng giả dân, dẫn dắt vote sai, bảo vệ đồng bọn.`;
+    }
     return `VAI TRÒ: MÀY LÀ THỢ SĂN — chết thì bắn 1 phát cuối kéo theo 1 người.
 Bị sói cắn hoặc treo cổ → được bắn. Bị Phù Thủy đầu độc → chết im, không bắn.
 MỤC TIÊU: Sống thì dẫn dắt dân tìm sói. Chết thì bắn đúng sói → swing game.
@@ -13,7 +21,12 @@ TƯ DUY ĐỈNH CAO: Nếu Sói sợ không dám cắn mày, mày sẽ VÔ DỤN
 - Doạ khi thực sự nguy kịch: Chỉ doạ "giết tao thì tao bắn lại" khi chắc chắn bị Làng dồn lên giàn.`;
   }
 
-  discussionHint(_player: Player, state: GameState): string {
+  discussionHint(player: Player, state: GameState): string {
+    if (player.infected) {
+      return `MÀY LÀ GIÁN ĐIỆP SÓI.
+MỤC TIÊU: Dùng quyền lực ẩn của Thợ Săn để bảo vệ Sói.
+CHIẾN THUẬT: Đóng giả dân, hùa theo Sói vote chết dân. Đừng cắn bậy cắn bạ để bị treo cổ phí mạng.`;
+    }
     if (state.round === 1) {
       return `MÀY LÀ THỢ SĂN. Vòng đầu — câu nhử:
 - Nói tự nhiên nhưng tạo vẻ hơi "bí ẩn" — để sói tò mò, có thể cắn mày (mày chết thì bắn 1 thằng).
@@ -39,6 +52,17 @@ Chỉ ra kẻ đáng nghi nhất và kêu gọi vote người đó.`;
 
   hunterShot(player: Player, state: GameState, observations: string[]): string {
     const targets = state.players.filter((p) => p.alive && p.id !== player.id);
+    if (player.infected) {
+      return `${taskContext(observations)}
+
+<task>
+MÀY LÀ THỢ SĂN GIÁN ĐIỆP SÓI! Mày đang chết. Bắn 1 phát cuối để GIÚP PHE SÓI!
+TUYỆT ĐỐI KHÔNG bắn trúng đồng bọn Sói! Xem lại <event_log> để biết ai là đồng bọn Sói.
+Ưu tiên bắn Tiên Tri, Phù Thủy, Bảo Vệ hoặc một Dân Làng có ảnh hưởng lớn.
+Danh sách: ${targets.map((t) => t.name).join(', ')}
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target":"Tên"}
+</task>`;
+    }
     return `${taskContext(observations)}
 
 <task>

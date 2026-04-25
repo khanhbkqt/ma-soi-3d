@@ -202,16 +202,18 @@ describe('Task 5: Witch poison — Kẻ Ngốc warning', () => {
   const builder = new WitchPromptBuilder();
   const witch = createMockPlayer({ name: 'Witch', role: Role.Witch });
   const target = createMockPlayer({ name: 'Target' });
+  const fool = createMockPlayer({ name: 'Fool', role: Role.Fool });
 
-  it('witchAction includes Kẻ Ngốc warning when poison available', () => {
-    const state = createMockState([witch, target]);
+  it('witchAction includes Kẻ Ngốc warning when poison available and Fool in game', () => {
+    // hasFool() checks state.players for a living Fool — must include Fool player
+    const state = createMockState([witch, target, fool]);
     const prompt = builder.witchAction(witch, state, [], null, { healUsed: true, killUsed: false });
     expect(prompt).toContain('Kẻ Ngốc');
     expect(prompt).toContain('KHÔNG độc người đã lộ role phe dân');
   });
 
   it('witchAction does NOT include warning when poison already used', () => {
-    const state = createMockState([witch, target]);
+    const state = createMockState([witch, target, fool]);
     const prompt = builder.witchAction(witch, state, [], null, { healUsed: true, killUsed: true });
     expect(prompt).not.toContain('Kẻ Ngốc');
   });
@@ -235,8 +237,10 @@ describe('Task 7: Fool subtlety', () => {
   const player = createMockPlayer({ role: Role.Fool });
   const state = createMockState([player]);
 
-  it('discussionHint emphasizes subtlety', () => {
-    const hint = builder.discussionHint(player, state);
+  it('discussionHint emphasizes subtlety (round >= 2)', () => {
+    // 'VỪA ĐỦ' is in the non-round-1 branch; round:1 returns the early-game hint
+    const stateR2 = createMockState([player], { round: 2 });
+    const hint = builder.discussionHint(player, stateR2);
     expect(hint).toContain('VỪA ĐỦ');
     expect(hint).not.toContain('nhận vơ là Tiên Tri soi bậy');
   });
