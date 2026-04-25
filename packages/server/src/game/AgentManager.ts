@@ -177,7 +177,9 @@ export class AgentManager implements ActionResolver {
       case GameEventType.VoteCast:
         return `${d.voterName} vote ${d.targetName}.`;
       case GameEventType.VoteResult:
-        return d.exiled ? `${d.exiled.name} bị đuổi bởi vote.` : 'Không ai bị đuổi (hòa phiếu).';
+        return d.exiled
+          ? `${d.exiled.name} bị đuổi bởi vote.`
+          : 'Kết quả đề cử: Hòa phiếu. Không ai bị chỉ định lên giàn.';
       case GameEventType.DuskNomination:
         return `${d.accusedName} bị đưa lên giàn để phán xét.`;
       case GameEventType.DefenseSpeech:

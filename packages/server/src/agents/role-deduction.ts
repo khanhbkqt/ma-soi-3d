@@ -258,7 +258,7 @@ export class RoleDeductionTracker {
     this.credibilityReasons.set(player, reasons);
   }
 
-  /** Build the PHÂN TÍCH ROLE prompt block */
+  /** Build the SỔ TAY SỰ KIỆN HỆ THỐNG prompt block */
   buildPrompt(myRole: Role, myName: string): string {
     const lines: string[] = [];
 
@@ -335,6 +335,6 @@ export class RoleDeductionTracker {
     }
 
     if (!lines.length) return '';
-    return `PHÂN TÍCH ROLE:\n${lines.join('\n')}`;
+    return `SỔ TAY SỰ KIỆN HỆ THỐNG:\n${lines.join('\n')}`;
   }
 }

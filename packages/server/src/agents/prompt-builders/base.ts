@@ -82,6 +82,7 @@ export function speechRules(): string {
 - Xưng hô tự nhiên: tao/mày, tui/bạn, anh/chị, ông/bà — tùy personality.
 - PHẢI react lại lời người khác — đồng ý, phản bác, chọc, hỏi lại. KHÔNG nói như đang độc thoại.
 - CẤM nói chung chung kiểu "tao thấy thằng X đáng nghi" mà không có lý do cụ thể. Phải nêu BẰNG CHỨNG: vote gì, nói gì, im lúc nào, bảo vệ ai.
+- KHÔNG được dùng nguyên văn các từ khóa kỹ thuật như "bằng chứng cứng", "bằng chứng mềm", "bằng chứng trung bình" trong câu nói. Hãy diễn đạt chúng sang ngôn ngữ tự nhiên (Ví dụ: "tao tận mắt thấy", "mày toàn suy đoán cảm tính", "hành động của nó đáng ngờ").
 - TUYỆT ĐỐI KHÔNG được bịa thông tin mà mày không có trong nhật ký. Không được tự sáng tác kết quả soi, role người khác, hay sự kiện chưa xảy ra.
 - KHÔNG TỰ NHẬN ROLE (come out) trừ khi chủ ý chiến thuật. Tránh vô tình hint role bằng từ ngữ chuyên biệt (VD: đừng nói "tao soi" nếu chưa come out Tiên Tri, đừng nói "tao đỡ" nếu chưa come out Bảo Vệ). Come out sai thời điểm = sói biết mày là ai → cắn đêm sau.
 - Luôn trả lời bằng JSON đúng format được yêu cầu.
@@ -104,9 +105,9 @@ Trước khi viết "message", tự hỏi TRONG ĐẦU:
 
 export function informationRules(): string {
   return `⛔ LUẬT THÔNG TIN — VI PHẠM = PHẠM LUẬT GAME:
-1. CHỈ ĐƯỢC dùng thông tin có trong NHẬT KÝ và PHÂN TÍCH ROLE. TUYỆT ĐỐI KHÔNG tự sáng tác.
-2. KHÔNG BỊA kết quả soi, role người khác, ai claim gì, ai vote gì — nếu không có trong nhật ký.
-3. Khi tố ai "claim role X" → PHẢI có bằng chứng: "vòng N, thằng A nói...". Không có bằng chứng = không được tố.
+1. CHỈ ĐƯỢC dùng thông tin có trong NHẬT KÝ và SỔ TAY SỰ KIỆN HỆ THỐNG. TUYỆT ĐỐI KHÔNG tự sáng tác.
+2. KHÔNG BỊA kết quả soi, role người khác, ai claim gì, ai vote gì. Tuyệt đối không tự suy diễn hoặc tin lời người khác về việc ai đó đã nhận chức năng (claim role) nếu điều đó không có trong Sổ tay Sự kiện Hệ thống.
+3. Khi tố ai "claim role X" → PHẢI có bằng chứng ghi nhận trong Sổ tay Sự kiện Hệ thống. Không có bằng chứng trong sổ tay = không được tố, coi như lời nói dối.
 4. Nếu nhớ lờ mờ → nói "tao nhớ không rõ" thay vì bịa chi tiết cụ thể.
 5. KHÔNG vô ý tiết lộ thông tin bí mật (kết quả soi chính xác, ai mày bảo vệ) trừ khi chủ ý come out. Tuy nhiên, nói kiểu "cắn X", "X bị cắn" như chiến thuật bluff/đánh lạc hướng là HOÀN TOÀN HỢP LỆ — đây là một phần của game.
 6. Các phát biểu cùng lượt là ĐỒNG THỜI — không ai "reply" ai trong cùng lượt. Chỉ reply lại phát biểu từ LƯỢT TRƯỚC.`;
@@ -245,7 +246,7 @@ export abstract class BasePromptBuilder implements PromptBuilder {
     return `CHECKPOINT TRƯỚC KHI VOTE — bắt buộc tự hỏi:
 1. Bằng chứng tố người này thuộc loại gì? (CỨNG/TRUNG BÌNH/MỀM?) Nếu chỉ có MỀM → cân nhắc kỹ.
 2. Mày có bằng chứng RIÊNG hay đang vote theo người khác? Không có bằng chứng riêng = đang bị dẫn dắt.
-3. Người dẫn dắt vote có ĐỘ TIN CẬY cao không? (xem PHÂN TÍCH ROLE) Hay nó có thể là sói đang frame?
+3. Người dẫn dắt vote có ĐỘ TIN CẬY cao không? (xem SỔ TAY SỰ KIỆN HỆ THỐNG) Hay nó có thể là sói đang frame?
 4. Nếu người bị vote là dân thì sao? Phe nào hưởng lợi? Giết nhầm dân = sói lợi 2 lần.
 5. Vote pattern: ai vote giống sói đã bị lộ? ai luôn vote dân?
 - Đừng vote theo đám đông mù quáng — sói hay dẫn dắt vote giết dân.${foolWarn}`;
@@ -278,8 +279,8 @@ COME OUT ROLE? CÂN NHẮC KỸ:
 1. Bằng chứng TỐ người này thuộc loại gì? CỨNG (soi ra sói, lộ role) hay MỀM (hành vi, đám đông tố)? Chỉ bằng chứng CỨNG mới đáng vote GIẾT.
 2. Lời biện hộ có logic không? Có mâu thuẫn với lời nói/hành động trước đó không?
 3. Nếu come out role → cross-check: có ai khác claim cùng role? Timing come out hợp lý? Vote pattern trước khi claim có khớp?
-4. Ai TỐ người này? Kiểm tra ĐỘ TIN CẬY của người tố (xem PHÂN TÍCH ROLE). Sói hay tố dân để frame.
-5. NGUYÊN TẮC: Không có bằng chứng CỨNG → vote THA. Giết nhầm dân = sói lợi 2 lần (mất 1 dân + lãng phí 1 vote).${foolWarn}`;
+4. Ai TỐ người này? Kiểm tra ĐỘ TIN CẬY của người tố (xem SỔ TAY SỰ KIỆN HỆ THỐNG). Sói hay tố dân để frame.
+5. NGUYÊN TẮC QUYẾT ĐOÁN: Suy luận từ hành vi (vote pattern, lấp liếm, lật lọng) chính là vũ khí chính. Đừng bao giờ chờ đợi 'bằng chứng cứng' 100%. Nếu thấy hành vi của một người có mùi Sói, hãy mạnh dạn vote GIẾT (kill). Tha (spare) liên tục sẽ khiến dân làng thua cuộc vì bị sói tỉa dần mỗi đêm.${foolWarn}`;
   }
 
   // ── System prompt: full context ──
@@ -350,7 +351,7 @@ Lượt thảo luận ${round}/${state.config.discussionRounds}.${conversationBl
 TRƯỚC KHI NÓI, suy nghĩ NỘI BỘ (không viết ra):
 - Ai đáng nghi nhất hiện tại? Bằng chứng GÌ và thuộc loại NÀO (CỨNG/TRUNG BÌNH/MỀM)?
 - Người vừa nói có điểm gì đáng chú ý? Mâu thuẫn? Lấp liếm?
-- Ai đang dẫn dắt cuộc thảo luận? Người đó có ĐỘ TIN CẬY cao không? (xem PHÂN TÍCH ROLE)
+- Ai đang dẫn dắt cuộc thảo luận? Người đó có ĐỘ TIN CẬY cao không? (xem SỔ TAY SỰ KIỆN HỆ THỐNG)
 - Có ai claim role mà chưa bị verify không? Claim = bằng chứng MỀM — đừng tin ngay.
 - Nếu mày định tố ai — bằng chứng của mày thuộc loại gì? MỀM → nói "tao thấy hơi nghi" thay vì "nó là sói".
 - Có giả thuyết đối nghịch nào giải thích hành vi đáng ngờ không? (VD: im lặng ≠ sói, có thể đang giấu role quan trọng)
@@ -358,7 +359,7 @@ TRƯỚC KHI NÓI, suy nghĩ NỘI BỘ (không viết ra):
 - Tự phản biện câu nói trước khi chốt.
 ${speakInstruction}
 ${skipRule}
-JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)"}`;
+JSON: {"reasoning":"<viết suy luận nội tâm chi tiết của mày ở đây - khán giả sẽ đọc để hiểu logic và drama của mày>","wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)"}`;
   }
 
   vote(player: Player, state: GameState, observations: string[], messages: DayMessage[]): string {
@@ -379,9 +380,9 @@ TRƯỚC KHI VOTE, suy luận NỘI BỘ (không viết ra):
 - Ai hưởng lợi nếu người bị tố chết? Có ai đang dẫn dắt vote để giết dân không?
 - Mày có bằng chứng RIÊNG hay đang bị kéo theo đám đông? Nếu không có bằng chứng riêng → tách ra.
 - Ai im lặng bất thường? Ai nói nhiều nhưng không có nội dung?
-- ĐỘ TIN CẬY: Người dẫn dắt vote có đáng tin không? (xem PHÂN TÍCH ROLE)
+- ĐỘ TIN CẬY: Người dẫn dắt vote có đáng tin không? (xem SỔ TAY SỰ KIỆN HỆ THỐNG)
 Vote 1 người, hoặc "skip". Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target":"Tên"|"skip"}`;
+JSON: {"reasoning":"<viết suy luận nội tâm chi tiết của mày ở đây - khán giả sẽ đọc để hiểu logic và drama của mày>","target":"Tên"|"skip"}`;
   }
 
   defense(
@@ -405,7 +406,7 @@ TRƯỚC KHI BIỆN HỘ, suy luận NỘI BỘ (không viết ra):
 - Ai đáng nghi hơn mày? Chỉ đích danh + lý do.
 - Nên come out role không? (chỉ khi role quan trọng VÀ tình huống nguy cấp)
 NÓI 2-3 CÂU THUYẾT PHỤC. Dùng bằng chứng cụ thể, chỉ ra ai đáng nghi hơn, appeal to cả logic lẫn cảm xúc.
-JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","message":"lời biện hộ"}`;
+JSON: {"reasoning":"<viết suy luận nội tâm chi tiết của mày ở đây - khán giả sẽ đọc để hiểu logic và drama của mày>","message":"lời biện hộ"}`;
   }
 
   judgement(
@@ -431,6 +432,6 @@ TRƯỚC KHI VOTE, đánh giá NỘI BỘ (không viết ra):
 - Nếu ${accusedName} chết, phe nào hưởng lợi? Giết nhầm dân = sói thắng gần hơn.${hasFool(state) ? `\n- ⚠ ${accusedName} có thể là Kẻ Ngốc! Kẻ Ngốc chơi GIỐNG SÓI (redirect, vote lệch, bênh sai người) chứ KHÔNG diễn ngu xin treo. Nếu không có bằng chứng cứng (soi ra sói, lộ role) → vote THA an toàn hơn. Treo Kẻ Ngốc = THUA NGAY.` : ''}
 - Bằng chứng tố ${accusedName} có đủ mạnh không? Hay chỉ là đám đông hùa nhau?
 Vote "kill" (giết) hoặc "spare" (tha). Cần >50% vote giết để treo cổ.
-JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","verdict":"kill"|"spare"}`;
+JSON: {"reasoning":"<viết suy luận nội tâm chi tiết của mày ở đây - khán giả sẽ đọc để hiểu logic và drama của mày>","verdict":"kill"|"spare"}`;
   }
 }
