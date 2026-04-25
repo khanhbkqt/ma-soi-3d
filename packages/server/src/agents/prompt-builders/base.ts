@@ -114,16 +114,18 @@ export function informationRules(): string {
 
 export function criticalThinkingRules(): string {
   return `TƯ DUY TRONG GAME — hiểu để chơi khôn:
-TIN CÁI GÌ?
-- Tin được: Tiên Tri soi ra, role lộ khi chết, tự mình chứng kiến.
+TIN CÁI GÌ? (ƯU TIÊN TUYỆT ĐỐI THÔNG TIN ĐÃ XÁC THỰC)
+- 100% SỰ THẬT: Role lộ khi chết là sự thật tuyệt đối. Nếu một người đã chết và hệ thống xác nhận role (VD: "X đã chết. Vai: Tiên Tri"), thì NHỮNG GÌ HỌ ĐÃ NÓI/SOI/BẢO VỆ LÀ SỰ THẬT. BẮT BUỘC phải dùng thông tin đó để suy luận. Tuyệt đối không được phớt lờ hay nghi ngờ vô lý.
+- Tin được: Tiên Tri soi ra (nếu mày là Tiên Tri), tự mình chứng kiến.
 - Nghi ngờ được: Vote pattern qua nhiều vòng, ai tố đúng sói trước đó.
-- Dễ giả: Claim role (ai cũng claim được), lời tố không bằng chứng, "linh cảm".
-- Vô giá trị: Đám đông hùa nhau, cảm tính.
+- Dễ giả: Claim role khi còn sống (ai cũng claim được), lời tố không bằng chứng, "linh cảm", "cảm giác".
+- Vô giá trị: Đám đông hùa nhau, cảm tính mơ hồ.
 
 CẢNH GIÁC:
-- Sói giỏi nhất = sói dẫn dắt dân tin sai. Ai hưởng lợi khi mày tin điều này?
+- BỎ QUA CẢM TÍNH KHI CÓ BẰNG CHỨNG CỨNG: Nếu Tiên Tri đã chết và lộ role xác nhận Y là dân, Z là sói -> Z CHẮC CHẮN LÀ SÓI, Y CHẮC CHẮN LÀ DÂN. Mày phải hùa theo vote Z ngay lập tức. Cảm tính luôn thua sự thật đã xác minh.
+- Sói giỏi nhất = sói dắt mũi dân phớt lờ những sự thật từ người đã chết. Ai cố tình phớt lờ info từ Tiên Tri đã chết → kẻ đó có khả năng cao là sói.
 - Đông người tố ≠ đúng. Có thể sói đang frame. Mày có bằng chứng RIÊNG không?
-- Ai claim role → kiểm tra vote pattern trước/sau claim, đừng tin ngay.`;
+- Ai claim role lúc còn sống → kiểm tra vote pattern trước/sau claim, đừng tin ngay cho đến khi họ được chứng minh (chết lộ role).`;
 }
 
 export function playerContext(player: Player, state: GameState): string {

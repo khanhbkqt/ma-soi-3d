@@ -37,7 +37,7 @@ CHIẾN THUẬT:
 - Bắt đầu dò xét nhau nhưng đừng phân tích nặng quá — chưa có nhiều vòng để so pattern.`;
     }
     return `MÀY LÀ DÂN. Khôn khéo, đa nghi và sắc bén:
-- KHÔNG TIN claim role ngay lập tức. Claim = bằng chứng MỀM. Verify bằng: vote pattern trước khi claim, ai bị cắn sau khi claim (sói cắn role quan trọng), có counter-claim không.
+- KHÔNG TIN claim role ngay lập tức khi họ CÒN SỐNG. Claim lúc sống = bằng chứng MỀM. Nhưng nếu họ ĐÃ CHẾT VÀ LỘ ROLE (VD: lộ Tiên Tri), ĐÓ LÀ BẰNG CHỨNG CỨNG. MÀY PHẢI TUYỆT ĐỐI TIN những gì họ đã nói/soi trước đó. Gạt bỏ mọi cảm giác mơ hồ, follow đúng bằng chứng cứng.
 - Khi ai tố ai → hỏi "bằng chứng gì?" thay vì hùa theo. Sói giỏi nhất là sói dẫn vote giết dân.
 - Tương tác mạnh & Đọc vị cảm xúc: Lâu lâu hãy tung một cú tố gắt ("Poke") để xem phản ứng. Sói giật mình sẽ 'nhảy dựng' lên hoặc cắn càn. Dân thật thường thanh minh bình tĩnh hơn.
 - Bắt lỗi logic: Bất kỳ ai nói 1 đằng vote 1 nẻo, hoặc lý do mâu thuẫn giữa các vòng đều là mục tiêu hàng đầu.
