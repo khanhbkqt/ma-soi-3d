@@ -1,4 +1,12 @@
-import { Role, Player, GameState, Phase, DayMessage, isWolfRole } from '@ma-soi/shared';
+import {
+  Role,
+  Player,
+  GameState,
+  Phase,
+  DayMessage,
+  isWolfRole,
+  GameEventType,
+} from '@ma-soi/shared';
 import { compressedMemoryPrompt } from '../memory-compression.js';
 
 // ── Shared helpers ──
@@ -314,6 +322,85 @@ COME OUT ROLE? CÂN NHẮC KỸ:
     return `\nVÒNG ĐẦU — BẮT ĐẦU PHÂN TÍCH:\nMọi người đã nói qua rồi. Bây giờ có thể bắt đầu nhận xét:\n- Ai nói đáng ngờ? Ai im quá? Ai cố tỏ ra vô hại?\n- React lại những gì mọi người đã nói — đồng ý, phản bác, hỏi dồn.\n- Vẫn chưa có NHIỀU info nên đừng chắc nịch. Nói kiểu "tao thấy hơi lạ" thay vì "nó chắc chắn là sói".`;
   }
 
+  /** Build structured death analysis block for discussion prompts */
+  protected buildDeathAnalysis(state: GameState): string {
+    if (state.round <= 1) return '';
+
+    const causeVi: Record<string, string> = {
+      wolf_kill: 'bị sói cắn',
+      witch_kill: 'bị Phù Thủy đầu độc',
+      hunter_shot: 'bị Thợ Săn bắn',
+      lover_death: 'chết theo người yêu',
+      judged: 'bị treo cổ',
+    };
+
+    // Scan events backwards to find deaths between last Night and current Day
+    const recentlyDead: { name: string; role: string; cause: string; causeLabel: string }[] = [];
+    const events = state.events || [];
+    let foundDayPhase = false;
+
+    for (let i = events.length - 1; i >= 0; i--) {
+      const e = events[i];
+
+      // Skip past current Day phase marker
+      if (
+        e.type === GameEventType.PhaseChanged &&
+        e.data?.phase === 'Day' &&
+        e.data?.round === state.round
+      ) {
+        foundDayPhase = true;
+        continue;
+      }
+
+      // Collect PlayerDied events (they happen during Dawn, between Night and Day)
+      if (e.type === GameEventType.PlayerDied) {
+        const name = e.data?.playerName;
+        const role = e.data?.role;
+        const cause = e.data?.cause || 'unknown';
+        if (name && role && !recentlyDead.some((d) => d.name === name)) {
+          recentlyDead.push({
+            name,
+            role: roleNameVi(role), // Convert enum to Vietnamese
+            cause,
+            causeLabel: causeVi[cause] || cause,
+          });
+        }
+      }
+
+      // Stop at the previous Night phase — anything before this is from an earlier round
+      if (e.type === GameEventType.PhaseChanged && e.data?.phase === 'Night') break;
+    }
+
+    if (recentlyDead.length === 0) return '';
+
+    const lines: string[] = [];
+    for (const d of recentlyDead) {
+      const analysis: string[] = [];
+      analysis.push(`${d.name} (${d.role}) — ${d.causeLabel}`);
+
+      if (d.cause === 'wolf_kill') {
+        analysis.push(
+          `Tại sao sói chọn ${d.name}? ${d.name} hôm qua tố ai/bênh ai? Ai hưởng lợi khi ${d.name} chết?`,
+        );
+      } else if (d.cause === 'witch_kill') {
+        analysis.push(
+          `Phù Thủy tin ${d.name} là sói → đúng hay sai? Ai hôm qua tố ${d.name}? Phù Thủy có thể đang nghe theo ai?`,
+        );
+      } else if (d.cause === 'hunter_shot') {
+        analysis.push(
+          `Thợ Săn chọn bắn ${d.name} → Thợ Săn tin ${d.name} đáng chết. Đúng hay sai? ${d.name} bị tố vì gì?`,
+        );
+      } else if (d.cause === 'lover_death') {
+        analysis.push(`${d.name} chết theo người yêu → cặp đôi bị lộ. Ai là Thần Tình Yêu?`);
+      }
+
+      lines.push(analysis.join(' '));
+    }
+
+    return `\n💀 PHÂN TÍCH CÁI CHẾT ĐÊM QUA (manh mối quan trọng!):\n${lines.map((l) => `- ${l}`).join('\n')}
+Suy luận: Sói thường cắn người đang tố đúng chúng, hoặc role quan trọng (Tiên Tri, Bảo Vệ). Phù Thủy đầu độc người họ tin là sói. Thợ Săn bắn kẻ nghi ngờ nhất. DỰA VÀO CÁI CHẾT ĐỂ SUY NGƯỢC ra ai đáng nghi.`;
+  }
+
   discuss(
     player: Player,
     state: GameState,
@@ -327,10 +414,8 @@ COME OUT ROLE? CÂN NHẮC KỸ:
     const isFirstRound = state.round === 1;
     const hasSpoken = messages.some((m) => m.playerId === player.id);
     const r1Hint = isFirstRound ? this.firstRoundHint(player, state, messages, round) : '';
-    const deathHint =
-      hasDeath && round === 1 && !isFirstRound
-        ? `\nCÓ NGƯỜI CHẾT — suy luận trước khi nói: Ai chết? Tại sao sói chọn người đó? Ai hưởng lợi? Ai hôm qua bảo vệ/tố người chết? Dùng info này để tố hoặc bênh ai đó.`
-        : '';
+    // Structured death analysis — fires for all rounds when there are deaths (not just round 1)
+    const deathHint = hasDeath && !isFirstRound ? this.buildDeathAnalysis(state) : '';
     const midHint =
       !lastRound && round > 1 && !isFirstRound
         ? '\nGIỮA GAME: React lại lời người khác — đồng ý, phản bác, hoặc hỏi dồn. Chỉ ra mâu thuẫn nếu thấy. Đừng lặp lại ý cũ.'
@@ -349,6 +434,7 @@ COME OUT ROLE? CÂN NHẮC KỸ:
 ${this.discussionHint(player, state)}${r1Hint}${deathHint}${midHint}${lastHint}
 Lượt thảo luận ${round}/${state.config.discussionRounds}.${conversationBlock(messages)}
 TRƯỚC KHI NÓI, suy nghĩ NỘI BỘ (không viết ra):
+- 💀 CÁI CHẾT ĐÊM QUA: Ai chết? Vì sao bị nhắm? Ai hưởng lợi? Dùng cái chết để suy ngược ra ai là sói.
 - Ai đáng nghi nhất hiện tại? Bằng chứng GÌ và thuộc loại NÀO (CỨNG/TRUNG BÌNH/MỀM)?
 - Người vừa nói có điểm gì đáng chú ý? Mâu thuẫn? Lấp liếm?
 - Ai đang dẫn dắt cuộc thảo luận? Người đó có ĐỘ TIN CẬY cao không? (xem SỔ TAY SỰ KIỆN HỆ THỐNG)

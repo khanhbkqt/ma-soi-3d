@@ -19,6 +19,12 @@ export interface Signal {
 
 export type ActionType = 'discuss' | 'vote' | 'defense' | 'judgement' | 'night';
 
+export interface RecentDeath {
+  name: string;
+  role: string;
+  cause: string; // 'wolf_kill' | 'witch_kill' | 'hunter_shot' | 'lover_death' | 'judged'
+}
+
 export interface AnalyzerContext {
   player: Player;
   state: GameState;
@@ -26,6 +32,7 @@ export interface AnalyzerContext {
   observations: string[];
   deduction: RoleDeductionTracker;
   actionType: ActionType;
+  recentDeaths: RecentDeath[];
 }
 
 // ── Signal relevance per action type ──
@@ -40,6 +47,7 @@ const SIGNAL_RELEVANCE: Record<string, ActionType[]> = {
   fool_risk: ['judgement', 'vote'],
   bandwagon: ['discuss', 'vote', 'judgement'],
   unverified_claim: ['discuss', 'vote', 'judgement'],
+  night_death_analysis: ['discuss', 'vote'],
 };
 
 // ── Accusation patterns (reused from role-deduction) ──
@@ -60,6 +68,7 @@ export class SituationAnalyzer {
       ...this.detectFoolRisk(ctx),
       ...this.detectBandwagon(ctx),
       ...this.detectUnverifiedClaims(ctx),
+      ...this.detectNightDeathSignals(ctx),
     ];
 
     // Filter by action relevance
@@ -68,8 +77,8 @@ export class SituationAnalyzer {
       return allowed ? allowed.includes(ctx.actionType) : true;
     });
 
-    // Sort by priority descending, take top 3
-    return relevant.sort((a, b) => b.priority - a.priority).slice(0, 3);
+    // Sort by priority descending, take top 4 (increased from 3 to accommodate death analysis)
+    return relevant.sort((a, b) => b.priority - a.priority).slice(0, 4);
   }
 
   // ── Detectors ──
@@ -424,6 +433,86 @@ export class SituationAnalyzer {
         break; // Only report first claim per player
       }
       if (signals.length >= 2) break; // Cap at 2 claim signals
+    }
+
+    return signals;
+  }
+  // ── Night Death Analysis ──
+
+  private detectNightDeathSignals(ctx: AnalyzerContext): Signal[] {
+    const { state, deduction, recentDeaths } = ctx;
+    if (!recentDeaths || recentDeaths.length === 0) return [];
+    if (state.round <= 1) return []; // No night deaths in round 1
+
+    const signals: Signal[] = [];
+    const causeVi: Record<string, string> = {
+      wolf_kill: 'bị sói cắn',
+      witch_kill: 'bị Phù Thủy đầu độc',
+      hunter_shot: 'bị Thợ Săn bắn',
+      lover_death: 'chết theo người yêu',
+    };
+
+    const IMPORTANT_ROLES = new Set([
+      'Tiên Tri',
+      'Tiên Tri Tập Sự',
+      'Phù Thủy',
+      'Thợ Săn',
+      'Bảo Vệ',
+    ]);
+
+    for (const death of recentDeaths) {
+      const cause = causeVi[death.cause] || death.cause;
+      const lines: string[] = [];
+
+      // Core death info
+      lines.push(`${death.name} (${death.role}) ${cause}.`);
+
+      if (death.cause === 'wolf_kill') {
+        // Who did the victim accuse yesterday? Wolves silence accusers.
+        const victimAccusations: string[] = [];
+        for (const [target, accusers] of deduction.accusations) {
+          if (accusers.includes(death.name)) {
+            victimAccusations.push(target);
+          }
+        }
+        if (victimAccusations.length > 0) {
+          lines.push(
+            `${death.name} hôm qua tố ${victimAccusations.join(', ')} → sói có thể cắn để bịt miệng. ${victimAccusations.join(', ')} đáng nghi hơn.`,
+          );
+        }
+
+        // Was the victim a claimed/important role?
+        if (IMPORTANT_ROLES.has(death.role)) {
+          lines.push(
+            `${death.name} là ${death.role} — sói biết role thật bằng cách nào? Ai hôm qua dẫn vote nhắm ${death.name}? Ai come out cùng role?`,
+          );
+        }
+
+        // Who defended the victim yesterday? They might be village-side.
+        // Who accused the victim yesterday? If victim was village, accusers might be wolves.
+        const accusersOfVictim = deduction.accusations.get(death.name) || [];
+        if (accusersOfVictim.length > 0) {
+          lines.push(
+            `Hôm qua ${accusersOfVictim.join(', ')} tố ${death.name} — nhưng sói lại cắn ${death.name} → ${accusersOfVictim.join(', ')} ít khả năng là sói (sói không cắn người mình đang frame).`,
+          );
+        }
+      } else if (death.cause === 'witch_kill') {
+        // Witch poison — Phù Thủy đã xác định ai đó đáng chết
+        lines.push(
+          `Phù Thủy đầu độc ${death.name} → Phù Thủy tin ${death.name} là sói hoặc có lý do riêng. Ai hôm qua tố ${death.name} mạnh nhất?`,
+        );
+      } else if (death.cause === 'hunter_shot') {
+        // Hunter shot — Thợ Săn chọn bắn ai khi chết
+        lines.push(
+          `Thợ Săn bắn ${death.name} khi chết → Thợ Săn tin ${death.name} là sói. Kiểm tra: ${death.name} có bị Tiên Tri soi trước không?`,
+        );
+      }
+
+      signals.push({
+        id: 'night_death_analysis',
+        priority: 82,
+        text: `💀 PHÂN TÍCH CÁI CHẾT: ${lines.join(' ')}`,
+      });
     }
 
     return signals;

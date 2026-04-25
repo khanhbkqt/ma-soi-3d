@@ -21,6 +21,7 @@ import {
   formatSignals,
   ActionType,
   AnalyzerContext,
+  RecentDeath,
 } from './situation-analyzer.js';
 
 export class AgentBrain {
@@ -88,6 +89,54 @@ export class AgentBrain {
     this.actionMessages = messages;
   }
 
+  /**
+   * Extract recent deaths from observations for the current round.
+   * Matches: "X đã chết (bị sói cắn). Vai: Dân." format.
+   */
+  private extractRecentDeaths(state: GameState): RecentDeath[] {
+    if (state.round <= 1) return [];
+
+    const deaths: RecentDeath[] = [];
+    const deathPattern = /^(.+?) đã chết \((.+?)\)\. Vai: (.+?)\.$/;
+    const causeMap: Record<string, string> = {
+      'bị sói cắn': 'wolf_kill',
+      'bị đầu độc': 'witch_kill',
+      'bị Thợ Săn bắn': 'hunter_shot',
+      'chết theo người yêu': 'lover_death',
+      'bị treo cổ': 'judged',
+    };
+
+    // Scan recent observations (last 30) for death events
+    // We scan from the end backwards — deaths from current dawn appear after the Dawn marker
+    const recentObs = this.memory.observations.slice(-30);
+    let foundDawn = false;
+
+    for (let i = recentObs.length - 1; i >= 0; i--) {
+      const obs = recentObs[i];
+
+      // Mark that we've found a Dawn phase marker for the current round
+      if (obs.includes('Rạng sáng') || obs.includes('Ban ngày')) {
+        if (obs.includes(`Vòng ${state.round}`)) {
+          foundDawn = true;
+        }
+      }
+
+      // Match death observations
+      const m = obs.match(deathPattern);
+      if (m && !deaths.some((d) => d.name === m[1])) {
+        const cause = causeMap[m[2]] || m[2];
+        deaths.push({ name: m[1], role: m[3], cause });
+      }
+
+      // Stop scanning once we hit a Night phase marker (too far back)
+      if (obs.includes('Đêm') && obs.includes('Vòng')) {
+        break;
+      }
+    }
+
+    return deaths;
+  }
+
   private async ask(prompt: string, state: GameState, jsonMode = true): Promise<string> {
     // Inject deduction analysis into user prompt
     const deduc = this.deductionBlock;
@@ -99,6 +148,7 @@ export class AgentBrain {
       observations: this.memory.observations,
       deduction: this.deduction,
       actionType: this.actionType,
+      recentDeaths: this.extractRecentDeaths(state),
     };
     const signals = this.analyzer.analyze(sigCtx);
     const situationBlock = formatSignals(signals);
