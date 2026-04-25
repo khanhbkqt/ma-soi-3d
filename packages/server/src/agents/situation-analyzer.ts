@@ -48,6 +48,7 @@ const SIGNAL_RELEVANCE: Record<string, ActionType[]> = {
   bandwagon: ['discuss', 'vote', 'judgement'],
   unverified_claim: ['discuss', 'vote', 'judgement'],
   night_death_analysis: ['discuss', 'vote'],
+  defense_comeout: ['defense'],
 };
 
 // ── Accusation patterns (reused from role-deduction) ──
@@ -69,6 +70,7 @@ export class SituationAnalyzer {
       ...this.detectBandwagon(ctx),
       ...this.detectUnverifiedClaims(ctx),
       ...this.detectNightDeathSignals(ctx),
+      ...this.detectDefenseComeOutSignal(ctx),
     ];
 
     // Filter by action relevance
@@ -516,6 +518,75 @@ export class SituationAnalyzer {
     }
 
     return signals;
+  }
+
+  // ── W3: Adaptive Defense Come Out Signal ──
+
+  private detectDefenseComeOutSignal(ctx: AnalyzerContext): Signal[] {
+    if (ctx.actionType !== 'defense') return [];
+
+    const { player, state } = ctx;
+    const alive = state.players.filter((p) => p.alive).length;
+    const isLateGame = alive <= 6;
+
+    // Witch: evaluate come-out value based on potions + game stage
+    if (player.role === Role.Witch) {
+      const bothUsed = state.witchPotions.healUsed && state.witchPotions.killUsed;
+      if (bothUsed) {
+        return [
+          {
+            id: 'defense_comeout',
+            priority: 95,
+            text: '💡 MÀY ĐÃ HẾT CẢ 2 THUỐC → COME OUT AN TOÀN! Sói cắn mày cũng không mất gì. Dump data: đêm nào sói cắn ai, cứu ai, độc ai. Info này CỰC GIÁ TRỊ.',
+          },
+        ];
+      }
+      // Witch with potions but near-death in late game
+      if (isLateGame) {
+        return [
+          {
+            id: 'defense_comeout',
+            priority: 85,
+            text: '⚠ ENDGAME + MÀY SẮP CHẾT: Come out Phù Thủy có thể cứu mạng mày. Chết = mất thuốc VÀ data đêm. Cân nhắc come out + dump info.',
+          },
+        ];
+      }
+      // Witch with only kill potion left (heal used)
+      if (state.witchPotions.healUsed && !state.witchPotions.killUsed) {
+        return [
+          {
+            id: 'defense_comeout',
+            priority: 70,
+            text: '💡 Đã dùng thuốc cứu. Còn thuốc độc. Come out = sói cắn đêm sau nhưng mày giữ được mạng + dump data đêm. Nếu phiếu đang sát (sắp bị treo) → cân nhắc come out.',
+          },
+        ];
+      }
+      return [];
+    }
+
+    // Guard: come out in endgame to save life + continue protecting
+    if (player.role === Role.Guard && isLateGame) {
+      return [
+        {
+          id: 'defense_comeout',
+          priority: 80,
+          text: 'ENDGAME: Come out Bảo Vệ có thể giúp mày sống + tiếp tục chặn kill. Chết = mất khiên vĩnh viễn. Nếu đã chặn thành công trước đó → dùng làm bằng chứng.',
+        },
+      ];
+    }
+
+    // Hunter: come out is effective as a threat
+    if (player.role === Role.Hunter) {
+      return [
+        {
+          id: 'defense_comeout',
+          priority: 65,
+          text: '💡 Mày là Thợ Săn. Come out + doạ bắn có thể khiến làng THA. Nhưng cẩn thận: sói biết mày → nhờ Phù Thủy độc thay vì cắn (độc = không bắn được).',
+        },
+      ];
+    }
+
+    return [];
   }
 }
 

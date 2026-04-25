@@ -33,8 +33,20 @@ interface Accusation {
   target: string;
   by: string;
 }
+interface DuskVote {
+  kind: 'dusk_vote';
+  voter: string;
+  target: string;
+  round: number;
+}
+interface JudgementVoteFact {
+  kind: 'judgement_vote';
+  voter: string;
+  verdict: 'GIẾT' | 'THA';
+  round: number;
+}
 
-type Fact = ConfirmedRole | SeerResult | RoleClaim | Accusation;
+type Fact = ConfirmedRole | SeerResult | RoleClaim | Accusation | DuskVote | JudgementVoteFact;
 
 type Extractor = (obs: string, round: number) => Fact | null;
 
@@ -84,6 +96,24 @@ const CLAIM_NEGATIVES = [
 ];
 
 const ACCUSE_PATTERNS = [/sói/, /fake/, /giả/, /nói láo/, /nói xạo/, /chắc luôn/, /đéo tin/];
+
+// ── Vote extractors ──
+
+/** Dusk nomination votes: "X vote Y." (not GIẾT/THA) */
+const extractDuskVote: Extractor = (obs, round) => {
+  // Must NOT match judgement votes ("X vote GIẾT/THA.")
+  if (/vote (GIẾT|THA)/.test(obs)) return null;
+  const m = obs.match(/^(.+?) vote (.+?)\.?$/);
+  if (m) return { kind: 'dusk_vote', voter: m[1], target: m[2], round };
+  return null;
+};
+
+/** Judgement votes: "X vote GIẾT." or "X vote THA." */
+const extractJudgementVote: Extractor = (obs, round) => {
+  const m = obs.match(/^(.+?) vote (GIẾT|THA)\.?$/);
+  if (m) return { kind: 'judgement_vote', voter: m[1], verdict: m[2] as 'GIẾT' | 'THA', round };
+  return null;
+};
 
 // ── Extractors ──
 
@@ -150,7 +180,13 @@ const extractAccusation: Extractor = (obs, round) => {
   return null; // handled by extractAccusationWithNames below
 };
 
-const EXTRACTORS: Extractor[] = [extractConfirmed, extractSeer, extractClaim];
+const EXTRACTORS: Extractor[] = [
+  extractConfirmed,
+  extractSeer,
+  extractClaim,
+  extractDuskVote,
+  extractJudgementVote,
+];
 
 // ── Tracker ──
 
@@ -161,6 +197,12 @@ export class RoleDeductionTracker {
   accusations = new Map<string, string[]>(); // target → [accusers]
   credibility = new Map<string, number>(); // player → credibility score (0 = neutral)
   private credibilityReasons = new Map<string, string[]>(); // player → reasons for score
+
+  // W1: Vote history — dusk nomination votes per round
+  duskVotes = new Map<number, { voter: string; target: string }[]>();
+  // W2: Judgement vote history — who voted KILL/SPARE per judgement
+  judgementVotes: { round: number; accused: string; kills: string[]; spares: string[] }[] = [];
+  private currentAccused: string | null = null;
 
   private currentRound = 1;
   private aliveNames: string[] = [];
@@ -177,6 +219,12 @@ export class RoleDeductionTracker {
     if (roundMatch) {
       this.currentRound = parseInt(roundMatch[1]);
       return;
+    }
+
+    // Track who is on trial (for judgement vote context)
+    const nominationMatch = obs.match(/^(.+?) bị đưa lên giàn/);
+    if (nominationMatch) {
+      this.currentAccused = nominationMatch[1];
     }
 
     // Run all extractors
@@ -203,6 +251,29 @@ export class RoleDeductionTracker {
         if (!list.some((c) => c.role === fact.role))
           list.push({ role: fact.role, round: fact.round });
         this.claims.set(fact.player, list);
+        break;
+      }
+      case 'dusk_vote': {
+        const votes = this.duskVotes.get(fact.round) || [];
+        if (!votes.some((v) => v.voter === fact.voter))
+          votes.push({ voter: fact.voter, target: fact.target });
+        this.duskVotes.set(fact.round, votes);
+        break;
+      }
+      case 'judgement_vote': {
+        // Find or create the current judgement entry
+        let entry = this.judgementVotes.find(
+          (j) => j.round === fact.round && j.accused === (this.currentAccused || '?'),
+        );
+        if (!entry) {
+          entry = { round: fact.round, accused: this.currentAccused || '?', kills: [], spares: [] };
+          this.judgementVotes.push(entry);
+        }
+        if (fact.verdict === 'GIẾT' && !entry.kills.includes(fact.voter)) {
+          entry.kills.push(fact.voter);
+        } else if (fact.verdict === 'THA' && !entry.spares.includes(fact.voter)) {
+          entry.spares.push(fact.voter);
+        }
         break;
       }
     }
@@ -319,6 +390,14 @@ export class RoleDeductionTracker {
       lines.push(`Bị tố sói: ${items.join(' | ')}`);
     }
 
+    // W2: Judgement vote history — compressed format, highlight suspicious patterns
+    const judgementBlock = this.buildJudgementBlock();
+    if (judgementBlock) lines.push(judgementBlock);
+
+    // W1: Vote correlation — when a wolf is confirmed, who voted with them?
+    const voteCorrelation = this.buildVoteCorrelation();
+    if (voteCorrelation) lines.push(voteCorrelation);
+
     // Credibility scores
     const credEntries = [...this.credibility]
       .filter(([name]) => name !== myName) // Don't show own credibility
@@ -336,5 +415,131 @@ export class RoleDeductionTracker {
 
     if (!lines.length) return '';
     return `<event_log>\nSỔ TAY SỰ KIỆN HỆ THỐNG:\n${lines.join('\n')}\n</event_log>`;
+  }
+
+  /**
+   * W2: Build compressed judgement vote history block.
+   * Format: "V3 xử Bảo(Sói): GIẾT:Mai,Lan,Minh... | THA:Tú"
+   * Highlights who spared a confirmed wolf or killed a confirmed villager.
+   */
+  private buildJudgementBlock(): string {
+    if (!this.judgementVotes.length) return '';
+    const wolfRoles = new Set(['Sói', 'Sói Đầu Đàn', 'Sói Con']);
+    const entries: string[] = [];
+    const warnings: string[] = [];
+
+    for (const jv of this.judgementVotes) {
+      const confirmed = this.confirmed.get(jv.accused);
+      const roleStr = confirmed ? `(${confirmed.role})` : '';
+      const killStr = jv.kills.length ? `GIẾT:${jv.kills.join(',')}` : '';
+      const spareStr = jv.spares.length ? `THA:${jv.spares.join(',')}` : '';
+      entries.push(
+        `V${jv.round} ${jv.accused}${roleStr}: ${[killStr, spareStr].filter(Boolean).join(' | ')}`,
+      );
+
+      // Highlight suspicious: who spared a confirmed wolf?
+      if (confirmed && wolfRoles.has(confirmed.role) && jv.spares.length > 0) {
+        warnings.push(`⚠ ${jv.spares.join(',')} THA ${jv.accused}(Sói) → đáng nghi!`);
+      }
+      // Highlight suspicious: who killed a confirmed villager?
+      if (confirmed && !wolfRoles.has(confirmed.role) && jv.kills.length > 0) {
+        // Only flag if the person was executed (majority killed)
+        if (jv.kills.length > jv.spares.length) {
+          warnings.push(`⚠ ${jv.accused} là ${confirmed.role} bị treo oan. Ai dẫn vote GIẾT?`);
+        }
+      }
+    }
+
+    let block = `PHÁN XÉT CŨ: ${entries.join(' | ')}`;
+    if (warnings.length) block += `\n${warnings.join('\n')}`;
+    return block;
+  }
+
+  /**
+   * W1: Build vote correlation analysis.
+   * When a wolf is confirmed dead, check who voted the same targets across rounds.
+   * Format: "⚠ Lan,Mai vote GIỐNG Bảo(Sói) ở V2 Phán xét → cùng phe?"
+   */
+  private buildVoteCorrelation(): string {
+    const wolfRoles = new Set(['Sói', 'Sói Đầu Đàn', 'Sói Con']);
+    const confirmedWolves = [...this.confirmed]
+      .filter(([, r]) => wolfRoles.has(r.role))
+      .map(([name]) => name);
+    if (!confirmedWolves.length) return '';
+
+    const warnings: string[] = [];
+
+    // Check judgement votes: who voted GIẾT the same person as confirmed wolves?
+    for (const jv of this.judgementVotes) {
+      for (const wolfName of confirmedWolves) {
+        // Find non-wolf players who voted the same way as the wolf in this judgement
+        const wolfVotedKill = jv.kills.includes(wolfName);
+        const wolfVotedSpare = jv.spares.includes(wolfName);
+        if (!wolfVotedKill && !wolfVotedSpare) continue;
+
+        const confirmed = this.confirmed.get(jv.accused);
+        const accusedIsWolf = confirmed && wolfRoles.has(confirmed.role);
+
+        if (wolfVotedKill && !accusedIsWolf) {
+          // Wolf voted to KILL a non-wolf → who else voted KILL?
+          const sameVoters = jv.kills.filter((v) => v !== wolfName && !confirmedWolves.includes(v));
+          // Only flag if there are alive players who matched
+          const aliveSame = sameVoters.filter((v) => this.aliveNames.includes(v));
+          if (aliveSame.length > 0) {
+            warnings.push(
+              `${aliveSame.join(',')} vote GIẾT giống ${wolfName}(Sói) ở V${jv.round} xử ${jv.accused}`,
+            );
+          }
+        }
+
+        if (wolfVotedSpare && accusedIsWolf) {
+          // Wolf voted to SPARE fellow wolf → who else voted SPARE?
+          const sameVoters = jv.spares.filter(
+            (v) => v !== wolfName && !confirmedWolves.includes(v),
+          );
+          const aliveSame = sameVoters.filter((v) => this.aliveNames.includes(v));
+          if (aliveSame.length > 0) {
+            warnings.push(
+              `${aliveSame.join(',')} THA ${jv.accused}(Sói) giống ${wolfName}(Sói) ở V${jv.round}`,
+            );
+          }
+        }
+      }
+    }
+
+    // Check dusk votes: who voted same targets as confirmed wolves?
+    for (const [round, votes] of this.duskVotes) {
+      for (const wolfName of confirmedWolves) {
+        const wolfVote = votes.find((v) => v.voter === wolfName);
+        if (!wolfVote) continue;
+
+        // Find alive players who voted the same target
+        const sameVoters = votes
+          .filter(
+            (v) =>
+              v.voter !== wolfName &&
+              v.target === wolfVote.target &&
+              !confirmedWolves.includes(v.voter) &&
+              this.aliveNames.includes(v.voter),
+          )
+          .map((v) => v.voter);
+
+        if (sameVoters.length > 0) {
+          // Check if the target was a confirmed villager (wrongly voted)
+          const targetConfirmed = this.confirmed.get(wolfVote.target);
+          const targetIsVillage = targetConfirmed && !wolfRoles.has(targetConfirmed.role);
+          if (targetIsVillage) {
+            warnings.push(
+              `${sameVoters.join(',')} vote ${wolfVote.target}(dân) giống ${wolfName}(Sói) ở V${round}`,
+            );
+          }
+        }
+      }
+    }
+
+    if (!warnings.length) return '';
+    // Cap at 3 entries to keep prompt compact
+    const capped = warnings.slice(0, 3);
+    return `VOTE GIỐNG SÓI:\n${capped.map((w) => `⚠ ${w}`).join('\n')}`;
   }
 }

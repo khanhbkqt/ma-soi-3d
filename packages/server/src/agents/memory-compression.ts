@@ -31,6 +31,9 @@ const HIGH_IMPORTANCE = [
   /Thợ Săn bắn/, // hunter shot
   /trả thù/, // wolf cub revenge
   /Kẻ Ngốc/, // fool victory
+  /vote GIẾT/, // W2: judgement kill vote — critical for vote pattern analysis
+  /vote THA/, // W2: judgement spare vote — critical for vote pattern analysis
+  /bị đưa lên giàn/, // W2: nomination — needed for judgement context
 ];
 
 const PHASE_MARKER = /^--- Vòng/;
