@@ -3,3 +3,6 @@ dist/
 .env
 .env.local
 .game_logs/
+
+# Tests
+lean-*test.ts

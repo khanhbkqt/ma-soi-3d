@@ -1,4 +1,4 @@
-import { LLMProvider, LLMMessage, LLMOptions, LLMResponse } from './types.js';
+import { LLMProvider, LLMMessage, LLMOptions, LLMResponse, contentToString } from './types.js';
 
 export class OllamaProvider implements LLMProvider {
   constructor(
@@ -7,9 +7,14 @@ export class OllamaProvider implements LLMProvider {
   ) {}
 
   async chat(messages: LLMMessage[], options?: LLMOptions): Promise<LLMResponse> {
+    // Flatten ContentBlock[] to plain strings — Ollama doesn't support caching
+    const flatMessages = messages.map((m) => ({
+      role: m.role,
+      content: contentToString(m.content),
+    }));
     const body: any = {
       model: options?.model || this.model,
-      messages,
+      messages: flatMessages,
       stream: false,
       keep_alive: '60m',
       options: {

@@ -2,15 +2,25 @@
  * Memory compression for agent observations.
  *
  * Problem: observations.slice(-30) drops early-game facts (deaths, seer results, vote outcomes).
- * Solution: Compress older observations into a structured summary, keep recent ones raw.
+ * Solution: Compress older observations into structured per-round summaries, keep recent ones raw.
  *
- * Key design: uses shared helpers from role-deduction.ts (isRoleClaim, isDefenseSpeech)
+ * Key design choices:
+ * - Per-round summaries use <round_summary round="N"> XML tags so each completed round
+ *   is "frozen" — its text never changes once the next round starts.
+ * - This preserves prompt prefix stability for LLM context caching
+ *   (OpenAI auto-caches matching prefixes; Anthropic needs explicit cache_control).
+ * - Rule-based, not LLM-based — no extra API calls, deterministic.
+ *
+ * Uses shared helpers from role-deduction.ts (isRoleClaim, isDefenseSpeech)
  * to ensure claim detection consistency between memory and deduction systems.
  */
 
 import { isRoleClaim, isDefenseSpeech } from './role-deduction.js';
 
 const RECENT_COUNT = 20;
+
+/** Standardized round boundary marker regex */
+const ROUND_MARKER = /^--- Vòng (\d+),\s*(.+?)\s*---$/;
 
 // Patterns that indicate high-importance observations
 const HIGH_IMPORTANCE = [
@@ -36,12 +46,18 @@ const HIGH_IMPORTANCE = [
   /bị đưa lên giàn/, // W2: nomination — needed for judgement context
 ];
 
-const PHASE_MARKER = /^--- Vòng/;
 const VOTE_PATTERN = /vote/;
 const CHAT_PATTERN = /nói: "/;
 
+interface RoundObservations {
+  round: number;
+  observations: string[];
+}
+
 interface CompressedMemory {
-  summary: string;
+  /** Per-round summaries, frozen — each string is a complete <round_summary> block */
+  frozenSummaries: string[];
+  /** Recent raw observations from the current (incomplete) round */
   recent: string[];
 }
 
@@ -49,40 +65,59 @@ function isHighImportance(obs: string): boolean {
   return HIGH_IMPORTANCE.some((p) => p.test(obs));
 }
 
-function isPhaseMarker(obs: string): boolean {
-  return PHASE_MARKER.test(obs);
-}
-
 function isChat(obs: string): boolean {
   return CHAT_PATTERN.test(obs);
 }
 
 /**
- * Compress observations into summary + recent raw observations.
- * - Extracts key facts (deaths, seer results, votes, executions) from older observations
- * - Keeps the last RECENT_COUNT observations raw
- * - Preserves role claims and defense speeches from old rounds (critical for consistency)
- * - Normal chat messages from old rounds are dropped (noise by that point)
+ * Parse observations into groups by round number.
+ * Observations before any round marker are assigned to round 0.
  */
-export function compressMemory(observations: string[]): CompressedMemory {
-  if (observations.length <= RECENT_COUNT) {
-    return { summary: '', recent: observations };
+function groupByRound(observations: string[]): RoundObservations[] {
+  const groups: RoundObservations[] = [];
+  let current: RoundObservations = { round: 0, observations: [] };
+
+  for (const obs of observations) {
+    const m = obs.match(ROUND_MARKER);
+    if (m) {
+      const roundNum = parseInt(m[1], 10);
+      if (roundNum !== current.round) {
+        // Save previous group if non-empty
+        if (current.observations.length > 0) {
+          groups.push(current);
+        }
+        current = { round: roundNum, observations: [] };
+      }
+      // Include the marker in this round's observations
+      current.observations.push(obs);
+    } else {
+      current.observations.push(obs);
+    }
   }
 
-  const cutoff = observations.length - RECENT_COUNT;
-  const old = observations.slice(0, cutoff);
-  const recent = observations.slice(cutoff);
+  // Push last group
+  if (current.observations.length > 0) {
+    groups.push(current);
+  }
 
-  // Extract key facts from old observations
+  return groups;
+}
+
+/**
+ * Compress a single round's observations into a compact summary.
+ * Returns empty string if nothing important was found.
+ */
+function compressRound(roundObs: string[]): string {
   const deaths: string[] = [];
   const seerResults: string[] = [];
   const executions: string[] = [];
   const keyEvents: string[] = [];
-  const votePatterns: string[] = []; // who voted whom (condensed)
-  const roleClaims: string[] = []; // role claims & defense speeches preserved
+  const votePatterns: string[] = [];
+  const roleClaims: string[] = [];
 
-  for (const obs of old) {
-    if (isPhaseMarker(obs)) continue;
+  for (const obs of roundObs) {
+    // Skip phase markers
+    if (ROUND_MARKER.test(obs)) continue;
 
     if (/đã chết/.test(obs)) {
       deaths.push(obs);
@@ -97,16 +132,14 @@ export function compressMemory(observations: string[]): CompressedMemory {
     } else if (VOTE_PATTERN.test(obs) && !isChat(obs)) {
       votePatterns.push(obs);
     } else if (isChat(obs) || isDefenseSpeech(obs)) {
-      // Preserve chat messages that contain role claims or defense speeches
-      // These are critical for agents to remember who claimed what
+      // Preserve role claims and defense speeches — critical for agent reasoning
       if (isRoleClaim(obs) || isDefenseSpeech(obs)) {
         roleClaims.push(obs);
       }
-      // Drop normal chat messages — they're noise by now
+      // Drop normal chat messages — noise by that point
     }
   }
 
-  // Build compact summary
   const parts: string[] = [];
   if (deaths.length) parts.push(`Chết: ${deaths.join(' | ')}`);
   if (seerResults.length) parts.push(`Soi: ${seerResults.join(' | ')}`);
@@ -114,19 +147,15 @@ export function compressMemory(observations: string[]): CompressedMemory {
   if (keyEvents.length) parts.push(`Sự kiện: ${keyEvents.join(' | ')}`);
   if (roleClaims.length) parts.push(`Claim role: ${roleClaims.join(' | ')}`);
   if (votePatterns.length) {
-    // Condense votes: keep only unique vote targets with voter counts
     const voteSummary = condenseVotes(votePatterns);
-    if (voteSummary) parts.push(`Vote cũ: ${voteSummary}`);
+    if (voteSummary) parts.push(`Vote: ${voteSummary}`);
   }
 
-  const summary = parts.length ? `TÓM TẮT CÁC VÒNG TRƯỚC:\n${parts.join('\n')}` : '';
-
-  return { summary, recent };
+  return parts.join('\n');
 }
 
 /** Condense vote lines into "X,Y → Z; A → B" format */
 function condenseVotes(votes: string[]): string {
-  // Group by round-ish blocks: "Tên vote Tên"
   const tally = new Map<string, string[]>();
   for (const v of votes) {
     const m = v.match(/^(.+?) vote (.+?)\.?$/);
@@ -143,23 +172,111 @@ function condenseVotes(votes: string[]): string {
 }
 
 /**
- * Build the full memory prompt with compression.
- * Replaces the old `memoryPrompt()` that just sliced to last 30.
+ * Compress observations into per-round frozen summaries + recent raw observations.
+ *
+ * Design for context caching:
+ * - Each completed round produces a `<round_summary round="N">` block that NEVER changes.
+ * - These frozen summaries form a stable prefix in the prompt → cache hit.
+ * - Only the current round's observations change (suffix) → doesn't break cache.
+ */
+export function compressMemory(observations: string[]): CompressedMemory {
+  if (observations.length <= RECENT_COUNT) {
+    return { frozenSummaries: [], recent: observations };
+  }
+
+  // Group observations by round
+  const roundGroups = groupByRound(observations);
+
+  if (roundGroups.length <= 1) {
+    // All observations are in one round — just split by count
+    const cutoff = observations.length - RECENT_COUNT;
+    const old = observations.slice(0, cutoff);
+    const recent = observations.slice(cutoff);
+    const summary = compressRound(old);
+    return {
+      frozenSummaries: summary ? [`<round_summary round="1">\n${summary}\n</round_summary>`] : [],
+      recent,
+    };
+  }
+
+  // Find current round (last group)
+  const currentRound = roundGroups[roundGroups.length - 1];
+  const completedRounds = roundGroups.slice(0, -1);
+
+  // Check total observation count to decide if we need compression
+  const completedObsCount = completedRounds.reduce((sum, g) => sum + g.observations.length, 0);
+  const totalCount = completedObsCount + currentRound.observations.length;
+
+  if (totalCount <= RECENT_COUNT) {
+    // Not enough to compress — return all as recent
+    return { frozenSummaries: [], recent: observations };
+  }
+
+  // Compress each completed round into a frozen summary
+  const frozenSummaries: string[] = [];
+  for (const group of completedRounds) {
+    const summary = compressRound(group.observations);
+    if (summary) {
+      frozenSummaries.push(`<round_summary round="${group.round}">\n${summary}\n</round_summary>`);
+    }
+  }
+
+  // Current round observations kept raw
+  // If current round is very long, also apply a sliding window
+  let recent: string[];
+  if (currentRound.observations.length > RECENT_COUNT) {
+    const cutoff = currentRound.observations.length - RECENT_COUNT;
+    const oldCurrent = currentRound.observations.slice(0, cutoff);
+    const currentSummary = compressRound(oldCurrent);
+    if (currentSummary) {
+      frozenSummaries.push(
+        `<round_summary round="${currentRound.round}" partial="true">\n${currentSummary}\n</round_summary>`,
+      );
+    }
+    recent = currentRound.observations.slice(cutoff);
+  } else {
+    recent = currentRound.observations;
+  }
+
+  return { frozenSummaries, recent };
+}
+
+/**
+ * Build the full memory prompt with per-round compression.
+ * Structure:
+ *   1. Frozen per-round summaries (stable prefix → cacheable)
+ *   2. Deduction block (semi-stable within a round)
+ *   3. Recent observations (dynamic suffix)
  */
 export function compressedMemoryPrompt(observations: string[], deductionBlock?: string): string {
   if (!observations.length && !deductionBlock) return '';
 
-  const { summary, recent } = compressMemory(observations);
+  const { frozenSummaries, recent } = compressMemory(observations);
   const recentBlock = recent.length ? recent.map((o) => `- ${o}`).join('\n') : '';
 
   const parts: string[] = [];
-  if (summary) parts.push(`<memory_summary>\n${summary}\n</memory_summary>`);
+
+  // Frozen summaries: stable text that never changes once a round completes
+  if (frozenSummaries.length) {
+    parts.push(`<memory_summary>\n${frozenSummaries.join('\n\n')}\n</memory_summary>`);
+  }
+
+  // Deduction analysis (changes per action, but still knowledge)
   if (deductionBlock) parts.push(deductionBlock);
+
+  // Recent observations from current round
   if (recentBlock) {
     const header =
-      !summary && !deductionBlock ? 'NHẬT KÝ (những gì mày biết/thấy/nghe)' : 'NHẬT KÝ GẦN ĐÂY';
+      !frozenSummaries.length && !deductionBlock
+        ? 'NHẬT KÝ (những gì mày biết/thấy/nghe)'
+        : 'NHẬT KÝ GẦN ĐÂY';
     parts.push(`<recent_observations>\n${header}:\n${recentBlock}\n</recent_observations>`);
   }
 
   return parts.join('\n\n');
 }
+
+// ── Legacy exports for backward compatibility ──
+
+/** @deprecated Use compressMemory() directly */
+export { compressMemory as compressMemoryLegacy };

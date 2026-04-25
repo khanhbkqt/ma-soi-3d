@@ -4,7 +4,8 @@ import { OpenAIProvider } from './openai.js';
 import { AnthropicProvider } from './anthropic.js';
 import { OllamaProvider } from './ollama.js';
 
-export type { LLMProvider, LLMMessage, LLMOptions, LLMResponse } from './types.js';
+export type { LLMProvider, LLMMessage, LLMOptions, LLMResponse, ContentBlock } from './types.js';
+export { contentToString } from './types.js';
 
 const providers = new Map<string, LLMProvider>();
 

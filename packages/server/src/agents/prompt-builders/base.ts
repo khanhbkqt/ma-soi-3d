@@ -191,7 +191,31 @@ export function conversationBlock(messages: DayMessage[]): string {
   return `\n<conversation>\nCuộc nói chuyện:\n${messages.map((m) => `${m.playerName}: "${m.message}"`).join('\n')}\n</conversation>`;
 }
 
+// ── System prompt parts for cache-friendly construction ──
+
+export interface SystemPromptParts {
+  /** Stable prefix: rules + personality (identical across rounds for same player) */
+  stablePrefix: string;
+  /** Dynamic suffix: player context + role identity (changes each round) */
+  dynamicSuffix: string;
+}
+
+/** Build the stable prefix that never changes for a given player during the game */
+export function stableRulesPrefix(player: Player): string {
+  return `${gameRules()}
+
+${speechRules()}
+
+${informationRules()}
+
+${criticalThinkingRules()}
+
+${personalityPrompt(player)}`;
+}
+
 // ── System prompt = heavy context (reused across all LLM calls for a player) ──
+// Order: STABLE prefix (rules + personality) → DYNAMIC suffix (player context + role)
+// This maximizes cache hits: stable prefix is identical across rounds for same player.
 
 export function systemContext(player: Player, state: GameState, roleHint: string): string {
   return `${gameRules()}
@@ -202,11 +226,11 @@ ${informationRules()}
 
 ${criticalThinkingRules()}
 
+${personalityPrompt(player)}
+
 ${playerContext(player, state)}
 
-${roleHint}
-
-${personalityPrompt(player)}`;
+${roleHint}`;
 }
 
 // ── User prompt = task-specific (lightweight, changes per action) ──
@@ -221,6 +245,8 @@ export function taskContext(observations: string[], deductionBlock?: string): st
 
 export interface PromptBuilder {
   systemPrompt(player: Player, state: GameState): string;
+  /** Split system prompt into stable (cacheable) and dynamic parts */
+  systemPromptParts(player: Player, state: GameState): SystemPromptParts;
   discuss(
     player: Player,
     state: GameState,
@@ -298,6 +324,16 @@ COME OUT ROLE? CÂN NHẮC KỸ:
 
   systemPrompt(player: Player, state: GameState): string {
     return systemContext(player, state, this.roleIdentity(player, state));
+  }
+
+  /** Split system prompt into stable prefix (cacheable) + dynamic suffix */
+  systemPromptParts(player: Player, state: GameState): SystemPromptParts {
+    return {
+      stablePrefix: stableRulesPrefix(player),
+      dynamicSuffix: `${playerContext(player, state)}
+
+${this.roleIdentity(player, state)}`,
+    };
   }
 
   // ── Day-phase user prompts: task-specific only ──

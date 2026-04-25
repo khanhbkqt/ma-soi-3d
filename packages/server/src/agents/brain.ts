@@ -7,7 +7,7 @@ import {
   isWolfRole,
   TokenUsage,
 } from '@ma-soi/shared';
-import { LLMProvider, LLMMessage } from '../providers/index.js';
+import { LLMProvider, LLMMessage, ContentBlock } from '../providers/index.js';
 import { getPromptBuilder, parseActionResponse } from './prompt-builders/index.js';
 import { WolfPromptBuilder, AlphaWolfPromptBuilder } from './prompt-builders/index.js';
 import { SeerPromptBuilder } from './prompt-builders/index.js';
@@ -154,12 +154,35 @@ export class AgentBrain {
     const situationBlock = formatSignals(signals);
 
     let userContent = prompt;
-    // Inject <event_log> inside <game_knowledge> (it's data, belongs with memory)
-    if (deduc && userContent.includes('<game_knowledge>')) {
-      userContent = userContent.replace('<game_knowledge>\n', `<game_knowledge>\n${deduc}\n\n`);
-    } else if (deduc) {
-      userContent = `${deduc}\n\n${userContent}`;
+
+    // ── Inject dynamic context into user message ──
+    // Dynamic context (playerContext + roleIdentity) moved FROM system message
+    // so system is 100% stable → cache hit on every call for same player.
+    // Order: frozen summaries (prefix, cached) → dynamic context → deduction → recent
+    const parts = this.builder.systemPromptParts(this.player, state);
+    const dynamicInjections: string[] = [];
+    if (parts.dynamicSuffix) {
+      dynamicInjections.push(`<player_context>\n${parts.dynamicSuffix}\n</player_context>`);
     }
+    if (deduc) {
+      dynamicInjections.push(deduc);
+    }
+    const injectionText = dynamicInjections.join('\n\n');
+
+    if (injectionText && userContent.includes('</memory_summary>')) {
+      userContent = userContent.replace(
+        '</memory_summary>',
+        `</memory_summary>\n\n${injectionText}`,
+      );
+    } else if (injectionText && userContent.includes('<game_knowledge>')) {
+      userContent = userContent.replace(
+        '<game_knowledge>\n',
+        `<game_knowledge>\n${injectionText}\n\n`,
+      );
+    } else if (injectionText) {
+      userContent = `${injectionText}\n\n${userContent}`;
+    }
+
     // Inject <current_situation> between <game_knowledge> and the rest
     if (situationBlock) {
       const gkEnd = '</game_knowledge>';
@@ -172,10 +195,32 @@ export class AgentBrain {
       }
     }
 
-    const messages: LLMMessage[] = [
-      { role: 'system', content: this.builder.systemPrompt(this.player, state) },
-      { role: 'user', content: userContent },
+    // ── System message: 100% stable (rules + personality only) ──
+    // Never changes for the same player → cache hit from call 2 onwards
+    const systemBlocks: ContentBlock[] = [
+      { type: 'text', text: parts.stablePrefix, cacheControl: true },
     ];
+
+    // ── User message: split at </memory_summary> for cache ──
+    // Block 1: frozen round summaries (prefix grows but never changes → cross-round cache)
+    // Block 2: dynamic context + deduction + recent + situation + conversation + task
+    const memorySplitMarker = '</memory_summary>';
+    const splitIdx = userContent.indexOf(memorySplitMarker);
+
+    const messages: LLMMessage[] = [{ role: 'system', content: systemBlocks }];
+
+    if (splitIdx !== -1) {
+      const frozenEnd = splitIdx + memorySplitMarker.length;
+      messages.push({
+        role: 'user',
+        content: [
+          { type: 'text', text: userContent.slice(0, frozenEnd), cacheControl: true },
+          { type: 'text', text: userContent.slice(frozenEnd) },
+        ],
+      });
+    } else {
+      messages.push({ role: 'user', content: userContent });
+    }
     try {
       const res = await this.provider.chat(messages, {
         temperature: 0.85,

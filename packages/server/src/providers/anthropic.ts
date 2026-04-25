@@ -1,4 +1,11 @@
-import { LLMProvider, LLMMessage, LLMOptions, LLMResponse } from './types.js';
+import {
+  LLMProvider,
+  LLMMessage,
+  LLMOptions,
+  LLMResponse,
+  ContentBlock,
+  contentToString,
+} from './types.js';
 
 export class AnthropicProvider implements LLMProvider {
   constructor(
@@ -7,21 +14,23 @@ export class AnthropicProvider implements LLMProvider {
   ) {}
 
   async chat(messages: LLMMessage[], options?: LLMOptions): Promise<LLMResponse> {
-    const system = messages.find((m) => m.role === 'system')?.content || '';
+    const systemMsg = messages.find((m) => m.role === 'system');
+    const systemContent = systemMsg ? this.buildSystemBlocks(systemMsg, options) : '';
     const msgs = messages
       .filter((m) => m.role !== 'system')
-      .map((m) => ({ role: m.role, content: m.content }));
+      .map((m) => ({
+        role: m.role,
+        content: this.buildContentBlocks(m, options),
+      }));
+
     const body: any = {
       model: options?.model || this.model,
       max_tokens: options?.maxTokens ?? 1024,
-      system,
+      system: systemContent,
       messages: msgs,
       temperature: options?.temperature ?? 0.8,
     };
-    // Enable automatic prompt caching
-    if (options?.cacheControl) {
-      body.cache_control = options.cacheControl;
-    }
+
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -52,6 +61,51 @@ export class AnthropicProvider implements LLMProvider {
         cacheWriteTokens: cacheWrite,
       },
     };
+  }
+
+  /**
+   * Build Anthropic system content with proper cache_control on content blocks.
+   * Anthropic requires system to be an array of content blocks for caching to work.
+   */
+  private buildSystemBlocks(msg: LLMMessage, options?: LLMOptions): any {
+    const content = msg.content;
+
+    if (Array.isArray(content)) {
+      // ContentBlock[] — map to Anthropic format with cache_control
+      return content.map((block) => {
+        const b: any = { type: 'text', text: block.text };
+        if (block.cacheControl && options?.cacheControl) {
+          b.cache_control = options.cacheControl;
+        }
+        return b;
+      });
+    }
+
+    // Simple string — wrap in content block array with cache_control if requested
+    if (options?.cacheControl) {
+      return [{ type: 'text', text: content, cache_control: options.cacheControl }];
+    }
+    return content; // plain string fallback
+  }
+
+  /**
+   * Build Anthropic message content blocks from LLMMessage.
+   * Handles both string and ContentBlock[] formats.
+   */
+  private buildContentBlocks(msg: LLMMessage, options?: LLMOptions): any {
+    const content = msg.content;
+
+    if (Array.isArray(content)) {
+      return content.map((block) => {
+        const b: any = { type: 'text', text: block.text };
+        if (block.cacheControl && options?.cacheControl) {
+          b.cache_control = options.cacheControl;
+        }
+        return b;
+      });
+    }
+
+    return content; // plain string
   }
 
   async test(model?: string) {

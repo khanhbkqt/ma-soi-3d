@@ -1,4 +1,4 @@
-import { LLMProvider, LLMMessage, LLMOptions, LLMResponse } from './types.js';
+import { LLMProvider, LLMMessage, LLMOptions, LLMResponse, contentToString } from './types.js';
 
 export class OpenAIProvider implements LLMProvider {
   constructor(
@@ -8,11 +8,17 @@ export class OpenAIProvider implements LLMProvider {
   ) {}
 
   async chat(messages: LLMMessage[], options?: LLMOptions): Promise<LLMResponse> {
+    // Flatten ContentBlock[] to plain strings — OpenAI auto-caches matching prefixes
+    const flatMessages = messages.map((m) => ({
+      role: m.role,
+      content: contentToString(m.content),
+    }));
     const body: any = {
       model: options?.model || this.model,
-      messages,
+      messages: flatMessages,
       temperature: options?.temperature ?? 0.8,
       max_tokens: options?.maxTokens ?? 1024,
+      ...options?.extraBody,
     };
     if (options?.jsonMode) body.response_format = { type: 'json_object' };
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
