@@ -9,11 +9,18 @@ export interface LLMOptions {
   maxTokens?: number;
   jsonMode?: boolean;
   model?: string;
+  cacheControl?: { type: 'ephemeral' };
+}
+
+export interface CacheMetrics {
+  cachedTokens: number;
+  cacheWriteTokens: number;
 }
 
 export interface LLMResponse {
   content: string;
   usage?: TokenUsage;
+  cacheMetrics?: CacheMetrics;
 }
 
 export interface LLMProvider {

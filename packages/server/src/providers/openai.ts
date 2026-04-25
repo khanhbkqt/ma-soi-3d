@@ -32,6 +32,13 @@ export class OpenAIProvider implements LLMProvider {
             promptTokens: data.usage.prompt_tokens || 0,
             completionTokens: data.usage.completion_tokens || 0,
             totalTokens: data.usage.total_tokens || 0,
+            cachedTokens: data.usage.prompt_tokens_details?.cached_tokens || 0,
+          }
+        : undefined,
+      cacheMetrics: data.usage
+        ? {
+            cachedTokens: data.usage.prompt_tokens_details?.cached_tokens || 0,
+            cacheWriteTokens: 0,
           }
         : undefined,
     };

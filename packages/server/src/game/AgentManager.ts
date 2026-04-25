@@ -457,11 +457,19 @@ export class AgentManager implements ActionResolver {
   }
 
   getTokenUsage(): GameTokenUsage {
-    const total = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+    const total = {
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      cachedTokens: 0,
+      callCount: 0,
+    };
     const perPlayer = [...this.brains.entries()].map(([, brain]) => {
       total.promptTokens += brain.tokenUsage.promptTokens;
       total.completionTokens += brain.tokenUsage.completionTokens;
       total.totalTokens += brain.tokenUsage.totalTokens;
+      total.cachedTokens += brain.tokenUsage.cachedTokens || 0;
+      total.callCount += brain.callCount;
       return {
         playerId: brain.player.id,
         playerName: brain.player.name,

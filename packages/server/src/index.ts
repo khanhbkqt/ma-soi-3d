@@ -148,9 +148,9 @@ io.on('connection', (socket) => {
             }
             s.emit(SocketEvents.GAME_STATE, state);
           }
-          // Emit token usage on phase transitions
-          io.emit(SocketEvents.TOKEN_USAGE, manager.getTokenUsage());
         }
+        // Emit token usage on every event for realtime HUD updates
+        io.emit(SocketEvents.TOKEN_USAGE, manager.getTokenUsage());
       });
 
       socket.emit(SocketEvents.GAME_STATE, gm.state);

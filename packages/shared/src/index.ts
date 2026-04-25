@@ -404,6 +404,7 @@ export interface TokenUsage {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
+  cachedTokens: number;
 }
 
 export interface PlayerTokenUsage {
@@ -414,7 +415,7 @@ export interface PlayerTokenUsage {
 }
 
 export interface GameTokenUsage {
-  total: TokenUsage;
+  total: TokenUsage & { callCount: number };
   perPlayer: PlayerTokenUsage[];
 }
 

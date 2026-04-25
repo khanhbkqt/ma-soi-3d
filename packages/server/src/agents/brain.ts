@@ -30,7 +30,12 @@ export class AgentBrain {
   private actionType: ActionType = 'discuss';
   private actionMessages: DayMessage[] = [];
   lastReasoning: string | undefined;
-  tokenUsage: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+  tokenUsage: TokenUsage = {
+    promptTokens: 0,
+    completionTokens: 0,
+    totalTokens: 0,
+    cachedTokens: 0,
+  };
   callCount = 0;
 
   constructor(
@@ -112,12 +117,14 @@ export class AgentBrain {
         maxTokens: 300,
         jsonMode,
         model: this.player.modelName,
+        cacheControl: { type: 'ephemeral' },
       });
       const content = res.content;
       if (res.usage) {
         this.tokenUsage.promptTokens += res.usage.promptTokens;
         this.tokenUsage.completionTokens += res.usage.completionTokens;
         this.tokenUsage.totalTokens += res.usage.totalTokens;
+        this.tokenUsage.cachedTokens += res.usage.cachedTokens || 0;
       }
       this.callCount++;
       try {

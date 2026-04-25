@@ -11,6 +11,7 @@ export class OllamaProvider implements LLMProvider {
       model: options?.model || this.model,
       messages,
       stream: false,
+      keep_alive: '60m',
       options: {
         temperature: options?.temperature ?? 0.8,
         num_predict: options?.maxTokens ?? 1024,
@@ -33,6 +34,7 @@ export class OllamaProvider implements LLMProvider {
               promptTokens: data.prompt_eval_count || 0,
               completionTokens: data.eval_count || 0,
               totalTokens: (data.prompt_eval_count || 0) + (data.eval_count || 0),
+              cachedTokens: 0,
             }
           : undefined,
     };
