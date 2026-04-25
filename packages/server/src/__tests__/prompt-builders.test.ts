@@ -154,7 +154,7 @@ describe('Task 2: Seer prompt constraints', () => {
   it('voteHint forbids voting seer-cleared players', () => {
     const hint = seer.voteHint(player, state);
     expect(hint).toContain('KHÔNG vote người mày đã soi ra KHÔNG PHẢI SÓI');
-    expect(hint).toContain('PHÂN TÍCH ROLE');
+    expect(hint).toContain('<event_log>');
   });
 
   it('judgementHint references seer results', () => {
@@ -164,9 +164,10 @@ describe('Task 2: Seer prompt constraints', () => {
     expect(hint).toContain('GIẾT');
   });
 
-  it('discussionHint references PHÂN TÍCH ROLE', () => {
-    const hint = seer.discussionHint(player, state);
-    expect(hint).toContain('PHÂN TÍCH ROLE');
+  it('discussionHint references <event_log>', () => {
+    const stateR2 = createMockState([player], { round: 2 });
+    const hint = seer.discussionHint(player, stateR2);
+    expect(hint).toContain('<event_log>');
   });
 });
 
@@ -225,7 +226,7 @@ describe('Task 6: Hunter shot — anti-friendly-fire', () => {
     const state = createMockState([hunter, target]);
     const prompt = builder.hunterShot(hunter, state, []);
     expect(prompt).toContain('KHÔNG bắn người đã được xác nhận là phe dân');
-    expect(prompt).toContain('PHÂN TÍCH ROLE');
+    expect(prompt).toContain('<event_log>');
   });
 });
 

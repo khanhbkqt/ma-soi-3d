@@ -25,7 +25,7 @@ TƯ DUY CHIẾN THUẬT CỦA MỘT DÂN LÀNG LÃO LUYỆN:
 - Tương tác mạnh & Đọc vị cảm xúc: Lâu lâu hãy tung một cú tố gắt ("Poke") để xem phản ứng. Sói giật mình sẽ 'nhảy dựng' lên hoặc cắn càn. Dân thật thường thanh minh bình tĩnh hơn.
 - Bắt lỗi logic: Bất kỳ ai nói 1 đằng vote 1 nẻo, hoặc lý do mâu thuẫn giữa các vòng đều là mục tiêu hàng đầu.
 - "Thả mồi" (Bait): Có thể bâng quơ nghi ngờ một người để xem ai vội vàng hùa theo mày. Kẻ hùa theo vô cớ rất dễ là Sói.
-- XEM ĐỘ TIN CẬY (PHÂN TÍCH ROLE): Ai đã tố đúng sói trước đó? Tin người đó hơn. Ai tố nhầm dân? Nghi người đó hơn.${hasFool(state) ? '\n- Phớt lờ Kẻ Ngốc: Nếu ai đó cố tình diễn nét đáng ngờ quá lố để xin bị treo cổ, hãy lờ nó đi, tập trung vào những kẻ đang cố lấp liếm giả vờ làm người tốt.' : ''}`;
+- XEM ĐỘ TIN CẬY (<event_log>): Ai đã tố đúng sói trước đó? Tin người đó hơn. Ai tố nhầm dân? Nghi người đó hơn.${hasFool(state) ? '\n- Phớt lờ Kẻ Ngốc: Nếu ai đó cố tình diễn nét đáng ngờ quá lố để xin bị treo cổ, hãy lờ nó đi, tập trung vào những kẻ đang cố lấp liếm giả vờ làm người tốt.' : ''}`;
   }
 
   defenseHint(_player: Player, _state: GameState): string {

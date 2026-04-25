@@ -55,11 +55,13 @@ describe('RoleDeductionTracker', () => {
     tracker.ingest('Tú nói: "thằng Hùng sói chắc luôn"');
 
     const prompt = tracker.buildPrompt(Role.Seer, 'Tôi');
-    expect(prompt).toContain('PHÂN TÍCH ROLE:');
+    expect(prompt).toContain('<event_log>');
+    expect(prompt).toContain('SỔ TAY SỰ KIỆN HỆ THỐNG:');
     expect(prompt).toContain('Xác nhận: Minh = Dân');
     expect(prompt).toContain('Soi: Hùng = SÓI');
     expect(prompt).toContain('Claim: Lan tự nhận Bảo Vệ (vòng 1)');
     expect(prompt).toContain('Bị tố sói: Hùng (1 người tố)');
+    expect(prompt).toContain('</event_log>');
   });
 
   it('detects conflict when someone claims my role', () => {

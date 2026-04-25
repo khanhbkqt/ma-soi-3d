@@ -138,14 +138,17 @@ CHỈ ĐỘC KHI CÓ BẰNG CHỨNG CỨNG HOẶC TRUNG BÌNH:
 - TRUNG BÌNH: Vote pattern rõ ràng match với sói đã lộ, claim role bị conflict, ai liên tục tố/dồn người mà mày biết là sạch.
 - TUYỆT ĐỐI KHÔNG đủ: "nhiều người tố", "linh cảm", "nó im lặng".
 Độc nhầm dân = thảm họa. Độc Thợ Săn → không được bắn phát cuối.${hasFool(state) ? '\n⚠ CẢNH BÁO: Game có Kẻ Ngốc — kẻ chơi bẩn/xạo/claim sai chưa chắc là Sói, có thể là Ngốc đang câu treo.' : ''}
-KHÔNG độc người mà mày biết bị Sói cắn qua các đêm trước (= người sạch 90%). KHÔNG độc người đã lộ role phe dân (xem PHÂN TÍCH ROLE mục Xác nhận). Chỉ độc khi có BẰNG CHỨNG CỨNG là Sói.
+KHÔNG độc người mà mày biết bị Sói cắn qua các đêm trước (= người sạch 90%). KHÔNG độc người đã lộ role phe dân (xem <event_log> mục Xác nhận). Chỉ độc khi có BẰNG CHỨNG CỨNG là Sói.
 Danh sách: ${targets.map((t) => t.name).join(', ')}`
       : 'Thuốc độc đã dùng.';
     return `${taskContext(observations)}
+
+<task>
 ${healInfo}
 ${killInfo}
 Thuốc cứu: ${potions.healUsed ? 'ĐÃ DÙNG' : 'còn'} | Thuốc độc: ${potions.killUsed ? 'ĐÃ DÙNG' : 'còn'}
 Mày KHÔNG biết Bảo Vệ đã bảo vệ ai đêm nay.
-JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","heal":true/false,"killTarget":"Tên"|null}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","heal":true/false,"killTarget":"Tên"|null}
+</task>`;
   }
 }

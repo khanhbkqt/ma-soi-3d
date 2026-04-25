@@ -92,16 +92,16 @@ describe('compressedMemoryPrompt', () => {
   });
 
   it('includes deduction block between summary and recent', () => {
-    const deduction = 'PHÂN TÍCH ROLE:\nXác nhận: Lan = Sói';
+    const deduction = '<event_log>\nSỔ TAY SỰ KIỆN HỆ THỐNG:\nXác nhận: Lan = Sói\n</event_log>';
     const obs = buildObs(['Minh đã chết. Vai: Dân.']);
     const result = compressedMemoryPrompt(obs, deduction);
-    expect(result).toContain('TÓM TẮT CÁC VÒNG TRƯỚC:');
+    expect(result).toContain('<memory_summary>');
     expect(result).toContain(deduction);
-    expect(result).toContain('NHẬT KÝ GẦN ĐÂY:');
+    expect(result).toContain('<recent_observations>');
     // Verify order: summary before deduction before recent
-    const summaryIdx = result.indexOf('TÓM TẮT');
-    const deductionIdx = result.indexOf('PHÂN TÍCH ROLE');
-    const recentIdx = result.indexOf('NHẬT KÝ GẦN ĐÂY');
+    const summaryIdx = result.indexOf('<memory_summary>');
+    const deductionIdx = result.indexOf('<event_log>');
+    const recentIdx = result.indexOf('<recent_observations>');
     expect(summaryIdx).toBeLessThan(deductionIdx);
     expect(deductionIdx).toBeLessThan(recentIdx);
   });

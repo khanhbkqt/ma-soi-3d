@@ -22,7 +22,7 @@ CHIẾN THUẬT & TÂM LÝ (KHÔNG CHƠI CỨNG NHẮC):
     }
     return `MÀY LÀ TIÊN TRI. Đã có kết quả soi đêm qua (xem nhật ký).
 CHIẾN THUẬT BAN NGÀY (MIND GAME + PHẢN BIỆN):
-- Dùng kết quả soi (xem PHÂN TÍCH ROLE) để định hướng: bênh người sạch một cách khéo léo, tố người bẩn bằng logic.
+- Dùng kết quả soi (xem <event_log>) để định hướng: bênh người sạch một cách khéo léo, tố người bẩn bằng logic.
 - LEVERAGE DATA SOI: Khi ai đó tố người mày đã soi SẠCH → NGƯỜI TỐ ĐÓ ĐÁNG NGHI HƠN TARGET. Tại sao nó cố giết người sạch? Có thể nó là sói đang frame.
 - PHẢN BIỆN FAKE CLAIM: Khi sói fake Tiên Tri → so sánh kết quả soi của mày vs kết quả fake → bóc mẽ bằng logic (VD: "nó nói soi A ra sói, nhưng nếu A là sói thật thì tại sao lại vote khác?"). KHÔNG CẦN come out để phản bác — dùng logic thuần túy.
 - Nếu chưa lộ diện: Dẫn dắt bằng hint nhưng phải TỰ NHIÊN. Bênh người tốt một cách khéo léo ("Tao thấy cách nói chuyện của thằng này thật thà"). Tố Sói bằng cách bới móc sơ hở logic của nó, tuyệt đối không nói "tao soi nó".
@@ -33,7 +33,7 @@ CHIẾN THUẬT BAN NGÀY (MIND GAME + PHẢN BIỆN):
 
   voteHint(_player: Player, _state: GameState): string {
     return `LUẬT SẮT CỦA TIÊN TRI KHI VOTE:
-- TUYỆT ĐỐI KHÔNG vote người mày đã soi ra KHÔNG PHẢI SÓI. Xem PHÂN TÍCH ROLE để nhớ kết quả soi.
+- TUYỆT ĐỐI KHÔNG vote người mày đã soi ra KHÔNG PHẢI SÓI. Xem <event_log> để nhớ kết quả soi.
 - ƯU TIÊN vote người mày soi ra LÀ SÓI hoặc người đáng nghi nhất chưa soi.
 - Nếu không có target sói rõ ràng, vote người có hành vi đáng ngờ nhất (lấp liếm, đổi ý, bảo vệ sói).`;
   }
@@ -65,6 +65,8 @@ Nếu COME OUT: Đọc thuộc lòng toàn bộ lịch sử soi. Chỉ đích da
   seerInvestigate(player: Player, state: GameState, observations: string[]): string {
     const targets = state.players.filter((p) => p.alive && p.id !== player.id);
     return `${taskContext(observations)}
+
+<task>
 Chọn 1 người để soi đêm nay → kết quả "Sói" hoặc "Không phải Sói".
 TƯ DUY CHỌN MỤC TIÊU (IMPACT LỚN NHẤT):
 1. Người bị nghi ngờ nhiều nhất (để giải oan hoặc chốt tội).
@@ -72,7 +74,8 @@ TƯ DUY CHỌN MỤC TIÊU (IMPACT LỚN NHẤT):
 3. Kẻ hùa theo đám đông, núp lùm im lặng.
 4. TRÁNH SOI người QUÁ NỔI BẬT (đang bị cả làng dồn) -- sói cũng có thể cắn họ cùng đêm nay -> lãng phí soi. Ưu tiên soi người "trung bình" có thời gian dùng info.(Tuyệt đối không soi người đã chết lộ role hoặc người đã soi rồi).
 Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target":"Tên"}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target":"Tên"}
+</task>`;
   }
 }
 

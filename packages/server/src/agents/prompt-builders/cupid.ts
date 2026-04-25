@@ -41,10 +41,13 @@ TƯ DUY CHỐNG BẮT BÀI: Mày phải bơ cặp đôi này đi! Tuyệt đối
   cupidPair(player: Player, state: GameState, observations: string[]): string {
     const targets = state.players.filter((p) => p.alive);
     return `${taskContext(observations)}
+
+<task>
 Chọn 2 người để ghép đôi. 1 chết → người kia chết theo. Có thể ghép chính mình ("${player.name}").
 Nếu cặp gồm 1 Sói + 1 Dân → Phe Cặp Đôi, thắng khi là 2 người cuối.
 Cân nhắc: ghép mình (kiểm soát được, nhưng rủi ro chết đôi) hay ghép 2 người khác (tự do hơn)?
 Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","player1":"Tên1","player2":"Tên2"}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","player1":"Tên1","player2":"Tên2"}
+</task>`;
   }
 }

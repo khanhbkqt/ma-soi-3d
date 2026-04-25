@@ -523,5 +523,5 @@ export class SituationAnalyzer {
 export function formatSignals(signals: Signal[]): string {
   if (!signals.length) return '';
   const lines = signals.map((s) => `- ${s.text}`).join('\n');
-  return `TÌNH HUỐNG HIỆN TẠI:\n${lines}`;
+  return `<current_situation>\nTÌNH HUỐNG HIỆN TẠI:\n${lines}\n</current_situation>`;
 }

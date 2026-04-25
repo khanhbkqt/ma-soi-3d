@@ -154,8 +154,23 @@ export class AgentBrain {
     const situationBlock = formatSignals(signals);
 
     let userContent = prompt;
-    const prefix = [deduc, situationBlock].filter(Boolean).join('\n\n');
-    if (prefix) userContent = `${prefix}\n\n${prompt}`;
+    // Inject <event_log> inside <game_knowledge> (it's data, belongs with memory)
+    if (deduc && userContent.includes('<game_knowledge>')) {
+      userContent = userContent.replace('<game_knowledge>\n', `<game_knowledge>\n${deduc}\n\n`);
+    } else if (deduc) {
+      userContent = `${deduc}\n\n${userContent}`;
+    }
+    // Inject <current_situation> between <game_knowledge> and the rest
+    if (situationBlock) {
+      const gkEnd = '</game_knowledge>';
+      const idx = userContent.indexOf(gkEnd);
+      if (idx !== -1) {
+        const insertAt = idx + gkEnd.length;
+        userContent = `${userContent.slice(0, insertAt)}\n\n${situationBlock}${userContent.slice(insertAt)}`;
+      } else {
+        userContent = `${situationBlock}\n\n${userContent}`;
+      }
+    }
 
     const messages: LLMMessage[] = [
       { role: 'system', content: this.builder.systemPrompt(this.player, state) },

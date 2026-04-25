@@ -335,6 +335,6 @@ export class RoleDeductionTracker {
     }
 
     if (!lines.length) return '';
-    return `SỔ TAY SỰ KIỆN HỆ THỐNG:\n${lines.join('\n')}`;
+    return `<event_log>\nSỔ TAY SỰ KIỆN HỆ THỐNG:\n${lines.join('\n')}\n</event_log>`;
   }
 }

@@ -150,14 +150,13 @@ export function compressedMemoryPrompt(observations: string[], deductionBlock?: 
   const recentBlock = recent.length ? recent.map((o) => `- ${o}`).join('\n') : '';
 
   const parts: string[] = [];
-  if (summary) parts.push(summary);
+  if (summary) parts.push(`<memory_summary>\n${summary}\n</memory_summary>`);
   if (deductionBlock) parts.push(deductionBlock);
-  if (recentBlock) parts.push(`NHẬT KÝ GẦN ĐÂY:\n${recentBlock}`);
-
-  if (!parts.length) return '';
-  // If no summary and no deduction, use simple header
-  if (!summary && !deductionBlock) {
-    return `NHẬT KÝ (những gì mày biết/thấy/nghe):\n${recentBlock}`;
+  if (recentBlock) {
+    const header =
+      !summary && !deductionBlock ? 'NHẬT KÝ (những gì mày biết/thấy/nghe)' : 'NHẬT KÝ GẦN ĐÂY';
+    parts.push(`<recent_observations>\n${header}:\n${recentBlock}\n</recent_observations>`);
   }
+
   return parts.join('\n\n');
 }

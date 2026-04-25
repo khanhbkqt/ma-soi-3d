@@ -40,10 +40,13 @@ Chỉ ra kẻ đáng nghi nhất và kêu gọi vote người đó.`;
   hunterShot(player: Player, state: GameState, observations: string[]): string {
     const targets = state.players.filter((p) => p.alive && p.id !== player.id);
     return `${taskContext(observations)}
+
+<task>
 MÀY ĐANG CHẾT! Bắn 1 phát cuối — bắn nhầm dân = thảm họa, bắn đúng sói = swing game.
-LUẬT SẮT: TUYỆT ĐỐI KHÔNG bắn người đã được xác nhận là phe dân (Tiên Tri soi sạch, role đã lộ là dân). Xem PHÂN TÍCH ROLE để biết ai đã xác nhận.
+LUẬT SẮT: TUYỆT ĐỐI KHÔNG bắn người đã được xác nhận là phe dân (Tiên Tri soi sạch, role đã lộ là dân). Xem <event_log> để biết ai đã xác nhận.
 Ai mày chắc nhất là sói? Dựa trên: Tiên Tri tố, vote pattern, hành vi, ai hưởng lợi khi mày chết.
 Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target":"Tên"}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target":"Tên"}
+</task>`;
   }
 }
