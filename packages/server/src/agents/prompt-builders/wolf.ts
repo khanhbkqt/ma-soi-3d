@@ -129,7 +129,7 @@ KHAI THÁC ROLE ĐÃ LỘ:
 - Phù Thủy đã come out + còn thuốc → Cắn Phù Thủy (để triệt thuốc).
 - Thợ Săn đã come out → KHÔNG CẮN! Cắn Thợ Săn = nó bắn 1 sói. Nếu có Phù Thủy (phe sói) → nhờ độc Thợ Săn thay vì cắn (bị độc = không bắn được).
 Nói 1-2 câu ngắn gọn: đề xuất target + lý do.
-JSON: {"message":"lời nói"}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","message":"lời nói"}`;
   }
 
   wolfKill(
@@ -154,7 +154,7 @@ TRÁNH CẮN:
 - Mấy con "cừu ngu" đang vote bậy (giữ lại làm bia đỡ đạn vòng sau).
 - Đứa nổi nhất làng (dễ bị kê khiên).
 Danh sách con mồi: ${targets.map((t) => t.name).join(', ')}
-JSON: {"target":"Tên"}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target":"Tên"}`;
   }
 
   wolfDoubleKill(
@@ -172,7 +172,7 @@ Suy nghĩ nội bộ chọn 2 target:
 - Target 2: Đứa "trung bình" để né khiên Bảo Vệ, hoặc đánh bồi 1 đứa mà Bảo Vệ có thể đỡ Target 1 (để chắc chắn 1 mạng ngã xuống).
 - Đừng phí mạng vào bọn "cừu ngu" đang bị cả làng nghi ngờ.
 Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"target1":"Tên1","target2":"Tên2"}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target1":"Tên1","target2":"Tên2"}`;
   }
 }
 
@@ -208,7 +208,7 @@ Suy nghĩ nội bộ:
 - CẮN THƯỜNG khi: Cần triệt tiêu gốc rễ (Tiên Tri đã come out), hoặc "đầu tàu" của làng.
 - KHÔNG lây nhiễm: Tiên Tri (nó đã biết mày sói), người sắp bị vote chết, hoặc mấy đứa cừu ngu không có giá trị.
 Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"target":"Tên","infect":true/false}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target":"Tên","infect":true/false}`;
   }
 }
 

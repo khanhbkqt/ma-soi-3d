@@ -358,7 +358,7 @@ TRƯỚC KHI NÓI, suy nghĩ NỘI BỘ (không viết ra):
 - Tự phản biện câu nói trước khi chốt.
 ${speakInstruction}
 ${skipRule}
-JSON: {"wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)"}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)"}`;
   }
 
   vote(player: Player, state: GameState, observations: string[], messages: DayMessage[]): string {
@@ -381,7 +381,7 @@ TRƯỚC KHI VOTE, suy luận NỘI BỘ (không viết ra):
 - Ai im lặng bất thường? Ai nói nhiều nhưng không có nội dung?
 - ĐỘ TIN CẬY: Người dẫn dắt vote có đáng tin không? (xem PHÂN TÍCH ROLE)
 Vote 1 người, hoặc "skip". Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"target":"Tên"|"skip"}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target":"Tên"|"skip"}`;
   }
 
   defense(
@@ -405,7 +405,7 @@ TRƯỚC KHI BIỆN HỘ, suy luận NỘI BỘ (không viết ra):
 - Ai đáng nghi hơn mày? Chỉ đích danh + lý do.
 - Nên come out role không? (chỉ khi role quan trọng VÀ tình huống nguy cấp)
 NÓI 2-3 CÂU THUYẾT PHỤC. Dùng bằng chứng cụ thể, chỉ ra ai đáng nghi hơn, appeal to cả logic lẫn cảm xúc.
-JSON: {"message":"lời biện hộ"}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","message":"lời biện hộ"}`;
   }
 
   judgement(
@@ -431,6 +431,6 @@ TRƯỚC KHI VOTE, đánh giá NỘI BỘ (không viết ra):
 - Nếu ${accusedName} chết, phe nào hưởng lợi? Giết nhầm dân = sói thắng gần hơn.${hasFool(state) ? `\n- ⚠ ${accusedName} có thể là Kẻ Ngốc! Kẻ Ngốc chơi GIỐNG SÓI (redirect, vote lệch, bênh sai người) chứ KHÔNG diễn ngu xin treo. Nếu không có bằng chứng cứng (soi ra sói, lộ role) → vote THA an toàn hơn. Treo Kẻ Ngốc = THUA NGAY.` : ''}
 - Bằng chứng tố ${accusedName} có đủ mạnh không? Hay chỉ là đám đông hùa nhau?
 Vote "kill" (giết) hoặc "spare" (tha). Cần >50% vote giết để treo cổ.
-JSON: {"verdict":"kill"|"spare"}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","verdict":"kill"|"spare"}`;
   }
 }

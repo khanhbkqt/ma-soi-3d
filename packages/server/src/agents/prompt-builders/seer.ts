@@ -72,7 +72,7 @@ TƯ DUY CHỌN MỤC TIÊU (IMPACT LỚN NHẤT):
 3. Kẻ hùa theo đám đông, núp lùm im lặng.
 4. TRÁNH SOI người QUÁ NỔI BẬT (đang bị cả làng dồn) -- sói cũng có thể cắn họ cùng đêm nay -> lãng phí soi. Ưu tiên soi người "trung bình" có thời gian dùng info.(Tuyệt đối không soi người đã chết lộ role hoặc người đã soi rồi).
 Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"target":"Tên"}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","target":"Tên"}`;
   }
 }
 

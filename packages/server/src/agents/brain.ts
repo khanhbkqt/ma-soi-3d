@@ -114,7 +114,7 @@ export class AgentBrain {
     try {
       const res = await this.provider.chat(messages, {
         temperature: 0.85,
-        maxTokens: 150,
+        maxTokens: 250,
         jsonMode,
         model: this.player.modelName,
         cacheControl: { type: 'ephemeral' },

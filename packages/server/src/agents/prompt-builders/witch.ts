@@ -69,6 +69,6 @@ ${healInfo}
 ${killInfo}
 Thuốc cứu: ${potions.healUsed ? 'ĐÃ DÙNG' : 'còn'} | Thuốc độc: ${potions.killUsed ? 'ĐÃ DÙNG' : 'còn'}
 Mày KHÔNG biết Bảo Vệ đã bảo vệ ai đêm nay.
-JSON: {"heal":true/false,"killTarget":"Tên"|null}`;
+JSON: {"reasoning":"suy luận nội tâm (ẩn, không ai thấy)","heal":true/false,"killTarget":"Tên"|null}`;
   }
 }

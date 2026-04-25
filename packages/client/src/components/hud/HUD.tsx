@@ -65,7 +65,7 @@ export default function HUD() {
         {/* Left sidebar */}
         <div
           className={`pointer-events-auto bg-black/40 backdrop-blur-sm border-r border-gray-700/30 flex flex-col overflow-hidden transition-all duration-300 ${
-            isPlayerView ? 'w-72' : 'w-48'
+            isPlayerView ? 'w-72' : 'w-64'
           }`}
         >
           {isPlayerView ? (
