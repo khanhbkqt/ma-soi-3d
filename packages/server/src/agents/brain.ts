@@ -16,10 +16,19 @@ import { GuardPromptBuilder } from './prompt-builders/index.js';
 import { HunterPromptBuilder } from './prompt-builders/index.js';
 import { CupidPromptBuilder } from './prompt-builders/index.js';
 import { RoleDeductionTracker } from './role-deduction.js';
+import {
+  SituationAnalyzer,
+  formatSignals,
+  ActionType,
+  AnalyzerContext,
+} from './situation-analyzer.js';
 
 export class AgentBrain {
   memory: AgentMemory = { observations: [], reflections: [], knownRoles: {}, suspicions: {} };
   readonly deduction = new RoleDeductionTracker();
+  private readonly analyzer = new SituationAnalyzer();
+  private actionType: ActionType = 'discuss';
+  private actionMessages: DayMessage[] = [];
   lastReasoning: string | undefined;
   tokenUsage: TokenUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
   callCount = 0;
@@ -69,10 +78,30 @@ export class AgentBrain {
     return this.player.role === Role.Seer || this.player.role === Role.ApprenticeSeer;
   }
 
+  private setAction(type: ActionType, messages: DayMessage[] = []) {
+    this.actionType = type;
+    this.actionMessages = messages;
+  }
+
   private async ask(prompt: string, state: GameState, jsonMode = true): Promise<string> {
     // Inject deduction analysis into user prompt
     const deduc = this.deductionBlock;
-    const userContent = deduc ? `${deduc}\n\n${prompt}` : prompt;
+    // Inject situation signals
+    const sigCtx: AnalyzerContext = {
+      player: this.player,
+      state,
+      messages: this.actionMessages,
+      observations: this.memory.observations,
+      deduction: this.deduction,
+      actionType: this.actionType,
+    };
+    const signals = this.analyzer.analyze(sigCtx);
+    const situationBlock = formatSignals(signals);
+
+    let userContent = prompt;
+    const prefix = [deduc, situationBlock].filter(Boolean).join('\n\n');
+    if (prefix) userContent = `${prefix}\n\n${prompt}`;
+
     const messages: LLMMessage[] = [
       { role: 'system', content: this.builder.systemPrompt(this.player, state) },
       { role: 'user', content: userContent },
@@ -112,6 +141,7 @@ export class AgentBrain {
     messages: { playerName: string; message: string }[],
     round: number,
   ): Promise<string> {
+    this.setAction('night');
     const b = this.builder as WolfPromptBuilder;
     const prompt = b.wolfDiscussionHint(this.player, state, this.memory.observations, messages);
     const res = await this.ask(prompt, state);
@@ -122,6 +152,7 @@ export class AgentBrain {
     state: GameState,
     discussion: { playerName: string; message: string }[] = [],
   ): Promise<string> {
+    this.setAction('night');
     const b = this.builder as WolfPromptBuilder;
     const prompt = b.wolfKill(this.player, state, this.memory.observations, discussion);
     const res = await this.ask(prompt, state);
@@ -133,6 +164,7 @@ export class AgentBrain {
     state: GameState,
     discussion: { playerName: string; message: string }[] = [],
   ): Promise<[string, string]> {
+    this.setAction('night');
     const b = this.builder as WolfPromptBuilder;
     const prompt = b.wolfDoubleKill(this.player, state, this.memory.observations, discussion);
     const res = await this.ask(prompt, state);
@@ -147,6 +179,7 @@ export class AgentBrain {
     state: GameState,
     discussion: { playerName: string; message: string }[] = [],
   ): Promise<{ target: string; infect: boolean }> {
+    this.setAction('night');
     const b = this.builder as AlphaWolfPromptBuilder;
     const prompt = b.alphaInfect(this.player, state, this.memory.observations, discussion);
     const res = await this.ask(prompt, state);
@@ -156,6 +189,7 @@ export class AgentBrain {
   }
 
   async decideSeerInvestigate(state: GameState): Promise<string> {
+    this.setAction('night');
     const b = this.builder as SeerPromptBuilder;
     const prompt = b.seerInvestigate(this.player, state, this.memory.observations);
     const res = await this.ask(prompt, state);
@@ -170,6 +204,7 @@ export class AgentBrain {
     killedName: string | null,
     potions: { healUsed: boolean; killUsed: boolean },
   ): Promise<{ heal: boolean; killTarget: string | null }> {
+    this.setAction('night');
     const b = this.builder as WitchPromptBuilder;
     const prompt = b.witchAction(this.player, state, this.memory.observations, killedName, potions);
     const res = await this.ask(prompt, state);
@@ -181,6 +216,7 @@ export class AgentBrain {
   }
 
   async decideGuardProtect(state: GameState, lastGuardedId: string | null): Promise<string> {
+    this.setAction('night');
     const b = this.builder as GuardPromptBuilder;
     const prompt = b.guardProtect(this.player, state, this.memory.observations, lastGuardedId);
     const res = await this.ask(prompt, state);
@@ -189,6 +225,7 @@ export class AgentBrain {
   }
 
   async decideCupidPair(state: GameState): Promise<[string, string]> {
+    this.setAction('night');
     const b = this.builder as CupidPromptBuilder;
     const prompt = b.cupidPair(this.player, state, this.memory.observations);
     const res = await this.ask(prompt, state);
@@ -206,6 +243,7 @@ export class AgentBrain {
     messages: DayMessage[],
     round: number,
   ): Promise<{ message: string; wantToSpeak: boolean }> {
+    this.setAction('discuss', messages);
     const prompt = this.builder.discuss(
       this.player,
       state,
@@ -251,6 +289,7 @@ export class AgentBrain {
   }
 
   async vote(state: GameState, messages: DayMessage[]): Promise<string> {
+    this.setAction('vote', messages);
     const prompt = this.builder.vote(this.player, state, this.memory.observations, messages);
     const res = await this.ask(prompt, state);
     let valid = state.players.filter((p) => p.alive && p.id !== this.player.id).map((p) => p.name);
@@ -264,6 +303,7 @@ export class AgentBrain {
   }
 
   async defend(state: GameState, messages: DayMessage[]): Promise<string> {
+    this.setAction('defense', messages);
     const prompt = this.builder.defense(this.player, state, this.memory.observations, messages);
     const res = await this.ask(prompt, state);
     return parseActionResponse(res, []).message || 'Tao vô tội!';
@@ -279,6 +319,7 @@ export class AgentBrain {
     if (this.isSeerRole() && this.seerClearNames.includes(accusedName)) {
       return 'spare';
     }
+    this.setAction('judgement', messages);
     const prompt = this.builder.judgement(
       this.player,
       state,
@@ -297,6 +338,7 @@ export class AgentBrain {
   }
 
   async hunterShot(state: GameState): Promise<string> {
+    this.setAction('night');
     const b = this.builder as HunterPromptBuilder;
     const prompt = b.hunterShot(this.player, state, this.memory.observations);
     const res = await this.ask(prompt, state);

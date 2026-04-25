@@ -88,7 +88,14 @@ CÁCH SUY LUẬN — suy nghĩ kỹ trước khi nói/hành động:
 - PHÂN TÍCH HÀNH VI: Ai im lặng khi đồng minh bị tố? Ai nói nhiều nhưng không có nội dung? Ai đổi ý đột ngột? Ai luôn hùa theo đám đông?
 - PHÂN TÍCH TIMING: Ai come out role lúc nào? (sớm quá = đáng ngờ, muộn quá = đáng ngờ). Ai tố người khác ngay sau khi bị tố? (redirect).
 - PHÂN TÍCH LIÊN MINH: Ai luôn bênh ai? Ai không bao giờ tố ai? Cặp đôi ngầm = có thể cùng phe sói.
-- ĐÁNH GIÁ NGÔN NGỮ KHÁCH QUAN: Khi ai đó nói "cắn X", "X bị cắn", "đêm qua cắn"... ĐỪNG vội kết luận người đó là sói! Trong Ma Sói, BẤT KỲ AI cũng có thể dùng ngôn ngữ này để bluff, đánh lạc hướng, hoặc test phản ứng. Đánh giá dựa trên TỔNG THỂ hành vi (vote pattern, logic, timing) chứ không phải chỉ vì dùng từ "cắn".`;
+- ĐÁNH GIÁ NGÔN NGỮ KHÁCH QUAN: Khi ai đó nói "cắn X", "X bị cắn", "đêm qua cắn"... ĐỪNG vội kết luận người đó là sói! Trong Ma Sói, BẤT KỲ AI cũng có thể dùng ngôn ngữ này để bluff, đánh lạc hướng, hoặc test phản ứng. Đánh giá dựa trên TỔNG THỂ hành vi (vote pattern, logic, timing) chứ không phải chỉ vì dùng từ "cắn".
+
+TỰ PHẢN BIỆN (bắt buộc trong "reasoning"):
+Trước khi viết "message", tự hỏi trong "reasoning":
+1. Câu này có vô tình lộ role/thông tin bí mật không? (sói nói "cắn" kèm chi tiết đêm, TT nói "soi" khi chưa come out, Bảo Vệ nói "đỡ")
+2. Câu này có rập khuôn/giống AI không? Có quá lịch sự, quá dài, hay quá chung chung không?
+3. Câu này có đúng TÍNH CÁCH đã gán không? Giọng điệu có nhất quán không?
+4. Nếu có vấn đề → SỬA LẠI trước khi đưa vào "message". Chỉ đưa bản đã sửa vào "message".`;
 }
 
 export function informationRules(): string {
@@ -304,7 +311,7 @@ TRƯỚC KHI NÓI, suy nghĩ trong "reasoning":
 - Mày nên tố, bênh, hỏi, hay im?
 ${speakInstruction}
 ${skipRule}
-JSON: {"wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)","reasoning":"phân tích chi tiết tình huống hiện tại"}`;
+JSON: {"wantToSpeak":true/false,"message":"câu nói (bỏ trống nếu skip)","reasoning":"phân tích tình huống + tự phản biện câu nói trước khi chốt"}`;
   }
 
   vote(player: Player, state: GameState, observations: string[], messages: DayMessage[]): string {
@@ -326,7 +333,7 @@ TRƯỚC KHI VOTE, suy luận trong "reasoning":
 - Ai im lặng bất thường? Ai nói nhiều nhưng không có nội dung?
 - Mày có nên vote theo đám đông hay tách ra vote người khác?
 Vote 1 người, hoặc "skip". Danh sách: ${targets.map((t) => t.name).join(', ')}
-JSON: {"target":"Tên"|"skip","reasoning":"phân tích chi tiết trước khi vote"}`;
+JSON: {"target":"Tên"|"skip","reasoning":"phân tích chi tiết + tự phản biện trước khi vote"}`;
   }
 
   defense(
@@ -350,7 +357,7 @@ TRƯỚC KHI BIỆN HỘ, suy luận trong "reasoning":
 - Ai đáng nghi hơn mày? Chỉ đích danh + lý do.
 - Nên come out role không? (chỉ khi role quan trọng VÀ tình huống nguy cấp)
 NÓI 2-3 CÂU THUYẾT PHỤC. Dùng bằng chứng cụ thể, chỉ ra ai đáng nghi hơn, appeal to cả logic lẫn cảm xúc.
-JSON: {"message":"lời biện hộ","reasoning":"phân tích tình huống + chiến thuật biện hộ"}`;
+JSON: {"message":"lời biện hộ","reasoning":"phân tích tình huống + chiến thuật biện hộ + tự phản biện trước khi chốt"}`;
   }
 
   judgement(
@@ -377,6 +384,6 @@ TRƯỚC KHI VOTE, đánh giá trong "reasoning":
 - ${accusedName} có phải là Kẻ Ngốc không? (Kẻ Ngốc thắng khi bị treo cổ — cẩn thận!)
 - Bằng chứng tố ${accusedName} có đủ mạnh không? Hay chỉ là đám đông hùa nhau?
 Vote "kill" (giết) hoặc "spare" (tha). Cần >50% vote giết để treo cổ.
-JSON: {"verdict":"kill"|"spare","reasoning":"phân tích chi tiết lời biện hộ + bằng chứng"}`;
+JSON: {"verdict":"kill"|"spare","reasoning":"phân tích lời biện hộ + bằng chứng + tự phản biện"}`;
   }
 }
