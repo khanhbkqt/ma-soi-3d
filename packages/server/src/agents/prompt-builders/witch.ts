@@ -71,34 +71,24 @@ CHIẾN THUẬT BAN NGÀY — KHAI THÁC THÔNG TIN NGẦM:
 
   voteHint(_player: Player, state: GameState): string {
     const foolWarn = hasFool(state)
-      ? '\n- ⚠ NHỚ: Game có Kẻ Ngốc — nó thắng khi bị treo cổ. Đưa người lên giàn mà không có bằng chứng cứng = rủi ro tặng win cho Kẻ Ngốc.'
+      ? '\n⚠ Game có Kẻ Ngốc — nó thắng khi bị treo cổ. Cẩn thận.'
       : '';
-    return `VOTE THÔNG MINH — MÀY CÓ DATA ĐẶC BIỆT MÀ DÂN THƯỜNG KHÔNG CÓ:
-LUẬT SẮT PHÙ THỦY:
-1. TUYỆT ĐỐI KHÔNG vote người mà mày biết bị Sói cắn (= 90% dân sạch). Xem nhật ký đêm trong <game_knowledge> — tìm "Sói cắn X".
-2. Nếu ai DẪN DẮT vote vào người mà mày biết là sạch → NGƯỜI DẪN DẮT ĐÓ ĐÁNG NGHI HƠN TARGET. Tại sao nó cố giết người sạch? Rất có thể nó là Sói đang frame.
-3. ƯU TIÊN vote người mà:
-   - Mày CHƯA BAO GIỜ thấy bị Sói cắn (chưa lọt vào danh sách sạch) VÀ có hành vi đáng ngờ
-   - Liên tục tố/dồn ép người mà mày biết là sạch (pattern sói)
-   - Claim role nhưng data của mày cho thấy mâu thuẫn
-4. BẰNG CHỨNG: Chỉ vote khi có ít nhất bằng chứng TRUNG BÌNH. Đừng vote theo đám đông mù quáng.
-5. CẢNH GIÁC kẻ thao túng: Sói hay dẫn dắt đám đông frame dân. Mày có data riêng → TỰ SUY NGHĨ, đừng bị kéo theo.
-⚠ NHẮC NHỞ: TRƯỚC KHI VOTE, kiểm tra <game_knowledge> xem target có từng bị sói cắn không. Nếu CÓ → KHÔNG VOTE, chuyển sang target khác.${foolWarn}`;
+    return `VOTE — MÀY CÓ DATA ĐẶC BIỆT:
+1. KHÔNG vote người mà mày biết bị Sói cắn (= dân sạch). Xem nhật ký đêm.
+2. Ai dẫn dắt vote vào người sạch → kẻ đó đáng nghi hơn.
+3. Ưu tiên vote người chưa từng bị cắn + có hành vi đáng ngờ.
+⚠ TRƯỚC KHI VOTE: kiểm tra <game_knowledge> xem target có từng bị sói cắn không. CÓ → KHÔNG VOTE.${foolWarn}`;
   }
 
   judgementHint(_player: Player, state: GameState): string {
     const foolWarn = hasFool(state)
-      ? `\n⚠ CẢNH BÁO KẺ NGỐC: Game có Kẻ Ngốc — nó thắng NGAY khi bị treo cổ. Kẻ Ngốc chơi GIỐNG SÓI (redirect, vote lệch) chứ không diễn ngu. Nếu bằng chứng chỉ là "hành vi đáng ngờ" mà KHÔNG CÓ bằng chứng cứng → vote THA an toàn hơn. Treo Kẻ Ngốc = THUA NGAY.`
+      ? `\n⚠ Game có Kẻ Ngốc — nó thắng ngay khi bị treo cổ. Nếu chưa chắc → vote THA. Treo Kẻ Ngốc = THUA NGAY.`
       : '';
-    return `PHÁN XÉT — DÙNG DATA ĐÊM CỦA MÀY ĐỂ QUYẾT ĐỊNH:
-1. Nếu bị cáo LÀ NGƯỜI MÀ MÀY BIẾT BỊ SÓI CẮN (xem <game_knowledge> tìm "Sói cắn X") → vote THA NGAY. Người đó 90% dân sạch. Giết nhầm = thảm họa cho Làng.
-2. Nếu bị cáo CHƯA BAO GIỜ bị Sói cắn + có bằng chứng cứng (soi ra sói, lộ role) → vote GIẾT.
-3. Nếu bị cáo chưa rõ ràng → đánh giá:
-   - Lời biện hộ có logic không? Có mâu thuẫn với hành vi trước đó?
-   - Ai tố bị cáo? Kẻ tố có đáng tin không? Hay kẻ tố chính là Sói đang frame?
-   - Data đêm mày có gì liên quan? (VD: bị cáo bị Sói cắn đêm X = sạch → vote THA)
-4. NGUYÊN TẮC: Không có bằng chứng CỨNG + data đêm không loại trừ được → vote THA. Giết nhầm dân = sói lợi 2 lần.
-⚠ NHẮC NHỞ: TRƯỚC KHI VOTE GIẾT, kiểm tra <game_knowledge> xem bị cáo có từng bị sói cắn không. CÓ → THA NGAY.${foolWarn}`;
+    return `PHÁN XÉT — DÙNG DATA ĐÊM:
+1. Bị cáo có từng bị Sói cắn không? (xem <game_knowledge>) CÓ → vote THA NGAY. Người đó dân sạch.
+2. Ai tố bị cáo? Kẻ tố có đáng tin không?
+3. Lời biện hộ có logic không?
+⚠ TRƯỚC KHI VOTE GIẾT: kiểm tra <game_knowledge> xem bị cáo có từng bị sói cắn không. CÓ → THA NGAY.${foolWarn}`;
   }
 
   defenseHint(_player: Player, state: GameState): string {

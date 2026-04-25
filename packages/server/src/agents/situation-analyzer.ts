@@ -79,8 +79,8 @@ export class SituationAnalyzer {
       return allowed ? allowed.includes(ctx.actionType) : true;
     });
 
-    // Sort by priority descending, take top 4 (increased from 3 to accommodate death analysis)
-    return relevant.sort((a, b) => b.priority - a.priority).slice(0, 4);
+    // Sort by priority descending, take top 2 (reduced from 4 to avoid context overload)
+    return relevant.sort((a, b) => b.priority - a.priority).slice(0, 2);
   }
 
   // ── Detectors ──
